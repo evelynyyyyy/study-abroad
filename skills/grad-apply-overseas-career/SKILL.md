@@ -1,0 +1,234 @@
+---
+name: grad-apply-overseas-career
+description: >-
+  End-to-end graduate application & overseas career super skill. Covers master's/PhD applications across
+  Financial Engineering / quant finance, ECE, mechanical & robotics, CS/AI/agents, data science,
+  interdisciplinary engineering, technology transfer, and entrepreneurship/founder tracks; plus overseas
+  internship/job search and founder-visa & fundraising strategy. Provides profile intake, evidence map,
+  school matching (Reach/Target/Safety) with a built-in programme CSV seed, gap-improvement roadmaps,
+  track-tailored CV/SOP drafting with admissions-officer review, LOR and cold-email templates, deadline
+  tracking, offer comparison, and a hard-tech founder playbook (YC/US/UK/SG/France/Middle East/China
+  fundraising + visa route comparison). Use when the user says (EN or 中文): 留学申请, 研究生申请, 海外读研,
+  硕士/博士申请, 选校, 文书, SOP, PS, personal statement, CV, 简历, 推荐信, LOR, 套磁, cold email professor,
+  海外实习, 海外工作, 海外求职, 找实习, 创业签证, founder visa, 移民签证路径, startup visa, 选offer,
+  DIY申请, gap plan, 简历修改/改简历 (CV review), 面试/行为面试/面试准备 (interview prep,
+  behavioral interview, 职业表达, 怎么讲项目), MBA/硕士文书与领导力故事 (leadership essay, MBA申请,
+  领导力素材, 社团legacy, 晋升思路), founder coaching (融资辅导, 创始人特质, pitch 训练,
+  创业冷启动, 早期用户, 零预算营销, PMF验证, 前100个用户, cold outreach, X/Reddit/LinkedIn,
+  UGC多渠道探索), 创业底层逻辑/反常识 (Stanford GSB, 创业为什么会死, One-Two Punch,
+  小市场练手, 创业中间地带, 黑科技未必赢), 链上支付/Web3基础设施 (马斯克 X 创作者稿费,
+  on-chain payments, 链上结算, 合规是门票, 结算即场景, 第一次接触Web3), AI无法编码/人类原生特质
+  (what AI can't encode, 信任品味审美想象, human native traits, Demis Hassabis 微观结构,
+  不会被AI取代),
+  Codex逆向工程美股博主指标 (codex 半公开策略 假设空间 图像吻合验证 公开的秘密),
+  Oak架构/Sutton高层状态转移 (Sutton Oak high-level state transition 时间延展选项 学习颗粒度),
+  姚期智-Sutton对话/AI被困在符号系统里 (姚期智 Richard Sutton 符号系统 数学范式 AI局限 自洽封闭系统),
+  applyphd.app/美国PhD导师搜索工具 (applyphd 34k records 简历匹配 关键词筛选),
+  SOP元框架/招生官三个问题 (哈佛/斯坦福/宾大/康奈尔/UCL/爱丁堡 动机/计划/能力 三个问题 十个节拍),
+  8小时文书初稿7步工作流 (PS/CV/RL三位一体 8h sprint 7步 BAR模型 量化成果 推荐人沟通),
+  区域PS风格 (英国PS 香港PS 新加坡PS UK HK SG 学术说服 职业说服 Why School Why Hong Kong),
+  通用PS写作原则 (真实感大于高大上 细节讲故事 思想深度决定上限 5段式叙事法 哈佛前招生官),
+  26fall AI写文书立场 (AI declaration vibe coding 斯坦福 耶鲁 gpt味儿 de-GPT prompt模板),
+  Karpathy LLM Wiki架构 (raw sources / wiki / schema 复利 bookkeeping lint obsidian IDE),
+  年轻人最累/迭代速度vs社会公允速度 (00后 热血意志力 privilege 社会杠杆滞后),
+  DeepSeek mHC / Hyper-Connections (字节 HC 残差流 扩展率 谱范数 双随机矩阵 Birkhoff polytope Sinkhorn-Knopp),
+  财富自由哲学/孙宇晨播客 (精神自由 战略vs战术 投资自己 多巴胺递减 中彩票难善终 黑客帝国脚本),
+  华科校友教授网络/校友套磁 (HUST alumni professors 华科校友 飞跃手册 csprofessors brown.edu 校友教授名录 面套),
+  暑研实操指南 (summer research 暑研 暑期科研 暑研套磁 MITACS UCInspire 面套行程 海外推荐信 暑研时间线 self-funded),
+  SOP写作前自我追问清单 (pre-writing checklist 动机追问 选校匹配 so-what test 飞跃手册文书指导),
+  创业者个人品牌建设 (personal profile personal IP 个人IP 真实人设 build up your profile manage every detail 差异化 不可替代性 个人品牌 创业者profile),
+  融资方法论/融资实战 (fundraising methodology 融资认知 投资人匹配表 决策成本 融资节奏 解释能力 融资进展硬指标 7个关键问题 为什么融 融多少 怎么讲 让多少股份 估值策略 估值陷阱 down round 降估值融资 被估值锁死 融资里程碑 稀释比例 下一轮估值 估值兑现),
+  海归就业/回国就业/留学ROI (海归就业 returnee employment 留学生回国 海归薪资 海归报告 回国找工作 留学值不值 ROI of studying abroad 海归城市选择 海归行业分布 智联招聘海归),
+  投行ECM面试/Placement (ECM interview 投行面试 Morgan Stanley 香港IB Primary Placement Secondary Placement Top-up Block Trade settlement Why Move Deal Experience equity capital markets 投行求职 跳槽动机),
+  PhD套磁信与面试四条 (PhD cold email tactics 套磁信怎么写 要match不要interest 要ability不要passion PhD面试主动提问 follow up节奏 导师选人细节 paper+future work方法),
+  Yale M2M申请复盘 (Yale SOM M2M 管理类项目申请 社会责任感 人本位 AI态度 1+1项目 GBS info session ESG经历 candidate画像 校友reach out),
+  AI投资飞轮/LLM股票对冲 (AI investment flywheel LLM股票 对冲token成本 正反馈循环 科技通胀传导 capex溢出 财富分化 左脚踩右脚 大爆炸时代),
+  红杉认知革命/AI世界观 (Sequoia Cognitive Revolution Konstantine Buhler 认知劳动外包 工业革命押韵 杰文斯悖论 Engels pause 每瓦智能 珍妮纺纱机 编程 汽车 认知工作自动化),
+  高性价比人生指南 (HowToLiveBetter 552条循证建议 人生性价比 留学身份 法律红线 急救 创业手续 没钱怎么活 程序员红线 技能回报),
+  硅谷AI行业观察/一线见闻 (Silicon Valley AI observations 教授 大厂 风投 对话 中美AI格局 AI制药 长生药 泡沫破裂 Google FDE 个人英雄主义 AI提效vs颠覆),
+  Cold Email Networking模板 (cold email模板 networking邮件 冷邮件 回复率 refer邮件 校友networking 职业社交 LinkedIn outreach how to write cold email 四块结构),
+  本科生科研套磁邮件 (undergrad research cold email 本科生套磁 RA申请邮件 科研套磁 本科生联系教授 套磁邮件大纲 5-part structure contribution CV transcript 回复率80%),
+  年轻人版本答案/全球化能力系统 (career version answer capability system 语言 专业技能 AI 互联网 全球化 跨市场 geographic arbitrage 能力系统 earn globally live locally 购买力 选择权),
+  灰产认知对冲 (grey market cognition hedge VC语境 非共识判断 钻空子 投机者 cofake talk 模型掺水 号池 生命周期管理 索罗斯反身性 庙堂江湖 AI灰产),
+  硅谷国内两周信息差 (SV China info gap VC FOMO Neo Lab Jev Instinct 融资 泡沫 correction 应用层ARR 模型层ARR AMD World Lab positioning startup 机器人 新芯片 Pre-Train开源 Post Train TML Fireworks RL as service Qiao Lin RSI 研究员出路 OAI 机器人数据),
+  essmote AI文书 AI简历 PS生成 SOP生成 留学文书工具 文书润色 人工精修 essmote,
+  创业合作复盘 (founder collaboration postmortem 尽调缺失 资金断供 代招用工 先钱后干活 共同办公 管理边界 止损信号 单向惩罚条款 创业踩坑 合作方违约),
+  免费网络安全自学 (awesome cyber security university red team blue team TryHackMe pentesting 渗透测试 红队 蓝队 CTF OWASP 逆向 取证),
+  移民签证海外工作资源 (immigration visa H1B O1 awesome-immigration highly-skilled-job-offers five-flags diaspora 移民 签证 长期签证 海外工作 高技能 跨国生活),
+  PERM暂停 科技大厂绿卡 (PERM suspension Microsoft Adobe Cognizant Infosys TCS Wipro HCL Capgemini 裁员 H-1B 绿卡 科技行业 SDE 留美 量化 投行 加拿大 香港 签证政策),
+  回国留美决策 (return vs stay 回国 留美 去留 储蓄速度 H1B slave 身份 躺平 原生家庭 子女教育 事业批 岁月静好 面子 实地考察),
+  官网学生分享/Meet the Class研究法 (student profiles Meet the Class 学生故事 官网学生 项目研究 录取偏好 why program 已有基础 能力缺口 项目资源 diversity contribution 社区贡献 课程选择 next steps MBAn 商业分析 简历只罗列工具 文书只想获得),
+  LetsMigrate欧洲居留路线 (letsmigrate.org 欧洲移民 研究居留 欧盟蓝卡 EU Blue Card 数字游民签证 欧洲创业签证 黄金签证 投资居留 被动居留 海牙认证 apostille 中国材料准备 马耳他 葡萄牙 西班牙数字游民 德国蓝卡 欧洲Plan B),
+  美国PhD申请费减免 (fee waiver application fee waiver 免申请费 申请费减免 PhD申请费 申请费太贵 waiver邮件模板 经济困难说明 银行流水 早鸟免费 info session宣讲会免申请费 哈佛普林斯顿勾选免 耶鲁哥大waiver 红州公立 UT Austin 威斯康星),
+  留学预算与回报率/海外实习全攻略 (study abroad ROI 留学预算 回报率 回本周期 留学值不值 性价比 父母攒钱月数 回本月数 代际公平 学费对比 留学费用一览 海外实习 实习全攻略 CPT OPT co-op PGWP spring week 实习时间线 国际组织实习 CSC实习),
+  美国AI硕士30项目/选校清单 (AI硕士 人工智能硕士 MSAI MSML MSAII AI项目清单 美国AI项目 AI选校 计算机硕士AI方向 独立AI学位 首届项目 Co-op实习项目 机器人硕士 应用数据科学),
+  career-anxiety or mindset talks (职业焦虑, 卷学历, 简历被挂, 职业迷茫,
+  应对变化, 上岸, 财富自由, 怀疑努力的意义), or asks to compare universities/programmes/visas/scholarships abroad.
+license: MIT
+version: 2.13.28
+last_updated: 2026-11-02
+---
+
+# Grad Apply & Overseas Career — Master Skill (v2.13.28)
+
+## 0. Loading protocol (progressive disclosure — follow strictly)
+This file is the **router** and stays loaded. Do NOT load every asset at once. Load a template/reference
+only when the workflow step requires it, then work from it:
+
+| When the task needs… | Load this file |
+| --- | --- |
+| Collecting achievements / building asset library | `templates/evidence-map-template.md` |
+| School matching & programme comparison | `references/school-programs.csv` (seed) + `templates/school-comparison-template.md` |
+| Gap diagnosis / background enhancement | this file §2 Step 4 (logic stays here) |
+| CV drafting (Markdown) | `templates/cv-template.md` |
+| CV drafting (LaTeX) | `templates/cv-template.tex` |
+| Research-track / PhD academic CV | `templates/cv-template-academic.md` |
+| SOP / personal statement (structural outline) | `templates/sop-outline-template.md` |
+| SOP meta-framework (admissions committee 3 questions + 10 beats) | `references/sop-meta-framework.md` |
+| 8-hour SOP/CV/RL initial-draft sprint (7-step playbook) | `references/sop-8h-workflow.md` |
+| Regional PS styles — UK (academic) / HK (career) / SG (hybrid) | `references/sop-ps-regional-styles.md` |
+| Universal PS writing craft — authenticity / details / depth / 5-para arc | `references/sop-ps-writing-principles.md` |
+| 26fall AI-era SOP stance + reusable prompt template | `references/sop-ai-era-writing-stance.md` |
+| Karpathy LLM Wiki architecture — raw sources / wiki / schema + 4 meta-insights | `references/karpathy-llm-wiki-architecture.md` |
+| Youngest-most-capable = most-exhausted (iteration speed vs social 公允 speed) | `references/career-youngest-most-exhausted.md` |
+| DeepSeek mHC — Hyper-Connections + Birkhoff-manifold constraint (CS/AI deep-tech seed) | `references/deepseek-mhc-hyperconnections.md` |
+| Wealth-freedom philosophy — spiritual freedom first, strategy > tactics, invest in yourself | `references/career-wealth-freedom-philosophy.md` |
+| LOR outline / professor cold email | `templates/lor-cold-email-template.md` |
+| PhD advisor sourcing / professor match check / red-list leads | `references/phd-advisor-sourcing.md` |
+| Founder venture brief / visa evidence | `templates/founder-pack-template.md` |
+| Founder cold-start / early traction (first 100 users) | `references/founder-coldstart-playbook.md` |
+| Founder strategic framing (anti-hedging, anti-incremental-market) | `references/founder-anti-hedging-principles.md` |
+| Founder infrastructure-migration thinking (Web3/on-chain, settlement-as-scenario) | `references/founder-infrastructure-migration.md` |
+| Visa policy thresholds & official links | `references/visa-policy-links.md` |
+| Founder fundraising ecosystem / investor lists | `references/founder-fundraising-ecosystem.md` |
+| Founder fundraising methodology (5 corrections + 7-question audit + valuation strategy) | `references/founder-fundraising-methodology.md` |
+| Founder personal profile building (identity-layer moat, 个人IP, authentic brand) | `references/founder-personal-profile-building.md` |
+| 2025 returnee employment market — supply surge, salary by sector, city decentralisation | `references/returnee-employment-market-2025.md` |
+| ECM interview prep — Placement types, Why Move narrative, Deal Experience storytelling (MS HK mentoring) | `references/ecm-interview-prep-ms-hk.md` |
+| PhD cold-email & interview tactics — match>interest, ability>passion, proactive interview, follow-up cadence | `references/phd-cold-email-interview-tactics.md` |
+| Yale M2M application review — candidate profile, ESG storyline, 1+1 alternative pathway | `references/yale-m2m-application-review.md` |
+| AI investment flywheel — LLM stocks as token hedge, positive feedback loop, wealth divergence | `references/ai-investment-flywheel.md` |
+| Sequoia Cognitive Revolution — AI = industrial revolution rhyme, cognitive labor outsourcing, Engels' pause, speed risk | `references/sequoia-cognitive-revolution.md` |
+| High cost-performance life guide — 552 evidence-based tips across 32 chapters (health, legal, career, finance, study abroad) | `references/how-to-live-better-guide.md` |
+| Deadline tracker / offer comparison | `templates/deadline-offer-templates.md` |
+| Expected output quality examples | `examples/` (evidence map, school match, CV bullets) |
+| HUST alumni professor network — 35+ alumni at US/HK for warm outreach | `references/hust-alumni-professor-network.md` |
+| Summer research (暑研) practical guide — finding labs, 面套, timelines, what to do | `references/summer-research-practical-guide.md` |
+| Career anxiety / "why am I doing this" / re-start decisions | `references/career-mindset-adaptability.md` |
+| Career investment against AI / "what can't AI do" | `references/career-what-ai-cannot-encode.md` |
+| Codex reverse-engineering of semi-public craft/investment knowledge | `references/investment-codex-reverse-engineering.md` |
+| World-description granularity / learning from experience / option-level policies | `references/career-oak-high-level-state-transition.md` |
+| Deepest AI boundary — symbolic-system trap (Yao Qiqi / Sutton exchange) | `references/career-ai-trapped-in-human-symbolic-system.md` |
+| SV AI industry observations — China-US AI landscape, AI pharma, bubble risk, Google FDE, personal heroism vs efficiency | `references/sv-ai-industry-observations.md` |
+| Cold email networking — 4-part structure for 95% reply rate (source → purpose → strengths → next step) | `references/cold-email-networking-template.md` |
+| TypeSafe Jev decision model — parallel judgments, RLCD calibration, agent cost reduction, browser-use integration | `references/type-safe-jev-decision-model.md` |
+| Silicon Valley incubator guide + Startup Compass — non-YC incubators, residency matching for Chinese founders | `references/silicon-valley-incubator-guide.md` |
+| Young people's "version answer" — language + skill + AI + internet + globalization = capability system, geographic arbitrage | `references/career-global-capability-system.md` |
+| Grey market cognition hedge — 灰产哥认知对冲: non-consensus judgment, exploit lifecycle, Soros reflexivity, VC vs 江湖 | `references/grey-market-cognition-hedge.md` |
+| Essmote AI — AI writing platform for study abroad (PS/SOP/CV/cover letter + human polishing) | `references/essmote-ai-writing-platform.md` |
+| PERM suspension & tech industry impact — 8 companies PERM halted, H-1B/green card conflict, quant/investment banking pivot, Canada/HK alternatives | `references/perm-suspension-tech-impact.md` |
+| Return vs stay decision framework — 回国or留美10条决策框架：储蓄速度/家庭/身份/性格/躺平/子女教育/人生目标 | `references/return-vs-stay-decision-framework.md` |
+| DINQ AI job map — 中国AI岗位地图：279家公司/12895+岗位、按城市区域分类、大模型/芯片/机器人/应用全景 | `references/dinq-ai-job-map.md` |
+| Industry PhD programs guide — 海外企业联培博士：CIFRE/MSCA/Industrial PhD、6国路径、12家目标企业、申请平台 | `references/industry-phd-programs-guide.md` |
+| Student profiles research method — 官网学生分享（Meet the Class）研究法：问题框架反推录取偏好；已有基础→能力缺口→项目资源；课程问题驱动；diversity增量贡献；简历/文书自检 | `references/student-profiles-research-method.md` |
+| LetsMigrate EU residence routes — 欧洲移民居留路线数据库：5类路线93+项目（数字游民15/蓝卡50/创业16/投资10/边缘2）、18国hub、中国申请者材料准备（apostille/翻译/无犯罪/姓名一致）、官方来源+核实日期 | `references/letsmigrate-eu-residence-routes.md` |
+| US PhD fee waiver guide — 美国PhD申请费减免：四档学校（勾选即免/材料申请/早鸟宣讲会/不免）、邮件模板、15申12中的实战命中率、申请季预算 | `references/us-phd-fee-waiver-guide.md` |
+| Study-abroad ROI & internship playbook — 留学预算与回报率大表：ROI四逻辑+四反直觉、10目的地总表、9专业组回本排序、CS/AI十国横比、五类预算画像；海外实习全攻略：CPT/Co-op/OPT/PGWP/485/Graduate Route/IANG制度差异、秋招时间线、H-1B三次抽签57%落空、4案例PR路径、Plan B | `references/study-abroad-roi-and-internship-playbook.md` |
+| US AI master's 30-programme list — 全美Top50 AI硕士30项目全景：四类分型（独立AI学位/CS-AI方向/交叉商业化/邻接学位）、首届项目风险、同校不同学院门槛差异、CMU MSAII vs MSML 路径差异 | `references/us-ai-masters-30-programs.md` |
+| CV revision / experience-hire CV review | `templates/cv-template.md` §CV revision rules |
+| Interview prep / storytelling / communication register | `references/interview-communication-notes.md` |
+| SOP/MBA leadership paragraphs & impact-story mining | `references/leadership-ladder.md` |
+
+## 1. Non-negotiable constraints
+1. Never fabricate experience, results, awards, internships, stories, funding or traction. All content comes from the user's real materials (use the Evidence Map as the single source).
+2. The user keeps final editing rights; AI structures, reviews, polishes — never overwrite the user's original sentences without permission.
+3. Save every deliverable as a local versioned Markdown file (evidence map, CV/SOP drafts, tables), not only in chat.
+4. Multi-track parallel applications are supported (8 tracks): Financial Engineering/Quant; ECE/Telecom; Mechanical/Robotics/Mechatronics; CS/AI/Agent/Embodied/LM engineering; Data Science & Applied Statistics; Interdisciplinary Engineering (BME+AI+Finance / Art-Tech); Technology Transfer / Tech-Innovation Management; **Entrepreneurship / Founder**.
+5. Programme evaluation always covers: tuition, visa & immigration policy, post-graduation work permission, career path, alumni network, long-term global mobility — plus founder extras (student IP policy, accelerators, founder-visa bridge) for founder track.
+
+## 2. End-to-end workflow
+1. **Profile intake** — collect GPA/rank, tests, coursework, experience inventory (research/hackathon/OSS/internship/startup/awards), budget, countries, career goal, risk appetite. → save into `templates/evidence-map-template.md`.
+2. **Build Evidence Map** — one entry per achievement: timeline, tech stack/methodology, quantified results (baseline→result), reflection/programme linkage, artifacts. Permanent reusable asset.
+3. **School matching** — bucket Reach/Target/Safety. ALWAYS start from `references/school-programs.csv` (45-programme seed), then VERIFY every tuition/deadline/curriculum fact on the programme's official URL before outputting; fill `templates/school-comparison-template.md` (include check date + source URL per row).
+4. **Gap diagnosis & roadmap** — time-phased 6–12 month plan: FinEng→quant mini-projects/backtests/case comps; ECE/ME/Robotics→embodied-AI OSS, Isaac Sim projects; Founder→incorporate, ship MVP, apply to named accelerators, document traction, file IP — map each milestone to visa-route evidence thresholds (see §4).
+5. **CV generation** — 1–2 page master CV + track variants from `templates/cv-template.md` (or `.tex`): fineng / cs / ds / ece / mech / techtransfer / founder. Every bullet quantified. Commands: `/cv-condense`, `/cv-quantify-result`, `/cv-rephrase-for-tech-transfer`, `/cv-rephrase-for-founder`.
+6. **SOP drafting & review** — outline via `templates/sop-outline-template.md`; cycles: first draft from evidence → user self-edit → admissions-officer review (flag clichés, weak logic, programme mismatch; score report) → targeted revision. Track reorientation: `/sop-reorient-fin-eng`, `/sop-reorient-tech-transfer`, `/sop-reorient-founder`.
+7. **Supplementary materials** — diversity statement, LOR outlines & cold emails (`templates/lor-cold-email-template.md`); founder addendum (`templates/founder-pack-template.md`).
+8. **Calendar & offers** — deadline checklist + offer comparison matrix (`templates/deadline-offer-templates.md`); founder-track decisions weight settlement speed, capital density, accelerators, tax/IP, student→founder bridging.
+
+## 3. Command routing
+| Command | Action → load |
+| --- | --- |
+| `/profile-intake` | Step 1 interview → create evidence-map file from `templates/evidence-map-template.md` |
+| `/build-evidence-map` | Fill evidence map; consult `examples/example-evidence-map.md` for depth |
+| `/school-match` | Read `references/school-programs.csv` → verify official pages → `templates/school-comparison-template.md`; example: `examples/example-school-match.md` |
+| `/gap-improve-plan` | Step 4 roadmap with monthly milestones |
+| `/cv-generate [track]` | `templates/cv-template.md` (+ `.tex` if asked); example bullets: `examples/example-cv-bullets.md` |
+| `/sop-draft [programme]` | `templates/sop-outline-template.md` first draft |
+| `/sop-review` | Admissions-officer scoring + revision report |
+| `/lor-template` | `templates/lor-cold-email-template.md` |
+| `/prof-email-draft` | `templates/lor-cold-email-template.md` cold-email part (requires ≥2 papers read) |
+| `/phd-advisor` | `references/phd-advisor-sourcing.md` — advisor research method (homepage+Scholar+current-student vetting, 3-dimension match, PhD self-test) + CS/AI red-list seed + alumni network sourcing; re-verify every lead |
+| `/hust-alumni` | `references/hust-alumni-professor-network.md` — 35+ HUST alumni professors at US/HK (names, institutions, fields); warm-outreach leads for 套磁 and 暑研; VERIFY every entry |
+| `/summer-research` | `references/summer-research-practical-guide.md` — 暑研 full lifecycle: when/where/how to find lab, three paths (official/self-套磁/referral), 面套 logistics, six priorities during 暑研, timeline |
+| `/deadline-timeline` | `templates/deadline-offer-templates.md` part A |
+| `/offer-compare` | `templates/deadline-offer-templates.md` part B |
+| `/visa-compare` | `references/visa-policy-links.md` + visa summary below; print official links next to every threshold |
+| `/founder-deck` | `templates/founder-pack-template.md` + `references/founder-fundraising-ecosystem.md` (investor lists + fundable-founder self-audit traits) |
+| `/startup-coldstart` | `references/founder-coldstart-playbook.md` — X/Reddit/LinkedIn cold outreach/UGC四渠道 + subreddit→Discord funnel 漏斗设计 + 前100用户运营节奏 |
+| `/founder-antihedge` | `references/founder-anti-hedging-principles.md` — 斯坦福GSB三条反常识：阶梯式冒险谬误、创业无中间地带、黑科技未必赢；诊断 founder 叙事中的 hedging |
+| `/founder-onchain` | `references/founder-infrastructure-migration.md` — 链上支付案例（X/Meta/Visa/渣打）+ 三条 founder 原则：用户假设重置/结算即场景/合规是产品能力 |
+| `/founder-profile` | `references/founder-personal-profile-building.md` — 创业者个人品牌建设：build up your profile + manage every detail；真实人设≠包装；从单点标签到完整profile画圆；身份层护城河 |
+| `/fundraising-methodology` | `references/founder-fundraising-methodology.md` — 融资实战5大认知纠偏 + 融资前7问自检 + 估值策略（Down Round/被估值锁死/5问压力测试） |
+| `/ecm-interview` | `references/ecm-interview-prep-ms-hk.md` — MS香港ECM面试辅导：Placement技术面(Primary/Secondary/Top-up/Block Trade) + Why Move跳槽叙事 + Deal Experience讲述框架 |
+| `/phd-cold-email` | `references/phd-cold-email-interview-tactics.md` — 套磁信四条（PhD）+ 本科生科研套磁5-part结构（回复率80%）：match>interest/ability>passion/主动提问/follow up节奏/contribution原则 |
+| `/capability-system` | `references/career-global-capability-system.md` — 年轻人版本答案：语言+专业技能+AI+互联网+全球化=能力系统，跨市场/地理套利/earn globally live locally |
+| `/yale-m2m` | `references/yale-m2m-application-review.md` — Yale M2M申请复盘：candidate画像三要素、ESG故事线、1+1项目捷径策略 |
+| `/ai-flywheel` | `references/ai-investment-flywheel.md` — AI投资飞轮：用LLM股票对冲token成本、正反馈循环8阶段、财富分化与个人定位 |
+| `/cognitive-revolution` | `references/sequoia-cognitive-revolution.md` — 红杉Sequoia认知革命：AI=工业革命押韵、认知劳动外包、杰文斯悖论、Engels' pause、速度风险 |
+| `/life-guide` | `references/how-to-live-better-guide.md` — 高性价比人生指南入口：552条循证建议、32章索引（留学/法律/创业/急救/技能/财务）、在线检索链接 |
+| `/mindset` | `references/career-mindset-adaptability.md` — reframe credential anxiety as optionality; redirect to concrete moves |
+| `/human-native` | `references/career-what-ai-cannot-encode.md` — trust/taste/aesthetics/imagination/emotion as career moat; Hassabis micro-structure argument; optimistic flip of long-term pessimism |
+| `/codex-hack` | `references/investment-codex-reverse-engineering.md` — three-step Codex methodology: full ingestion → separate known/unknown → bounded hypothesis search against blogger images |
+| `/oak-state-transition` | `references/career-oak-high-level-state-transition.md` — Sutton's Oak framing: world described by high-level state transitions; agents take temporally extended options, not step-wise actions |
+| `/yao-sutton` | `references/career-ai-trapped-in-human-symbolic-system.md` — Yao Qiqi vs Sutton: AI is structurally trapped inside the human symbolic system (mathematics/logic); only humans can potentially step outside. L1/L2/L3 three-layer career moat stack |
+| `/cv-review` | Revision pass against the real-review checklist in `templates/cv-template.md` (skills backed by bullets, experience-hire visual weight, leadership vs client balance) |
+| `/interview-prep` | `references/interview-communication-notes.md` — jargon vs plain-English calibration, presence for front-office roles, story mechanics |
+| `/leadership-stories` | `references/leadership-ladder.md` — place evidence-map stories on the 5-tier influence ladder; upgrade structure (broad → strong → legacy/leverage); quantify |
+| `/sv-ai-observations` | Silicon Valley AI industry observations: China-US AI landscape, AI pharma directions, bubble risk, Google FDE, personal heroism vs efficiency |
+| `/cold-email` | Cold email networking template: 4-part structure for 95% reply rate (source → purpose → strengths → next step) |
+| `/jev-decision-model` | TypeSafe Jev decision model: parallel judgments, RLCD calibration, agent cost reduction, browser-use integration |
+| `/incubator-guide` | Silicon Valley incubator guide + Startup Compass: non-YC incubators, residency matching for Chinese founders |
+| `/grey-market` | 灰产认知对冲：灰产哥的非共识判断、钻空子思维、空子生命周期管理、索罗斯反身性、庙堂与江湖 |
+| `/quant-weekly` | Quant行业周报：Jane Street算力军备、Systematic Flow、HFT基础设施扩张、大宗交易电子化、指数与市场分化 |
+| `/sv-china-gap` | 硅谷与国内两周信息差：VC FOMO、泡沫共识、应用层vs模型层ROI、positioning startup、RSI |
+| `/essmote` | Essmote AI 留学文书平台：PS/SOP/CV/推荐信生成 + 人工润色（essmote.com） |
+| `/collaboration-postmortem` | 创业合作复盘：尽调缺失/先钱后干活/管理边界失守/止损信号/单向惩罚条款 |
+| `/cyber-security-university` | 免费网络安全自学课程体系：Red Team/Blue Team/CTF/OWASP/逆向/取证（TryHackMe） |
+| `/immigration-resources` | 移民/签证/海外工作开源资源合集：awesome-immigration/H1B数据/高技能求职/Five Flags/DiasporaAI |
+| `/perm-suspension` | PERM暂停与科技行业留美影响：8家公司暂停、量化投行转型、加拿大香港替代 |
+| `/return-vs-stay` | 回国or留美10条决策框架：储蓄速度/家庭/身份/性格/躺平/子女教育/人生目标 |
+| `/ai-job-map` | 中国AI岗位地图：279家公司/12895+岗位、按城市区域分类（jobs.dinq.me） |
+| `/industry-phd` | 海外企业联培博士指南：CIFRE/MSCA/Industrial PhD、6国路径、申请平台 |
+| `/student-profiles` | 官网学生分享研究法（MIT MBAn Meet the Class）：问题框架反推录取偏好、why program逻辑链、diversity贡献、简历文书自检 |
+| `/letsmigrate` | LetsMigrate.org欧洲居留路线：蓝卡/数字游民/创业/投资5类路线93+项目、18国对比、中国签证材料准备清单 |
+| `/fee-waiver` | 美国PhD申请费减免：四档学校机制、waiver邮件模板、15申12中命中率、申请季费用预算 |
+| `/study-roi` | 留学预算与回报率大表 + 海外实习全攻略：ROI四逻辑、10目的地/9专业组回本表、五类预算画像、工签与PR路径、秋招时间线 |
+| `/ai-masters` | 全美AI硕士30项目清单：四类分型、独立AI学位vs CS-AI方向、首届项目风险、CMU MSAII/MSML差异、同校不同学院门槛 |
+
+## 4. Founder track (summary — details live in references/)
+- **Goal profile:** hard-tech venture raising VC globally — overseas YC / Silicon Valley / California / Middle East sovereign capital (Mubadala, PIF/Sanabil, Hub71); domestic China 红杉中国 HongShan, 硬科技基金 (中科创星/深创投/线性), PE (高瓴/CPE/国调). Full lists & accelerator names: `references/founder-fundraising-ecosystem.md`.
+- **Visa reality (2026-08 snapshot, re-verify at `references/visa-policy-links.md`):** US has no startup visa — IER parole ($311,071 qualified US investment / $124,429 grants, ~26 lifetime approvals, no green-card path); O-1A is the practical pre-seed route (~90%+ approvals; beneficiary-owned company may petition); EB-1A/NIW for long term; E-2 NOT available to Chinese nationals. UK Innovator Founder = endorsement, no investment minimum, 3yr→ILR. Singapore EntrePass = ≥30% ownership + SGD100k round or recognised accelerator. France French Tech = 4yr, no capital, SMIC funds. Canada SUV PAUSED since 2026-01-01.
+- **Rule:** every visa threshold output MUST be followed by its official-source URL from `references/visa-policy-links.md`; visa content is strategy reference, never legal advice; recommend a licensed immigration lawyer.
+- **Fundraising rule:** investor/accelerator names are re-verification items ("terms to confirm"), never promises; US C-Corp vs China-entity vs dual-structure is a lawyer/accountant decision.
+
+## 5. Hallucination & risk controls (mandatory)
+1. School data: CSV is a hallucination-reduction SEED only — re-verify on `official_url`; mark last-checked date; if a fact can't be verified, say so.
+2. Visa data: cite official link beside each claim; policies change monthly.
+3. AI output is a DRAFT: SOP/CV require deep human rewrite + native-English proofread before submission; never submit AI text directly.
+4. Visa/legal: consult licensed professionals; this skill never provides legal advice.
+5. No copying from sample-SOP repos (learn narrative structure only).
+
+## 6. Output conventions
+- Save files under these gitignored folders (private, never committed): `profile/`, `evidence-map/`, `cv/`, `sop/`, `drafts/`, `offers/`.
+- Tables for any comparison; sources (official URL + date) attached to factual claims; versions in filenames.
