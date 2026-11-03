@@ -274,6 +274,7 @@ tabs.forEach(id=>$(id).addEventListener('change',selectRegion));
 $('clear-search').addEventListener('click',()=>{search.value='';focus.value='all';refresh();search.focus()});
 document.addEventListener('click',e=>{const btn=e.target.closest('.save-button');if(!btn)return;const key=btn.dataset.key,saved=JSON.parse(localStorage.getItem('atlas-saved')||'[]');const next=saved.includes(key)?saved.filter(x=>x!==key):saved.concat(key);localStorage.setItem('atlas-saved',JSON.stringify(next));refresh()});
 try{const saved=JSON.parse(localStorage.getItem('atlas-profile')||'null');if(saved){major.value=saved.major||major.value;gpa.value=(saved.gpaScale===5&&Number(saved.gpa)>=0&&Number(saved.gpa)<=5)?saved.gpa:'3.5';career.value=saved.career||career.value;focus.value=saved.focus||focus.value}}catch(e){}
+localStorage.setItem("atlas-profile",JSON.stringify({major:major.value,gpa:gpa.value,career:career.value,focus:focus.value,gpaScale:5}));
 refresh();
 })();
 </script></body></html>
