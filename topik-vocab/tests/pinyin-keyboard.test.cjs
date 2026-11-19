@@ -25,3 +25,14 @@ assert.ok(app.includes('updatePinyinDisplay()'));
 assert.ok(!app.includes('data-temporary-system'));
 assert.ok(app.includes("if(!useVirtualKeyboard()&&!/iPad|iPhone|iPod/.test(navigator.userAgent))i.focus"));
 console.log('Pinyin IME word candidates, selection, deletion, clear, bilingual direction isolation passed.');
+
+assert.ok(K.render().includes('data-pinyin-shift="1"'));
+assert.ok(!K.render().includes('data-pinyin-key="clear"'));
+assert.ok(K.render().includes('ios-row-second')&&K.render().includes('ios-row-third'));
+assert.ok(K.render().includes('data-smart-submit="1"'));
+({answer,composition}=K.update('','', 'X'));assert.equal(composition,'x');
+assert.ok(app.includes('function keyboardReturn()'));
+assert.ok(app.includes('function bindDeleteRepeat('));
+assert.ok(app.includes('pinyinShift=!pinyinShift'));
+assert.ok(app.includes('const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck'));
+assert.ok(app.includes('pinyinComposition||\'\''));
