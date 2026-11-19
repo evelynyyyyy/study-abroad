@@ -135,7 +135,7 @@ function smartPick(){
    queueLength:d.queueLength,queueKoToZh:d.queue.meaning,queueZhToKo:d.queue.spell
   });
  }
- resetKeyboardInteraction();if(typeof simpleIme!=='undefined'&&simpleIme)simpleIme.reset();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
+ resetKeyboardInteraction();if(typeof simpleIme!=='undefined'&&simpleIme)simpleIme.reset();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;hangulMode='letters';pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
 }
 function resetKeyboardInteraction(){clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null;}
 function smartNext(){
@@ -215,9 +215,20 @@ function chineseGlosses(){return scope().map(w=>w[2])}
 // Chinese IME is input-only; no scheduler, FSRS or study persistence changes.
 const CHINESE_IME_ENGINE=new URLSearchParams(location.search).get('chineseIme')==='legacy'?'legacy':'simple-ime';
 window.CHINESE_IME_ENGINE=CHINESE_IME_ENGINE;
-const simpleIme=CHINESE_IME_ENGINE==='simple-ime'&&window.SimpleImeCore&&window.TOPIK_SimpleImeAdapter
- ?new window.TOPIK_SimpleImeAdapter(window.SimpleImeCore,10):null;
-if(CHINESE_IME_ENGINE==='simple-ime'&&!simpleIme)console.error('simple-ime assets unavailable: legacy candidate fallback is intentionally disabled');
+let simpleIme=null,imeLoadPromise=null,imeLoadStarted=0;
+const IME_ASSET_VERSION='d503bee97392f3b99e1fb9d6f23cecc86ced6f26';
+function loadChineseIme(){
+ if(CHINESE_IME_ENGINE==='legacy')return Promise.resolve(null);
+ if(simpleIme)return Promise.resolve(simpleIme);
+ if(imeLoadPromise)return imeLoadPromise;
+ imeLoadStarted=performance.now();
+ const load=src=>new Promise((resolve,reject)=>{const el=document.createElement('script');el.src=src;el.onload=resolve;el.onerror=()=>reject(Error('IME asset failed: '+src));document.head.appendChild(el)});
+ imeLoadPromise=load('./ime-experiment/simple-ime-core.js?v='+IME_ASSET_VERSION)
+  .then(()=>load('./ime-experiment/simple-ime-adapter.js?v=3.7.0'))
+  .then(()=>{simpleIme=new window.TOPIK_SimpleImeAdapter(window.SimpleImeCore,10);console.info('[IME] ready',Math.round(performance.now()-imeLoadStarted),'ms');if(useChineseKeyboard())updatePinyinDisplay();return simpleIme})
+  .catch(err=>{imeLoadPromise=null;console.error(err);notify('中文输入法加载失败，请检查网络后重试');throw err});
+ return imeLoadPromise;
+}
 function chineseImeCandidates(){
  if(CHINESE_IME_ENGINE==='legacy')return TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses());
  return simpleIme?simpleIme.getCandidates():[];
@@ -275,7 +286,7 @@ function applyPinyinKey(key){
   if(key==='space'&&pinyinComposition){if(!commitChineseCandidate(0))notify('没有匹配候选，请修改拼音')}
   else{const result=TOPIK_PINYIN.update(typed,pinyinComposition,key);typed=result.answer;pinyinComposition=result.composition}
  }else{
-  if(!simpleIme){notify('中文输入引擎尚未加载，请刷新页面');return}
+  if(!simpleIme){void loadChineseIme().catch(()=>{});notify('中文输入法加载中，请稍候');return}
   if(key==='backspace'){
    if(simpleIme.getComposition())simpleIme.backspace();
    else typed=Array.from(typed).slice(0,-1).join('');
@@ -295,8 +306,8 @@ function keyboardReturn(){
   // Return never submits a study answer in Chinese keyboard mode.
   return;
  }
- // Korean jamo are already synchronously assembled by TOPIK_HANGUL.edit.
- smartSubmit();
+ // Korean Return only completes keyboard input. Submit via the separate study button.
+ return;
 }
 function bindDeleteRepeat(button,action){
  let repeated=false;
@@ -310,6 +321,7 @@ function bindDeleteRepeat(button,action){
  button.addEventListener('click',e=>{if(repeated){e.preventDefault();repeated=false;return}action()});
  window.addEventListener('blur',stop,{once:true});
 }
+let hangulMode='letters';
 function applyHangulKey(key){
  if(!useHangulKeyboard()||didCheck||pendingRating)return;
  const input=document.getElementById('spell-input');if(!input)return;
@@ -330,6 +342,7 @@ function smartScreen(){
  const isShow=type==='show'||type==='relearn-show',isMeaning=mode==='meaning';
  const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck;
  const koreanKeyboard=webKeyboard&&!isMeaning,chineseKeyboard=webKeyboard&&isMeaning;
+ if(chineseKeyboard&&CHINESE_IME_ENGINE==='simple-ime'&&!simpleIme)void loadChineseIme().catch(()=>{});
  const example=d[0]?'<div class="smart-example" id="smart-example" hidden><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
  const main=isShow?
  '<div class="smart-word" lang="ko">'+ko+'</div><div class="smart-translation">'+zh+'</div><div class="smart-reading">'+quote(romanizeHangul(w[1]))+'</div><button class="smart-speak" data-speak="'+ko+'">▶ 听发音</button>':
@@ -463,6 +476,9 @@ function render(){
 function bind(){const topLevel=document.getElementById('top-level-select');if(topLevel)topLevel.onchange=e=>{state.level=Number(e.target.value);persist();session=null;render()};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>change(b.dataset.view));document.querySelectorAll('[data-next-reveal]').forEach(b=>b.onclick=advanceReveal);document.querySelectorAll('[data-begin-typing]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-next-question]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-check-onboard]').forEach(b=>b.onclick=submitOnboardAnswer);document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{state.level=Number(b.dataset.level);persist();session=null;render()});document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start(b.dataset.start));document.querySelectorAll('[data-smart-start]').forEach(b=>b.onclick=startSmart);let collectionChoice=document.getElementById('collection-choice');if(collectionChoice)collectionChoice.onchange=e=>{state.collection=e.target.value;listQuery='';persist();render()};document.querySelectorAll('[data-reset-scope]').forEach(b=>b.onclick=()=>resetLearning(b.dataset.resetScope));document.querySelectorAll('[data-smart-next]').forEach(b=>b.onclick=smartNext);document.querySelectorAll('[data-smart-submit]').forEach(b=>b.onclick=b.closest('.ios-keyboard')?keyboardReturn:smartSubmit);
  document.querySelectorAll('[data-hangul]').forEach(b=>{const action=()=>applyHangulKey(hangulShift&&b.dataset.shift?b.dataset.shift:b.dataset.hangul);if(b.dataset.hangul==='Backspace')bindDeleteRepeat(b,action);else b.onclick=action});
  document.querySelectorAll('[data-hangul-shift]').forEach(b=>b.onclick=()=>{hangulShift=!hangulShift;TOPIK_HANGUL.updateShift(document.querySelector('.hangul-keyboard'),hangulShift)});
+ document.querySelectorAll('[data-hangul-mode]').forEach(b=>b.onclick=()=>{hangulMode=b.dataset.hangulMode;TOPIK_HANGUL.setMode(document.querySelector('.hangul-keyboard'),hangulMode)});
+ document.querySelectorAll('[data-hangul-more]').forEach(b=>b.onclick=()=>{hangulMode=b.dataset.hangulMore;TOPIK_HANGUL.setMode(document.querySelector('.hangul-keyboard'),hangulMode)});
+ document.querySelectorAll('[data-hangul-symbol]').forEach(b=>b.onclick=()=>{if(!useHangulKeyboard()||didCheck||pendingRating)return;const input=document.getElementById('spell-input');if(!input)return;const value=decodeURIComponent(b.dataset.hangulSymbol);const caret=input.selectionStart??input.value.length;input.value=input.value.slice(0,caret)+value+input.value.slice(input.selectionEnd??caret);typed=input.value;input.setSelectionRange(caret+value.length,caret+value.length)});
  document.querySelectorAll('[data-pinyin-key]').forEach(b=>{const action=()=>applyPinyinKey(b.dataset.pinyinKey);if(b.dataset.pinyinKey==='backspace')bindDeleteRepeat(b,action);else b.onclick=action});
  document.querySelectorAll('[data-pinyin-symbol]').forEach(b=>b.onclick=()=>applyPinyinSymbol(decodeURIComponent(b.dataset.pinyinSymbol)));
  document.querySelectorAll('[data-pinyin-mode]').forEach(b=>b.onclick=()=>{pinyinMode=b.dataset.pinyinMode;TOPIK_PINYIN.setMode(document.querySelector('.pinyin-keyboard'),pinyinMode)});
