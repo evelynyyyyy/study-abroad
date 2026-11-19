@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('topik-vocab/theme.js','utf8');
+const html=fs.readFileSync('topik-vocab/index.html','utf8');
+const app=fs.readFileSync('topik-vocab/app.js','utf8');
+const css=fs.readFileSync('topik-vocab/styles.css','utf8');
+function make(initialDark,preference){
+ const store=new Map(preference?[['topik_theme_preference',preference]]:[]);
+ const meta={value:null,setAttribute(k,v){if(k==='content')this.value=v}};
+ const toggle={setAttribute(k,v){this[k]=v}};
+ const doc={documentElement:{dataset:{},style:{}},querySelector:()=>meta,getElementById:()=>toggle};
+ const media={matches:initialDark,addEventListener(_,fn){this.change=fn}};
+ const storage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,v)};
+ const ctx={window:{}};vm.runInNewContext(source,ctx);
+ return {ctrl:ctx.window.TOPIK_THEME.create({document:doc,media,storage}),doc,media,meta,store};
+}
+let t=make(false);assert.equal(t.ctrl.getMode(),'system');assert.equal(t.doc.documentElement.dataset.theme,'light');
+t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');assert.equal(t.meta.value,'#1c1c1e');
+t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'light');
+t.ctrl.setMode('dark');t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
+t.ctrl.setMode('system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
+t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
+t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
+assert.ok(html.indexOf('theme.js?v=3.3.0')<html.indexOf('styles.css?v=3.3.0'),'theme must initialize before CSS');
+assert.ok(html.includes('name="color-scheme" content="light dark"'));
+assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
+assert.ok(!app.includes("state.theme=state.theme||'dark'"));
+assert.ok(!app.includes("persist();render()});\ndocument.addEventListener('keydown'"),'theme toggle must not rerender');
+assert.ok(!source.includes('smartTask')&&!source.includes('scheduler')&&!source.includes('typed'),'theme controller must not access learning state');
+for(const token of ['--bg-primary','--bg-secondary','--surface','--text-primary','--text-secondary','--text-muted','--border','--button-primary','--button-primary-text','--input-bg','--input-border','--keyboard-bg','--keyboard-key-bg','--keyboard-key-text','--candidate-bg','--candidate-text'])assert.ok(css.includes(token),token);
+assert.ok(css.includes('.hangul-keyboard,.pinyin-keyboard'));
+console.log('System theme startup, live changes, overrides, restore, metadata and learning isolation passed.');
