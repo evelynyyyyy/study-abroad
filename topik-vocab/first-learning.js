@@ -34,6 +34,8 @@ recall(state,ko,mode){
  const r=this.record(state,ko);
  if(r.stage==='unseen')return;
  r.first[mode]=true;
+ if(r.first.meaning&&r.first.spell&&!r.firstBothAt&&!state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=Date.now();
+ else if(state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=state.lifecycle[ko].firstBothAt;
  r.stage=this.stage(state,ko);
  state.lifecycle[ko]=r;
  this.mastery(state,ko);
