@@ -106,7 +106,7 @@ window.TOPIK_SMART={
   return !Number.isFinite(Number(p.due))||Number(p.due)<=now;
  },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
- select(state,words,day,goal,history=[],now=Date.now()){
+ select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null){
   const relearn=window.TOPIK_RELEARN?.select(state,words,history,now);
   const recent=history.slice(-this.MIN_GAP),introduced=new Set(day.learned||[]);
   const candidates=[],fresh=[];
@@ -130,7 +130,11 @@ window.TOPIK_SMART={
   if(!eligible.length)eligible=candidates.filter(c=>c.word[1]!==history.at(-1));
   if(!eligible.length)eligible=candidates;
   eligible.sort((a,b)=>b.score-a.score);
-  const due=eligible[0],backlog=candidates.length;
+  // Keep a short run of the same input language only when the due-score gap is small.
+  // Urgent lapses, overdue reviews and anti-repeat filtering always take precedence.
+  const best=eligible[0];
+  const same=preferredMode&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-8):null;
+  const due=same||best,backlog=candidates.length;
   const freshAllowed=introduced.size<goal&&
    (backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
   const recentSpellings=history.slice(-3);
