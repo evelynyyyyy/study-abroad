@@ -478,3 +478,8 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
  .smart-bottom.has-keyboard .smart-actions button{min-height:34px;}
  .study-keyboard-dock .ios-keyboard{gap:3px!important;}
 }
+
+/* Independent home actions: explicit spacing, Safari-safe sizing. */
+.smart-start-stack{display:flex;flex-direction:column;gap:16px;width:100%;min-width:0}
+.smart-start-stack>.smart-start{box-sizing:border-box;width:100%;min-width:0;margin:0}
+.smart-study-head .tiny{min-width:0;overflow-wrap:anywhere;text-align:right}
