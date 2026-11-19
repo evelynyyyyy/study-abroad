@@ -1,5 +1,8 @@
 const { webkit, chromium } = require('playwright');
 const assert = require('node:assert/strict');
+const fs=require('node:fs'),zlib=require('node:zlib');
+const engineBytes=fs.readFileSync('topik-vocab/ime-experiment/simple-ime-core.js');
+console.log(JSON.stringify({kind:'engine-asset-size',rawBytes:engineBytes.length,gzipBytes:zlib.gzipSync(engineBytes).length,brotliBytes:zlib.brotliCompressSync(engineBytes).length}));
 const URL = 'https://evelynyyyyy.github.io/study-abroad/topik-vocab/ime-experiment/';
 const expected={jian:'间',cheng:'成',chengwei:'成为',shijian:'时间',fangjian:'房间',zhongjian:'中间',xuesheng:'学生',xuexi:'学习',gongzuo:'工作',pengyou:'朋友',keyi:'可以',ranhou:'然后'};
 (async()=>{
@@ -15,6 +18,9 @@ for(const [name,engine] of [['webkit',webkit],['chromium',chromium]]){
  assert.equal(response.status(),200);
  await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Engine loaded'),{timeout:30000});
  const readyMs=Date.now()-t;
+ const assetResponse=await page.request.get(URL+'simple-ime-core.js');
+ assert.equal(assetResponse.status(),200);
+ console.log(JSON.stringify({browser:name,kind:'live-core-response',status:assetResponse.status(),headers:{'content-type':assetResponse.headers()['content-type'],'cache-control':assetResponse.headers()['cache-control'],'content-encoding':assetResponse.headers()['content-encoding'],'etag':assetResponse.headers()['etag']}}));
  const init=await page.evaluate(()=>({engine:typeof SimpleImeCore,adapter:typeof TOPIK_SimpleImeAdapter,ready:document.querySelector('#status').textContent}));
  assert.equal(init.engine,'object');assert.equal(init.adapter,'function');
  let firstMs=null;const durations=[];
