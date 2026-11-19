@@ -22,6 +22,7 @@ for(let i=1;i<=3;i++){
  S.review(state,'집','spell',true,now+i*20*60000,'easy');
 }
 assert.equal(S.mastered(state,'집',now+3*20*60000),false,'same-day successes cannot prove mastery');
+state.lifecycle['집'].wordState='REVIEW';
 const due=S.select(state,words,day,2,['학교','물'],now+S.DAY*2,null,'review');
 assert.equal(due.type,'typing','next-day due reviews take priority');
 const weakState={progress:{},lifecycle:{}};
@@ -54,7 +55,7 @@ for(const w of pool){
  F.shown(dual,w[1]);
  S.review(dual,w[1],'meaning',true,now-2*S.DAY,'good');
  S.review(dual,w[1],'spell',true,now-2*S.DAY,'good');
- F.recall(dual,w[1],'meaning');F.recall(dual,w[1],'spell');
+ F.recall(dual,w[1],'meaning');F.recall(dual,w[1],'spell');dual.lifecycle[w[1]].wordState='REVIEW';
 }
 function simulate(inputMethod){
  const state=JSON.parse(JSON.stringify(dual)),modes=[];
@@ -90,7 +91,7 @@ const mixed={progress:{},lifecycle:{},smartHistory:[],smartDirectionHistory:[]};
 for(const w of mixedPool){
  F.shown(mixed,w[1]);
  S.review(mixed,w[1],'meaning',true,now-2*S.DAY,'good');
- F.recall(mixed,w[1],'meaning');
+ F.recall(mixed,w[1],'meaning');mixed.lifecycle[w[1]].wordState='REVIEW';
 }
 function run50(inputMethod){
  const st=JSON.parse(JSON.stringify(mixed));st.inputMethod=inputMethod;
