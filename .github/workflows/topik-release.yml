@@ -1,0 +1,64 @@
+name: Publish TOPIK verified release
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - 'topik-vocab/**'
+      - '.github/workflows/topik-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: topik-pages-release
+  cancel-in-progress: false
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    outputs:
+      build_sha: ${{ steps.meta.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run all existing TOPIK tests without skipping
+        run: |
+          set -e
+          for test in topik-vocab/tests/*.test.cjs; do node "$test"; done
+          node --check topik-vocab/app.js
+          node --check topik-vocab/release-client.js
+      - name: Build immutable asset URLs and release manifest
+        id: meta
+        run: |
+          set -euo pipefail
+          echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          mkdir -p "$RUNNER_TEMP/topik-site"
+          tar --exclude=.git --exclude=node_modules --exclude=.github -cf - . | tar -xf - -C "$RUNNER_TEMP/topik-site"
+          node topik-vocab/scripts/build-release.cjs "$RUNNER_TEMP/topik-site"
+          node topik-vocab/scripts/verify-release.cjs "$RUNNER_TEMP/topik-site/topik-vocab"
+          test "$(node -p "require('$RUNNER_TEMP/topik-site/topik-vocab/release.json').buildSha")" = "$GITHUB_SHA"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/topik-site
+  deploy:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+  verify-online:
+    needs: [test-and-build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify published manifest, HTML and actual asset contents
+        env:
+          TARGET_SHA: ${{ needs.test-and-build.outputs.build_sha }}
+        run: |
+          set -euo pipefail
+          node topik-vocab/scripts/verify-online.cjs "https://evelynyyyyy.github.io/study-abroad/topik-vocab/" "$TARGET_SHA"
