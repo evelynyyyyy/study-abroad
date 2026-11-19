@@ -24,14 +24,17 @@ jobs:
           node --check topik-vocab/vocabulary.js
           node --check topik-vocab/study-context.js
           node --check topik-vocab/first-learning.js
+          node --check topik-vocab/smart-scheduler.js
       - name: Test first learning lifecycle and independent recall
         run: |
           node topik-vocab/tests/first-learning.test.cjs
+          node topik-vocab/tests/smart-scheduler.test.cjs
       - name: Check site structure and title
         run: |
-          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./styles.css'])if(!h.includes(x))process.exit(1)"
+          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./smart-scheduler.js','./styles.css'])if(!h.includes(x))process.exit(1)"
           test -f topik-vocab/styles.css
           test -f topik-vocab/vocabulary.js
           test -f topik-vocab/study-context.js
           test -f topik-vocab/first-learning.js
+          test -f topik-vocab/smart-scheduler.js
           test -f topik-vocab/SKILL.md
