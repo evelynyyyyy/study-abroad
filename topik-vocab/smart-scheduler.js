@@ -130,11 +130,15 @@ window.TOPIK_SMART={
   if(!eligible.length)eligible=candidates.filter(c=>c.word[1]!==history.at(-1));
   if(!eligible.length)eligible=candidates;
   eligible.sort((a,b)=>b.score-a.score);
-  // Keep a short run of the same input language only when the due-score gap is small.
-  // Urgent lapses, overdue reviews and anti-repeat filtering always take precedence.
+  // Direction is determined exclusively by due memory tasks, never keyboard settings.
+  // A tiny same-direction preference is capped at three consecutive Typing tasks.
+  // Alternate directions are never starved when their due priority is comparable.
   const best=eligible[0];
-  const same=preferredMode&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-8):null;
-  const due=same||best,backlog=candidates.length;
+  const recentModes=(state.smartDirectionHistory||[]).slice(-3);
+  const sameRun=preferredMode&&recentModes.length===3&&recentModes.every(m=>m===preferredMode);
+  const alternate=preferredMode&&best?eligible.find(c=>c.mode!==preferredMode&&c.score>=best.score-8):null;
+  const same=preferredMode&&!sameRun&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-8):null;
+  const due=(sameRun&&alternate)||same||best,backlog=candidates.length;
   const freshAllowed=introduced.size<goal&&
    (backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
   const recentSpellings=history.slice(-3);
