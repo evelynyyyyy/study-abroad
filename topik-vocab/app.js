@@ -249,7 +249,7 @@ function smartRecord(result){
 }
 function markUnfamiliar(){
  if(!smartTask||smartTask.type!=='typing'||!didCheck)return;
- if(TOPIK_SMART.wordState(state,smartTask.word[1])==='LEARNING')state.lifecycle[smartTask.word[1]].learningStreak=0;
+ if(TOPIK_SMART.wordState(state,smartTask.word[1])==='LEARNING'){const life=state.lifecycle[smartTask.word[1]];life.learningStreak=0;life.learningFailureCount=(Number(life.learningFailureCount)||0)+1;life.learningProof={round:0,lastSerial:0,directions:[]};}
  else TOPIK_RELEARN.enqueue(state,smartTask.word[1],'refresh',[smartTask.mode]);
  state.smartAnswerHistory.push({ko:smartTask.word[1],mode:smartTask.mode,result:'unfamiliar',at:Date.now()});
  state.smartAnswerHistory=state.smartAnswerHistory.slice(-3000);
