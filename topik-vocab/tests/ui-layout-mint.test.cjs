@@ -10,7 +10,7 @@ assert.match(patch,/\.smart-home \.smart-stats\{grid-template-columns:repeat\(2,
 assert.match(patch,/\.smart-home \.smart-stats>div\{[^}]*min-width:0;min-height:76px;justify-content:center;text-align:center/,'stat cells centered');
 assert.match(app,/<span>今日已学会<\/span>[\s\S]*?<span>今日接触新词<\/span>[\s\S]*?<span>学习中<\/span>[\s\S]*?<span>今日待复习<\/span>/,'home stats remain in requested order');
 assert.match(patch,/\.study-focus-mode \.topbar \.study-back\{display:none\}/,'mobile topbar back hidden');
-assert.equal((app.match(/class=\\"text-btn smart-back\\"/g)||[]).length,1,'one in-page smart back button');
+assert.equal(app.split('class="text-btn smart-back"').length-1,1,'one in-page smart back button');
 assert.ok(html.includes('class="text-btn study-back"'),'global back remains for other contexts');
 assert.match(patch,/\.smart-bottom \.smart-actions:has\(\[data-smart-next\]\)\{grid-template-columns:minmax\(0,1fr\);max-width:390px/,'continue action centered and single column');
 assert.match(css,/\.smart-bottom\.has-keyboard[\s\S]*?position:fixed!important;left:0!important;right:0!important;/,'virtual keyboard dock remains fixed');
