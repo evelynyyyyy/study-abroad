@@ -5,6 +5,8 @@ const built=[
 const detail={
 "학교":["학교에 가요.","去学校。",""],"학생":["저는 학생이에요.","我是学生。",""],"선생님":["선생님이 오셨어요.","老师来了。",""],"친구":["친구를 만나요.","见朋友。",""],"책":["책을 읽어요.","读书。",""],"물":["물을 마셔요.","喝水。",""],"밥":["밥을 먹어요.","吃饭。",""],"집":["집에 있어요.","在家。",""],"오늘":["오늘 공부해요.","今天学习。",""],"내일":["내일 만나요.","明天见。",""],"사람":["사람이 많아요.","人很多。",""],"한국어":["한국어를 공부해요.","学习韩语。",""],"시험":["시험을 준비해요.","准备考试。",""],"대학":["대학에 다녀요.","上大学。",""],"운동":["매일 운동해요.","每天运动。",""],"여행":["한국으로 여행을 가요.","去韩国旅行。",""],"문제":["문제를 풀어요.","解题。",""],"건강":["건강이 중요해요.","健康很重要。",""],"경험":["좋은 경험이었어요.","是很好的经历。",""],"환경":["환경을 보호해요.","保护环境。",""],"발전":["기술이 발전해요.","技术在发展。",""],"학교":["학교에 가요.","去学校。","[학꾜]"],"학생":["저는 학생이에요.","我是学生。","[학쌩]"],"한국어":["한국어를 공부해요.","学习韩语。","[한구거]"]
 };
+// Global local-first invariant: the public URL contains no profile data; each browser owns its own learning state.
+// Never load learning state from URL/query/hash or shared remote storage. Backup import requires explicit file selection.
 const STORAGE='topik_lab_v2';
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const parse=(key,otherwise)=>{try{return JSON.parse(localStorage.getItem(key))??otherwise}catch{return otherwise}};
@@ -14,6 +16,8 @@ let legacy=parse('topik_records',{});
 if(!state.legacyMigrated){Object.entries(legacy).forEach(([ko,r])=>{if(!state.progress[ko])state.progress[ko]={read:{step:Number(r.step)||0,due:Number(r.due)||0,wrong:0}}});state.legacyMigrated=true;}
 let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false,pinyinMode='letters',pinyinExpanded=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
+// First visit creates an empty browser-local profile; existing profiles are never reset by opening or sharing the URL.
+if(localStorage.getItem(STORAGE)===null)persist();
 function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],window.TOPIK_VERIFIED_ADDITIONS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 const TOPIK_TOPICS={
  conversation:['안녕','안녕하세요','감사합니다','죄송합니다','네','아니요','이름','친구','만나다','말하다','질문','대답','약속','인사하다'],
