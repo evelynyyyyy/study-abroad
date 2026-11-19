@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const c={window:{}};vm.runInNewContext(fs.readFileSync('topik-vocab/hangul-keyboard.js','utf8'),c);
+const c={window:{}};for(const f of ['korean-ime-engine.js','korean-ime-adapter.js','hangul-keyboard.js'])vm.runInNewContext(fs.readFileSync('topik-vocab/'+f,'utf8'),c);
 const K=c.window.TOPIK_HANGUL;
 function type(keys){return keys.reduce((s,k)=>K.append(s,k),'')}
 assert.equal(type(['ㅎ','ㅏ','ㄱ','ㅅ','ㅐ','ㅇ']),'학생');
@@ -21,9 +21,9 @@ assert.equal(K.edit('학교',2,2,'Backspace').text,'학ㄱ');
 assert.ok(K.render().includes('data-hangul="Backspace"'));
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const m of ['input-method','TOPIK_HANGUL.edit','inputmode=','compositionstart','compositionend'])assert.ok(app.includes(m),m);
-assert.ok(html.includes('hangul-keyboard.js?v=3.7.0'));
-assert.ok(html.includes('name="topik-app-version" content="3.7.0"'));
-assert.ok(html.includes('app.js?v=3.7.0'));
+assert.ok(html.includes('hangul-keyboard.js?v=3.7.2'));
+assert.ok(html.includes('name="topik-app-version" content="3.7.2"'));
+assert.ok(html.includes('app.js?v=3.7.2'));
 assert.ok(/版本 v3\\.7\\.\\d+ · 中韩双语网页键盘/.test(app));
 assert.ok(app.includes('<h3>学习安排</h3>')&&app.includes('<h3>输入方式</h3>')&&app.includes('<h3>显示偏好</h3>'));
 assert.ok(app.indexOf('<h3>学习安排</h3>')<app.indexOf('<h3>输入方式</h3>')&&app.indexOf('<h3>输入方式</h3>')<app.indexOf('<h3>显示偏好</h3>'));
@@ -39,7 +39,7 @@ assert.ok(app.includes("webKeyboard||didCheck?'readonly'"));
 assert.ok(app.includes('TOPIK_PINYIN.render()'));
 assert.ok(app.includes('TOPIK_HANGUL.render(hangulShift)'));
 assert.ok(!app.includes('data-temporary-system'));
-assert.ok(html.includes('pinyin-keyboard.js?v=3.7.0'));
+assert.ok(html.includes('pinyin-keyboard.js?v=3.7.2'));
 console.log('Virtual keyboard is readonly and direction-derived.');
 
 for(const [plain,shifted] of Object.entries({'ㅂ':'ㅃ','ㅈ':'ㅉ','ㄷ':'ㄸ','ㄱ':'ㄲ','ㅅ':'ㅆ','ㅐ':'ㅒ','ㅔ':'ㅖ'})){assert.ok(K.render(false).includes('>'+plain+'</button>'));assert.ok(K.render(true).includes('>'+shifted+'</button>'))}
