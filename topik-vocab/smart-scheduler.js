@@ -53,6 +53,7 @@ window.TOPIK_SMART={
  },
  stage(state,ko){return window.TOPIK_FIRST_LEARNING.stage(state,ko)},
  select(state,words,day,goal,history=[],now=Date.now()){
+  const relearn=window.TOPIK_RELEARN?.select(state,words,history,now);
   const recent=history.slice(-this.MIN_GAP);
   const introduced=new Set(day.learned||[]);
   const candidates=[];
@@ -77,7 +78,7 @@ window.TOPIK_SMART={
     candidates.push({word,type:'typing',mode,score});
    }
   }
-  if(!candidates.length)return null;
+  if(!candidates.length)return relearn||null;
   let eligible=candidates.filter(c=>!recent.includes(c.word[1]));
   // If there are fewer than 3 available words, relax the history filter
   // rather than falsely claiming that today's work is complete.
@@ -85,6 +86,8 @@ window.TOPIK_SMART={
   if(!eligible.length)eligible=candidates;
   const due=eligible.filter(c=>c.type==='typing').sort((a,b)=>b.score-a.score);
   const fresh=eligible.filter(c=>c.type==='show');
+  // Explicit relearning takes priority when it does not repeat the immediately previous word.
+  if(relearn&&relearn.word[1]!==history.at(-1))return relearn;
   // Dynamically interleave new words among due work without a fixed-size batch.
   const newSlot=history.length%4===0;
   if(fresh.length&&(!due.length||newSlot))return fresh[0];
