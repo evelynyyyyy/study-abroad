@@ -5,7 +5,7 @@
  const SoundManager={
   context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,samples:null,sampleContext:null,sampleLoading:null,lastKeyTarget:null,deleteRepeat:0,audioUnlocked:false,unlockPending:null,masterGain:null,keyboardGain:null,limiter:null,keyboardSources:[],keyboardSoundReady:false,sampleLevels:null,
   init(){
-   if(this.mode==='off'||typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
+   if(typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
    try{
     if(!this.context||this.context.state==='closed'){
      this.context=new (root.AudioContext||root.webkitAudioContext)();
