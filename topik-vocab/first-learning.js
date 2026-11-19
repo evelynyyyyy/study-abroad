@@ -33,6 +33,7 @@ questions(words){
   const last=out.at(-1)?.word[1];let idx=src.findIndex(x=>x.word[1]!==last);if(idx<0)idx=0;
   out.push(src.splice(idx,1)[0]);
  }
+ for(let i=1;i<out.length;i++)if(out[i].word[1]===out[i-1].word[1]){let j=out.findIndex((q,k)=>k>i&&q.word[1]!==out[i-1].word[1]&&(k===out.length-1||out[k+1].word[1]!==out[i].word[1]));if(j>i)[out[i],out[j]]=[out[j],out[i]]}
  return out;
 },
 newBatch(words){return {phase:'show',words:words.slice(0,this.LIMIT),index:0,queue:[],retry:[],retryCount:{},question:null,attempts:0,correct:0}},
