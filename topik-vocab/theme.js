@@ -6,8 +6,7 @@ const modes=['system','light','dark'];
 function normalize(mode){return modes.includes(mode)?mode:'system'}
 function preferred(storage){
  try{const explicit=storage.getItem(KEY);if(explicit!==null)return normalize(explicit);
- const legacy=JSON.parse(storage.getItem('topik_lab_v2')||'null');
- return normalize(legacy&&legacy.theme)}catch{return 'system'}
+ return 'system'}catch{return 'system'}
 }
 function resolved(mode,systemDark){return mode==='system'?(systemDark?'dark':'light'):normalize(mode)==='dark'?'dark':'light'}
 function create(options){
