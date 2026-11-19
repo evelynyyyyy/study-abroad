@@ -2,7 +2,7 @@
 (function(root){'use strict';
 const CHO=[...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'],V=[...'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'],T=[...'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ'];
 const J={ㄱ:'r',ㄲ:'R',ㄴ:'s',ㄷ:'e',ㄸ:'E',ㄹ:'f',ㅁ:'a',ㅂ:'q',ㅃ:'Q',ㅅ:'t',ㅆ:'T',ㅇ:'d',ㅈ:'w',ㅉ:'W',ㅊ:'c',ㅋ:'z',ㅌ:'x',ㅍ:'v',ㅎ:'g',ㅏ:'k',ㅐ:'o',ㅑ:'i',ㅒ:'O',ㅓ:'j',ㅔ:'p',ㅕ:'u',ㅖ:'P',ㅗ:'h',ㅘ:'hk',ㅙ:'ho',ㅚ:'hl',ㅛ:'y',ㅜ:'n',ㅝ:'nj',ㅞ:'np',ㅟ:'nl',ㅠ:'b',ㅡ:'m',ㅢ:'ml',ㅣ:'l',ㄳ:'rt',ㄵ:'sw',ㄶ:'sg',ㄺ:'fr',ㄻ:'fa',ㄼ:'fq',ㄽ:'ft',ㄾ:'fx',ㄿ:'fv',ㅀ:'fg',ㅄ:'qt'};
-const K={};for(const [j,k] of Object.entries(J))if(k.length===1){K[k]=j;if(!K[k.toUpperCase()])K[k.toUpperCase()]=j}
+const K={};for(const [j,k] of Object.entries(J))if(k.length===1)K[k]=j;for(const [k,j] of Object.entries(K))if(k===k.toLowerCase()&&!K[k.toUpperCase()])K[k.toUpperCase()]=j;
 const CV={'ㅗㅏ':'ㅘ','ㅗㅐ':'ㅙ','ㅗㅣ':'ㅚ','ㅜㅓ':'ㅝ','ㅜㅔ':'ㅞ','ㅜㅣ':'ㅟ','ㅡㅣ':'ㅢ'};
 const CT={'ㄱㅅ':'ㄳ','ㄴㅈ':'ㄵ','ㄴㅎ':'ㄶ','ㄹㄱ':'ㄺ','ㄹㅁ':'ㄻ','ㄹㅂ':'ㄼ','ㄹㅅ':'ㄽ','ㄹㅌ':'ㄾ','ㄹㅍ':'ㄿ','ㄹㅎ':'ㅀ','ㅂㅅ':'ㅄ'};
 const ST=Object.fromEntries(Object.entries(CT).map(([k,v])=>[v,[...k]]));
