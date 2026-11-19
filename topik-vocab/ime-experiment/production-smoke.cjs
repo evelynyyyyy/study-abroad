@@ -44,7 +44,7 @@ async function typeKorean(page,keys){for(const k of keys)await page.locator('.ha
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间');
  await page.locator('.pinyin-keyboard [data-smart-submit]').click();
  assert.equal(await page.locator('#pinyin-composition').textContent(),'');
- assert.equal(await page.locator('[data-smart-submit]').count(),1);
+ assert.equal(await page.locator('.pinyin-keyboard [data-smart-submit]').count(),1);assert.ok(await page.locator('.smart-bottom [data-smart-submit]').count()>=1);
  for(const [expected,keys] of Object.entries({
   '学生':'', // Korean samples below use actual jamo arrays
  }))void expected,void keys;
