@@ -361,7 +361,7 @@ function smartScreen(){
  '<div class="smart-word '+(isMeaning?'':'smart-chinese')+'" '+(isMeaning?'lang="ko"':'')+'>'+(isMeaning?ko:zh)+'</div>'+
  (!isMeaning&&TOPIK_LEXICON.hint(w,scope())?'<p class="tiny muted">'+quote(TOPIK_LEXICON.hint(w,scope()))+'</p>':'')+
  '<div class="input-wrap"><input id="spell-input" class="field" type="text" inputmode="'+(webKeyboard?'none':'text')+'" enterkeyhint="done" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(webKeyboard||didCheck?'readonly':'')+'></div>'+ 
- (koreanKeyboard?TOPIK_HANGUL.render(hangulShift):chineseKeyboard?TOPIK_PINYIN.render():'')+
+
  (pendingRating?'<p class="tiny muted" role="status">'+(evaluateAnswer(w,typed,mode).level==='acceptable'?'基本正确 · 可接受表达。':'回答正确。')+'请选择刚才回忆的真实感受，再安排下次复习。</p>'+meaningFeedback(w,typed,mode):'')+
  (didCheck?'<div class="smart-feedback '+(correctRating(smartResult)?'good':'bad')+'" role="status">'+
  '<strong>'+(correctRating(smartResult)?'回答正确 · 已安排后续巩固':smartResult==='again'?'已记录：不知道 · 稍后重练':'回答错误 · 稍后重练')+'</strong>'+
@@ -381,7 +381,7 @@ function smartScreen(){
  '<section class="smart-focus"><div class="smart-kind">'+(type==='relearn-show'?'重新认识':isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
  (d[0]&&isShow?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+
  (didCheck&&d[0]?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+'</section>'+
- '<footer class="smart-bottom">'+actions+'</footer></div>';
+ '<footer class="smart-bottom'+(webKeyboard?' has-keyboard':'')+'">'+actions+(webKeyboard?'<div class="study-keyboard-dock">'+(koreanKeyboard?TOPIK_HANGUL.render(hangulShift):TOPIK_PINYIN.render())+'</div>':'')+'</footer></div>';
 }
 
 function startOnboarding(){
