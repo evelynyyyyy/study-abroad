@@ -37,6 +37,52 @@ function change(v){view=v;session=null;practiceReturn=null;onboarding=null;typed
 function levelBar(){return '<div class="level-switch" role="group" aria-label="选择 TOPIK 难度">'+[1,2,3,4,5,6].map(n=>'<button type="button" data-level="'+n+'" class="'+(state.level===n?'active':'')+'">TOPIK '+n+'</button>').join('')+'</div>'}
 function home(){let n=counts();return '<div class="eyebrow">自主学习 · '+today()+'</div><h1>想学多少，就学多少。</h1><p class="muted">随时选择单词、练习方向和学习时长。没有每日任务或学习上限。</p>'+levelBar()+'<div class="summary" aria-label="学习数据"><div><b>'+n.today+'</b><span>今日首次展示新词</span></div><div><b>'+n.due+'</b><span>待复习（双向）</span></div><div><b>'+n.learned+' / '+n.total+'</b><span>已展示词汇</span></div></div><div class="section"><h3 class="section-title">开始学习</h3><div class="action-list"><button class="action" data-start="learn"><span><b>新词首次学习（每轮 10 词）</b><small>先认识词义，再打乱顺序进行双向 Typing</small></span><span class="arrow">→</span></button><button class="action" data-start="context"><span><b>语境学词</b><small>在韩语例句里理解词义，并听整句发音</small></span><span class="arrow">→</span></button><button class="action" data-start="review"><span><b>复习旧词</b><small>'+n.due+' 个词待双向复习</small></span><span class="arrow">→</span></button><button class="action" data-start="spell"><span><b>韩文拼写</b><small>看到中文，自己写出韩文</small></span><span class="arrow">→</span></button><button class="action" data-start="meaning"><span><b>中文释义输入</b><small>看到韩文，自己打出中文意思</small></span><span class="arrow">→</span></button><button class="action" data-start="wrong"><span><b>错词强化</b><small>'+n.wrong+' 个曾经答错的词</small></span><span class="arrow">→</span></button></div></div><p class="small muted section">学习顺序、数量与频率完全由你决定。六级为教学难度分组，不是官方完整 TOPIK 词表。</p>'}
 function choose(mode){let words=scope();if(mode==='learn')return words.filter(w=>isNew(w[1]));if(mode==='context')return words.filter(w=>!!ex(w)[0]);if(mode==='review')return words.filter(w=>['reviewing','mastered'].includes(learningStage(w[1]))&&['meaning','spell'].some(m=>isDue(w[1],m)));if(mode==='wrong')return words.filter(w=>hasSeen(w[1])&&weak(w[1])>0).sort((a,b)=>weak(b[1])-weak(a[1]));if(mode==='meaning'){let studied=words.filter(w=>hasSeen(w[1]));let due=studied.filter(w=>!prog(w[1],'meaning')||isDue(w[1],'meaning'));return(due.length?due:studied)}if(mode==='spell'){let studied=words.filter(w=>hasSeen(w[1]));let due=studied.filter(w=>!prog(w[1],'spell')||isDue(w[1],'spell'));return(due.length?due:studied)}return[]}
+
+function startOnboarding(){
+ let words=scope().filter(w=>isNew(w[1])).slice(0,TOPIK_FIRST_LEARNING.LIMIT);
+ onboarding=TOPIK_FIRST_LEARNING.newBatch(words);
+ view='onboard';session=null;practiceReturn=null;typed='';didCheck=false;render();
+}
+function advanceReveal(){
+ if(!onboarding||onboarding.phase!=='show')return;
+ const w=onboarding.words[onboarding.index];if(!w)return;
+ markShown(w[1]);TOPIK_FIRST_LEARNING.reveal(onboarding);render();
+}
+function nextOnboardQuestion(){
+ if(!onboarding)return;
+ TOPIK_FIRST_LEARNING.next(onboarding);typed='';didCheck=false;render();
+}
+function submitOnboardAnswer(){
+ if(!onboarding||onboarding.phase!=='typing'||didCheck)return;
+ const q=onboarding.question;
+ typed=(document.getElementById('spell-input')?.value??typed).trim();
+ if(!typed){notify('请先输入答案');return}
+ const ok=answerCorrect(q.word,typed,q.mode);
+ didCheck=true;
+ grade(q.word[1],q.mode,ok);
+ markRecall(q.word[1],q.mode);
+ TOPIK_FIRST_LEARNING.result(onboarding,ok);
+ render();
+}
+function onboardScreen(){
+ const b=onboarding;
+ if(!b||!b.words.length)return '<div class="eyebrow">首次学习</div><h1>当前等级没有未学习的新词</h1><p class="muted">可以复习已学词，也可以切换 TOPIK 等级。</p><button class="primary" data-view="home">返回首页</button>';
+ if(b.phase==='done')return '<div class="eyebrow">首次学习 · 已完成</div><h1>本轮学习完成</h1><p class="muted">本轮认识了 '+b.words.length+' 个新词，完成双向 Typing 首次回忆。错误题目最多安排两次额外练习，不会无限重复。</p><div class="summary"><div><b>'+b.words.length+'</b><span>新词数量</span></div><div><b>'+b.attempts+'</b><span>Typing 作答次数</span></div><div><b>'+b.correct+'</b><span>正确次数</span></div></div><p class="muted">已进入间隔复习，两个方向的掌握程度独立计算。</p><button class="primary" data-view="home">返回今日学习</button>';
+ if(b.phase==='intro')return '<div class="eyebrow">首次学习 · 第二阶段</div><h1>开始记忆</h1><p class="muted">刚才已经展示 '+b.words.length+' 个新词。接下来将打乱顺序，分别测试韩语 → 中文、中文 → 韩语。不会刚看完一个词就立即考同一个词。</p><button class="primary" data-begin-typing="1">开始双向 Typing →</button>';
+ const isShow=b.phase==='show',w=isShow?b.words[b.index]:b.question.word;
+ const mode=isShow?'':b.question.mode,d=ex(w),k=quote(w[1]);
+ const extra=d[0]?'<section class="context-panel"><div class="context-label">韩语例句 · 学习参考</div><div class="context-ko" lang="ko">'+markExample(d[0],w[1])+'</div><div class="context-zh">'+quote(d[1])+'</div><button type="button" class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></section>':'';
+ const content=isShow?
+   '<div class="onboard-label">首次认识 · 不计入正确率</div><div class="korean" lang="ko">'+k+'</div>'+pronunciation(w,d)+'<div class="answer-block"><div class="meaning">'+quote(w[2])+'</div>'+extra+'</div><p class="muted small">先阅读和记忆，不需要输入，也不判断对错。</p>':
+   '<div class="onboard-label">首次回忆 · '+(mode==='meaning'?'韩语 → 中文':'中文 → 韩语')+'</div>'+(mode==='meaning'?'<div class="korean" lang="ko">'+k+'</div>':'<div class="meaning">'+quote(w[2])+'</div>')+
+   '<div class="question">'+(mode==='meaning'?'请输入中文意思':'请输入韩语拼写')+'</div><div class="input-wrap"><input id="spell-input" class="field" aria-label="'+(mode==='meaning'?'输入中文意思':'输入韩语拼写')+'" lang="'+(mode==='meaning'?'zh-CN':'ko')+'" autocomplete="off" spellcheck="false" placeholder="'+(mode==='meaning'?'请输入中文……':'请输入韩语……')+'" value="'+quote(typed)+'" '+(didCheck?'disabled':'')+'></div>'+
+   (didCheck?'<div class="feedback '+(answerCorrect(w,typed,mode)?'good':'bad')+'" role="status">'+(answerCorrect(w,typed,mode)?'回答正确！':'正确答案：'+quote(mode==='meaning'?w[2]:w[1]))+pronunciation(w,d)+extra+'</div>':'');
+ const actions=isShow?'<button class="secondary" data-speak="'+k+'">听发音</button><button class="primary" data-next-reveal="1">'+(b.index===b.words.length-1?'开始记忆 →':'下一个 →')+'</button>':
+   didCheck?'<button class="primary" data-next-question="1">下一题 →</button>':'<button class="primary" data-check-onboard="1">检查答案</button>';
+ const count=isShow?b.index+1:b.attempts+1,total=isShow?b.words.length:b.words.length*2;
+ return '<div class="study-head"><div><div class="eyebrow">TOPIK '+state.level+' · '+(isShow?'第一阶段：新词认识':'第二阶段：双向 Typing')+'</div><span class="tiny quiet">'+count+' / '+total+' · 新词按单词计数</span></div><button class="text-btn" data-view="home">保存并退出 ×</button></div><div class="progress-track"><i style="width:'+Math.min(100,100*(isShow?b.index:b.attempts)/total)+'%"></i></div><section class="study-screen onboard-screen '+(isShow?'onboard-reveal':'onboard-test')+'">'+content+'</section><div class="study-actions">'+actions+'</div>';
+}
+
 function start(mode){if(mode==='learn'){startOnboarding();return}practiceReturn=null;session={mode,deck:choose(mode),index:0,flipped:false};view=mode;typed='';didCheck=false;feedback='';render()}
 function startSpecific(mode){let w=session?.deck[session?.index];if(!w)return;if(isNew(w[1])){notify('新词需要先认识韩文与中文');return}practiceReturn={view,session};view=mode;session={mode,deck:[w],index:0,flipped:false};typed='';didCheck=false;render()}
 function resumePractice(){if(!practiceReturn)return;view=practiceReturn.view;session=practiceReturn.session;practiceReturn=null;typed='';didCheck=false;render()}
