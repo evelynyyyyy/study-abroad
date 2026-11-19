@@ -44,8 +44,8 @@ assert.equal(F.stage(old,'집'),'consolidating');
 assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for consolidation');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const marker of ['data-smart-start="1"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;persist();render()'])assert.ok(app.includes(marker),marker);
-assert.ok(html.includes('smart-scheduler.js?v=3.5.0'));
-assert.ok(app.includes('版本 v3.5.0'));
+assert.ok(html.includes('smart-scheduler.js?v=3.5.1'));
+assert.ok(app.includes('版本 v3.5.1'));
 
 // 30-task keyboard-mode independence: both due directions must appear.
 const pool=Array.from({length:18},(_,i)=>[1,'测试词'+i,'词义'+i]);
