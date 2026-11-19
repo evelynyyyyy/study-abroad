@@ -4,6 +4,7 @@ on:
     branches: [gh-pages]
     paths:
       - 'topik-vocab/**'
+      - 'k/**'
   pull_request:
     branches: [gh-pages]
     paths:
@@ -29,6 +30,17 @@ jobs:
         run: |
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
+      - name: Verify permanent URL and portable learning backups
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const entry=fs.readFileSync('k/index.html','utf8');
+          const app=fs.readFileSync('topik-vocab/app.js','utf8');
+          assert.ok(entry.includes('../topik-vocab/'),'Permanent short path must redirect to same-origin app');
+          assert.ok(app.includes("const STORAGE='topik_lab_v2'"),'Local progress key must remain stable');
+          for(const marker of ['id="export-data"','id="backup-upload"','async function importBackup','smartAnswerHistory'])assert.ok(app.includes(marker),'Missing portable backup feature: '+marker);
+          console.log('Permanent URL and learning-data backup checks passed');
+          NODE
       - name: Check site structure and title
         run: |
           node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./smart-scheduler.js','./styles.css'])if(!h.includes(x))process.exit(1)"
