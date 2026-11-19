@@ -40,7 +40,7 @@ newBatch(words){return {phase:'show',words:words.slice(0,this.LIMIT),index:0,que
 reveal(batch){batch.index++;if(batch.index>=batch.words.length){batch.phase='intro';batch.queue=this.questions(batch.words);batch.index=0}},
 next(batch){
  let q=batch.queue.shift();
- if(!q&&batch.retry.length){batch.queue=this.shuffle(batch.retry);batch.retry=[];q=batch.queue.shift()}
+ if(!q&&batch.retry.length&&batch.words.length>1){batch.queue=this.shuffle(batch.retry);batch.retry=[];q=batch.queue.shift()}
  if(!q){batch.phase='done';batch.question=null;return}
  batch.phase='typing';batch.question=q;
 },
