@@ -447,3 +447,6 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 .ios-keyboard [data-hangul-mode],.ios-keyboard [data-hangul-more]{flex:1.25 1 0!important;font-size:13px!important;}
 .ios-keyboard [data-hangul-more][hidden]{display:none!important;}
 @media(max-width:390px){.ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{gap:3px;}.ios-keyboard{gap:6px;}}
+
+/* Keep horizontal candidate swipes inside the IME without hijacking vertical study scroll. */
+.ios-keyboard .pinyin-candidates{touch-action:pan-x;overscroll-behavior-x:contain}
