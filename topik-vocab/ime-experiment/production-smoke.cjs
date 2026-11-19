@@ -31,7 +31,7 @@ async function typeKorean(page,keys){for(const k of keys)await page.locator('.ha
  await page.locator('[data-pinyin-mode="numbers"]').click();
  await page.locator('[data-pinyin-symbol="'+encodeURIComponent('（')+'"]').click();
  await page.locator('[data-pinyin-mode="letters"]').click();
- await typeChinese(page,'shijian');await page.locator('[data-pinyin-choice="0"]').click();
+ await typeChinese(page,'shijian');const timeChoices=await page.evaluate(()=>simpleIme.getCandidates());assert.ok(timeChoices.includes('时间'));await page.locator('[data-pinyin-choice="'+timeChoices.indexOf('时间')+'"]').click();
  await page.locator('[data-pinyin-mode="numbers"]').click();
  await page.locator('[data-pinyin-symbol="'+encodeURIComponent('）')+'"]').click();
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间）');
@@ -44,7 +44,7 @@ async function typeKorean(page,keys){for(const k of keys)await page.locator('.ha
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间');
  await page.locator('.pinyin-keyboard [data-smart-submit]').click();
  assert.equal(await page.locator('#pinyin-composition').textContent(),'');
- assert.equal(await page.locator('.smart-submit').count(),1);
+ assert.equal(await page.locator('[data-smart-submit]').count(),1);
  for(const [expected,keys] of Object.entries({
   '学生':'', // Korean samples below use actual jamo arrays
  }))void expected,void keys;
