@@ -1,79 +1,102 @@
-/* Continuous scheduler, FSRS-inspired D/S/R memory model (not official FSRS weights). */
+/* TOPIK v2.0.0: continuous scheduling with SM-2 intervals and short learning steps.
+ * Independently stored per direction; no third-party source code copied.
+ * Adapted from published SM-2 principles (1d, 6d, interval*ease).
+ */
 'use strict';
 window.TOPIK_SMART={
-  DAY:86400000, MIN:60000, MIN_GAP:2, MAX_NEW_PER_DAY:20,
-  normalize(state,ko,mode){
-    const p=state.progress?.[ko]?.[mode]||{},now=Date.now();
-    if(p.memory&&Number.isFinite(p.memory.stability))return p.memory;
-    // Preserve old due dates and successful steps; never reset existing learning.
-    const elapsed=p.last?Math.max(0,(now-p.last)/this.DAY):0;
-    const stability=Math.max(.08,Math.min(365,p.step?Math.pow(2,Math.max(0,p.step-1)):.08));
-    return {stability,difficulty:Math.max(1,Math.min(10,5+(p.wrong||0)*.3)),retrievability:Math.pow(.9,elapsed/stability),interval:Math.max(0,(Number(p.due||now)-Number(p.last||now))/this.DAY),lastReview:p.last||0,nextReview:p.due||now,correct:p.correct||Math.max(0,p.step||0),incorrect:p.wrong||0,reps:(p.correct||Math.max(0,p.step||0))+(p.wrong||0)};
-  },
-  review(state,ko,mode,success,now=Date.now()){
-    const entry=state.progress[ko]||{},old=entry[mode]||{},m=this.normalize(state,ko,mode);
-    const elapsed=m.lastReview?Math.max(0,(now-m.lastReview)/this.DAY):0;
-    const R=Math.pow(.9,elapsed/Math.max(.08,m.stability));
-    const D=Math.max(1,Math.min(10,m.difficulty+(success?-.18:.75)));
-    let S;
-    if(success){
-      S=m.reps===0?.6:Math.max(.15,m.stability*(1+Math.exp((11-D)/6)*(Math.pow(Math.max(.02,1-R),.55))*.35));
-    }else{
-      S=Math.max(.08,Math.min(m.stability*.55,.18+Math.pow(D,-.3)*Math.pow(m.stability,.45)*.13));
-    }
-    // Failed items return after short delay; successful items follow retention target.
-    const interval=success?Math.max(.04,Math.min(365,S)):Math.max(2/1440,Math.min(.015,S*.08));
-    const nextReview=now+Math.round(interval*this.DAY);
-    const memory={stability:S,difficulty:D,retrievability:1,interval,lastReview:now,nextReview,correct:m.correct+(success?1:0),incorrect:m.incorrect+(success?0:1),reps:m.reps+1};
-    entry[mode]={...old,memory,due:nextReview,last:now,wrong:(old.wrong||0)+(success?0:1),correct:(old.correct||0)+(success?1:0),step:success?Math.min(7,(old.step||0)+1):0};
-    state.progress[ko]=entry;
-    return memory;
-  },
-  due(state,ko,mode,now=Date.now()){
-    const p=state.progress?.[ko]?.[mode];return !p||Number(p.due||0)<=now;
-  },
-  stage(state,ko){
-    return window.TOPIK_FIRST_LEARNING.stage(state,ko);
-  },
-  select(state,words,day,goal,history=[],now=Date.now()){
-    const recent=history.slice(-this.MIN_GAP);
-    const seenToday=new Set(day.learned||[]);
-    const candidates=[];
-    for(const w of words){
-      const ko=w[1],stage=this.stage(state,ko),p=state.progress[ko]||{};
-      if(stage==='unseen'){
-        if(seenToday.size<goal)candidates.push({word:w,type:'show',mode:null,score:30});
-        continue;
-      }
-      for(const mode of ['meaning','spell']){
-        const q=p[mode],m=q?this.normalize(state,ko,mode):null;
-        const first=!!state.lifecycle?.[ko]?.first?.[mode]||!!q?.last;
-        const shownAt=state.lifecycle?.[ko]?.seenAt||p.read?.last||0;
-        const isDue=!q||q.due<=now;
-        if(!isDue)continue;
-        // No instant testing after a first reveal. Require two intervening items
-        // and a short temporal separation, except for previously shown legacy words.
-        if(!first&&shownAt&&now-shownAt<15000)continue;
-        let score=!first?95:65;
-        if(q?.wrong)score+=Math.min(25,q.wrong*2);
-        if(q?.due)score+=Math.min(35,Math.max(0,(now-q.due)/this.DAY)*4);
-        if(m)score+=Math.max(0,6-m.stability)*2;
-        candidates.push({word:w,type:'typing',mode,score});
-      }
-    }
-    const eligible=candidates.filter(c=>!recent.includes(c.word[1]));
-    if(!eligible.length)return null;
-    const due=eligible.filter(x=>x.type==='typing').sort((a,b)=>b.score-a.score);
-    const fresh=eligible.filter(x=>x.type==='show');
-    // Due work takes priority, but new words are interleaved when capacity remains.
-    const recentTypes=history.slice(-4).map(x=>typeof x==='string'?x:'');
-    const wantNew=fresh.length&&(!due.length||history.length%4===0);
-    if(wantNew)return fresh[0];
-    return due[0]||fresh[0]||null;
-  },
-  summary(state,words,day,goal,now=Date.now()){
-    let due=0;
-    for(const w of words)if(this.stage(state,w[1])!=='unseen')for(const m of ['meaning','spell'])if(this.due(state,w[1],m,now))due++;
-    return {due,newCount:(day.learned||[]).length,goal,remaining:Math.max(0,goal-(day.learned||[]).length)};
+ DAY:86400000, MIN_GAP:2, VERSION:'2.0.0',
+ normalize(state,ko,mode,now=Date.now()){
+  const p=state.progress?.[ko]?.[mode]||{},old=p.memory||{};
+  const lastReview=Number(old.lastReview||p.last||0);
+  const interval=Number.isFinite(old.interval)?old.interval:Math.max(0,(Number(p.due||lastReview)-lastReview)/this.DAY);
+  const stability=Math.max(.04,Number(old.stability)||Math.max(.04,interval||.2));
+  const elapsed=lastReview?Math.max(0,(now-lastReview)/this.DAY):0;
+  return {
+   ease:Math.max(1.3,Math.min(3,Number(old.ease)||2.5)),
+   streak:Number(old.streak??p.step??0),stability,
+   difficulty:Number(old.difficulty)||5,
+   retrievability:Math.pow(.9,elapsed/stability),
+   interval,lastReview,nextReview:Number(p.due??old.nextReview??now),
+   correct:Number(old.correct??p.correct??Math.max(0,p.step||0)),
+   incorrect:Number(old.incorrect??p.wrong??0),
+   reps:Number(old.reps??((p.correct||Math.max(0,p.step||0))+(p.wrong||0))),
+   lastResult:old.lastResult??null
+  };
+ },
+ review(state,ko,mode,success,now=Date.now()){
+  const entry=state.progress[ko]||{},old=entry[mode]||{};
+  const m=this.normalize(state,ko,mode,now);
+  const streak=success?m.streak+1:0;
+  const ease=Math.max(1.3,Math.min(3,m.ease+(success?0:-.2)));
+  // SM-2 review progression, plus 1-minute learning/lapse step for in-session errors.
+  let interval;
+  if(!success)interval=1/1440;
+  else if(streak===1)interval=1;
+  else if(streak===2)interval=6;
+  else interval=Math.max(1,Math.round(Math.max(1,m.interval)*ease));
+  const nextReview=now+Math.round(interval*this.DAY);
+  const stability=success?Math.max(.2,interval):Math.max(.04,m.stability*.4);
+  const memory={
+   ease,streak,stability,difficulty:Math.max(1,Math.min(10,m.difficulty+(success?-.15:.7))),
+   retrievability:1,interval,lastReview:now,nextReview,
+   correct:m.correct+(success?1:0),incorrect:m.incorrect+(success?0:1),
+   reps:m.reps+1,lastResult:success?'correct':'wrong'
+  };
+  entry[mode]={...old,memory,due:nextReview,last:now,
+   wrong:(old.wrong||0)+(success?0:1),correct:(old.correct||0)+(success?1:0),
+   step:success?Math.min(7,(old.step||0)+1):0};
+  state.progress[ko]=entry;return memory;
+ },
+ due(state,ko,mode,now=Date.now()){
+  const p=state.progress?.[ko]?.[mode];
+  return !p||!Number.isFinite(Number(p.due))||Number(p.due)<=now;
+ },
+ stage(state,ko){return window.TOPIK_FIRST_LEARNING.stage(state,ko)},
+ select(state,words,day,goal,history=[],now=Date.now()){
+  const recent=history.slice(-this.MIN_GAP);
+  const introduced=new Set(day.learned||[]);
+  const candidates=[];
+  for(const word of words){
+   const ko=word[1],stage=this.stage(state,ko),p=state.progress[ko]||{};
+   if(stage==='unseen'){
+    if(introduced.size<goal)candidates.push({word,type:'show',mode:null,score:20});
+    continue;
+   }
+   for(const mode of ['meaning','spell']){
+    const q=p[mode],first=!!state.lifecycle?.[ko]?.first?.[mode]||!!q?.last;
+    const seenAt=state.lifecycle?.[ko]?.seenAt||p.read?.last||0;
+    if(!this.due(state,ko,mode,now))continue;
+    // Require intervening items; a very short cooldown also avoids answer leakage.
+    if(!first&&seenAt&&now-seenAt<3000)continue;
+    const m=this.normalize(state,ko,mode,now);
+    const lateness=q?.due?Math.max(0,(now-q.due)/this.DAY):0;
+    const score=(!first?90:60)+Math.min(40,lateness*8)+
+     (q?.wrong?Math.min(30,q.wrong*3):0)+(m.lastResult==='wrong'?15:0)+
+     Math.max(0,5-m.stability);
+    candidates.push({word,type:'typing',mode,score});
+   }
   }
+  if(!candidates.length)return null;
+  let eligible=candidates.filter(c=>!recent.includes(c.word[1]));
+  // If there are fewer than 3 available words, relax the history filter
+  // rather than falsely claiming that today's work is complete.
+  if(!eligible.length)eligible=candidates.filter(c=>c.word[1]!==history.at(-1));
+  if(!eligible.length)eligible=candidates;
+  const due=eligible.filter(c=>c.type==='typing').sort((a,b)=>b.score-a.score);
+  const fresh=eligible.filter(c=>c.type==='show');
+  // Dynamically interleave new words among due work without a fixed-size batch.
+  const newSlot=history.length%4===0;
+  if(fresh.length&&(!due.length||newSlot))return fresh[0];
+  // Avoid the same word in both directions back-to-back whenever alternatives exist.
+  return due[0]||fresh[0]||null;
+ },
+ summary(state,words,day,goal,now=Date.now()){
+  let due=0;
+  for(const word of words){
+   if(this.stage(state,word[1])==='unseen')continue;
+   for(const mode of ['meaning','spell'])if(this.due(state,word[1],mode,now))due++;
+  }
+  return {due,newCount:(day.learned||[]).length,goal,
+   remaining:Math.max(0,goal-(day.learned||[]).length)};
+ }
 };
