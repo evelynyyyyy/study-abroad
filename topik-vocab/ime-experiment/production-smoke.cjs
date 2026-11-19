@@ -4,7 +4,7 @@ const url=process.env.STUDY_E2E_URL||'https://evelynyyyyy.github.io/study-abroad
 const words={jian:'间',cheng:'成',chengwei:'成为',shijian:'时间',fangjian:'房间',zhongjian:'中间',xuesheng:'学生',xuexi:'学习',gongzuo:'工作',pengyou:'朋友',keyi:'可以',ranhou:'然后'};
 async function setTask(page,mode,word='되다'){await page.evaluate(({mode,word})=>{view='smart';smartTask={word:[1,word,mode==='meaning'?'成为':'学习'],type:'typing',mode};state.inputMethod='virtual';didCheck=false;pendingRating=false;typed='';pinyinComposition='';pinyinExpanded=false;hangulShift=false;hangulMode='letters';if(simpleIme)simpleIme.reset();render()},{mode,word})}
 async function typeChinese(page,py){for(const k of py)await page.locator('.pinyin-keyboard [data-pinyin-key="'+k+'"]').click()}
-async function typeKorean(page,keys){for(const k of keys)await page.locator('.hangul-keyboard [data-hangul="'+k+'"]').click()}
+async function typeKorean(page,keys){const shifted={'ㅃ':'ㅂ','ㅉ':'ㅈ','ㄸ':'ㄷ','ㄲ':'ㄱ','ㅆ':'ㅅ','ㅒ':'ㅐ','ㅖ':'ㅔ'};for(const k of keys){if(shifted[k]){await page.locator('[data-hangul-shift]').click();await page.locator('.hangul-keyboard [data-hangul="'+shifted[k]+'"]').click()}else await page.locator('.hangul-keyboard [data-hangul="'+k+'"]').click()}}
 (async()=>{for(const [name,engine] of [['webkit',webkit],['chromium',chromium]]){
  const browser=await engine.launch();const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  const errors=[];const failed=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)failed.push(r.status()+':'+r.url())});
