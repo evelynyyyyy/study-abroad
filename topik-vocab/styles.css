@@ -72,3 +72,29 @@
  .smart-focus .input-wrap{margin-top:12px}
  .footnote{font-size:11px}
 }
+
+/* Typing actions: reachable on iPhone without fixed overlays covering the keyboard. */
+.smart-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px;width:100%}
+.smart-actions button{min-height:54px;padding:14px 12px;font-size:16px;touch-action:manipulation}
+.smart-unknown{border:1px solid var(--edge);background:var(--hover);color:var(--ink);border-radius:10px;font-weight:550}
+.smart-unknown:hover,.smart-unknown:focus-visible{border-color:var(--soft);background:var(--on)}
+.smart-submit{border-radius:10px}
+.smart-feedback{width:min(100%,390px);line-height:1.6}
+.smart-feedback strong{font-size:15px}
+.smart-answer{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:9px 0}
+.smart-answer span{color:var(--soft);font-size:12px}
+.smart-answer b{color:var(--ink);font-size:20px;font-weight:550}
+.smart-answer button{padding:6px}
+.smart-study:has(.smart-actions) .smart-focus{min-height:220px}
+.smart-bottom{position:relative;z-index:1;background:var(--bg)}
+@media(max-width:760px){
+ .smart-actions{gap:10px}
+ .smart-actions button{min-height:52px}
+ .smart-study:has(.smart-actions){min-height:calc(100dvh - 195px)}
+ .smart-study:has(.smart-actions) .smart-focus{min-height:180px}
+ .smart-bottom{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+}
+@media(max-height:560px){
+ .smart-study:has(.smart-actions){min-height:0}
+ .smart-study:has(.smart-actions) .smart-focus{min-height:150px;padding:16px 4px}
+}
