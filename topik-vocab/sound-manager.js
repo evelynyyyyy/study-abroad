@@ -42,6 +42,37 @@
      osc.onended=()=>{this.active=Math.max(0,this.active-1);try{osc.disconnect();gain.disconnect()}catch(_){}};
      osc.start(at);osc.stop(at+len+.005);
     };
+    if(type==='key'||type==='function'){
+     // Short, dry iOS-style synthetic click: filtered transient + subdued body.
+     // Keep the whole click in one voice to avoid exhausting the polyphony cap.
+     const isFunction=type==='function',variation=(Math.random()-.5)*.10;
+     const duration=isFunction?.032:.025,noiseLength=isFunction?.021:.017;
+     const samples=Math.ceil(ctx.sampleRate*noiseLength);
+     const buffer=ctx.createBuffer(1,samples,ctx.sampleRate),data=buffer.getChannelData(0);
+     for(let i=0;i<samples;i++)data[i]=(Math.random()*2-1);
+     const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),noiseGain=ctx.createGain();
+     const body=ctx.createOscillator(),bodyGain=ctx.createGain();
+     const output=ctx.createGain();this.active++;
+     noise.buffer=buffer;filter.type='bandpass';
+     filter.frequency.setValueAtTime((isFunction?1950:2650)*(1+variation),now);
+     filter.Q.value=isFunction?.7:.85;
+     noiseGain.gain.setValueAtTime(.0001,now);
+     noiseGain.gain.linearRampToValueAtTime(1,now+.001);
+     noiseGain.gain.exponentialRampToValueAtTime(.0001,now+noiseLength);
+     body.type='triangle';
+     body.frequency.setValueAtTime((isFunction?650:900)*(1+variation*.35),now);
+     bodyGain.gain.setValueAtTime(.0001,now);
+     bodyGain.gain.linearRampToValueAtTime(isFunction?.018:.011,now+.001);
+     bodyGain.gain.exponentialRampToValueAtTime(.0001,now+(isFunction?.018:.012));
+     output.gain.value=(isFunction?.24:.19)*(1+variation)*(this.mode==='standard'?1:.58)*scale;
+     noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(output);
+     body.connect(bodyGain);bodyGain.connect(output);output.connect(ctx.destination);
+     body.onended=()=>{this.active=Math.max(0,this.active-1);
+      try{noise.disconnect();filter.disconnect();noiseGain.disconnect();body.disconnect();bodyGain.disconnect();output.disconnect()}catch(_){}};
+     noise.start(now);noise.stop(now+noiseLength+.001);
+     body.start(now);body.stop(now+duration);
+     return;
+    }
     if(type==='test'){playTone(950,now,.09,.30);playTone(1180,now+.09,.09,.27)}
     else if(type==='correct'){playTone(freq,now,.065,volume);playTone(freq*1.25,now+.062,.065,volume*.72)}
     else playTone(freq,now,duration,volume);
