@@ -420,8 +420,9 @@ function smartScreen(){
  (!isMeaning&&TOPIK_LEXICON.hint(w,scope())?'<p class="tiny muted">'+quote(TOPIK_LEXICON.hint(w,scope()))+'</p>':'')+
  '<div class="input-wrap"><input id="spell-input" class="field" type="text" inputmode="'+(webKeyboard?'none':'text')+'" enterkeyhint="done" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(webKeyboard||didCheck?'readonly':'')+'></div>'+ 
 
- (didCheck?'<div class="smart-feedback '+(correctRating(smartResult)?'good':'bad')+'" role="status">'+
- '<strong>'+(correctRating(smartResult)?'回答正确':typed?'回答错误':'不知道 · 稍后重练')+'</strong>'+
+ (didCheck?'<div class="smart-feedback '+(correctRating(smartResult)?'good':smartResult==='again'&&!typed?'skipped':'bad')+'" role="status">'+
+ '<strong>'+(correctRating(smartResult)?'回答正确':smartResult==='again'&&!typed?'不知道 · 稍后重练':'回答错误')+'</strong>'+
+  (typed?'<div class="smart-user-answer">你的答案：'+quote(typed)+'</div>':'')+
  '<div class="smart-answer"><span>韩语</span><b lang="ko">'+ko+'</b><button class="text-btn" data-speak="'+ko+'">▶ 发音</button></div>'+
  '<div class="smart-answer"><span>中文</span><b>'+zh+'</b></div>'+ (correctRating(smartResult)?meaningFeedback(w,typed,mode):'')+
  (d[2]?'<div class="smart-reading">读音：'+quote(d[2])+'</div>':'')+
