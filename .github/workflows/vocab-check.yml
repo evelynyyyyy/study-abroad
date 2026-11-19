@@ -1,0 +1,27 @@
+name: Check Korean vocabulary app
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - 'topik-vocab/**'
+  pull_request:
+    branches: [gh-pages]
+    paths:
+      - 'topik-vocab/**'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: node --check topik-vocab/app.js
+      - name: Check site structure and title
+        run: |
+          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['韩语词汇实验室','./app.js','./styles.css'])if(!h.includes(x))process.exit(1)"
+          test -f topik-vocab/styles.css
+          test -f topik-vocab/SKILL.md
