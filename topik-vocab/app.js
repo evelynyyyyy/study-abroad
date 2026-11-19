@@ -124,6 +124,7 @@ function smartPick(){
 }
 function smartNext(){
  if(!smartTask)return;
+ if(pendingRating){notify('请先选择记忆感受');return}
  if(smartTask.type==='relearn-show'){
    TOPIK_RELEARN.afterShow(state,smartTask.word[1]);
  }else if(smartTask.type==='show'){
@@ -172,7 +173,7 @@ function smartRate(rating){
  smartRecord(rating);
 }
 function smartDontKnow(){
- if(!smartTask||smartTask.type!=='typing'||didCheck)return;
+ if(!smartTask||smartTask.type!=='typing'||didCheck||pendingRating)return;
  typed='';pendingRating=false;
  // No input required. Only this recall direction receives an Again grade.
  smartRecord('again');
@@ -192,7 +193,7 @@ function smartScreen(){
  (!isMeaning&&TOPIK_LEXICON.hint(w,scope())?'<p class="tiny muted">'+quote(TOPIK_LEXICON.hint(w,scope()))+'</p>':'')+
  '<div class="input-wrap"><input id="spell-input" class="field" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(didCheck?'disabled':'')+'></div>'+
  (pendingRating?'<p class="tiny muted" role="status">回答正确。请选择刚才回忆的真实感受，再安排下次复习。</p>':'')+
- (didCheck?'<div class="smart-feedback '+(smartResult==='correct'?'good':'bad')+'" role="status">'+
+ (didCheck?'<div class="smart-feedback '+(correctRating(smartResult)?'good':'bad')+'" role="status">'+
  '<strong>'+(correctRating(smartResult)?'回答正确 · 已安排后续巩固':smartResult==='again'?'已记录：不知道 · 稍后重练':'回答错误 · 稍后重练')+'</strong>'+
  '<div class="smart-answer"><span>韩语</span><b lang="ko">'+ko+'</b><button class="text-btn" data-speak="'+ko+'">▶ 发音</button></div>'+
  '<div class="smart-answer"><span>中文</span><b>'+zh+'</b></div>'+
