@@ -22,7 +22,7 @@ assert.equal(state.lifecycle[target].graduatedAt,undefined,'wrong cannot increme
 assert.equal(answer(target,'meaning',true,22),'LEARNING');
 assert.equal(answer(target,'spell',true,23),'LEARNING','back-to-back cannot qualify');
 gap(30);
-assert.equal(answer(target,'spell',true,40),'LEARNING','round one must be Korean-to-Chinese');
+assert.equal(answer(target,'meaning',true,40),'LEARNING','round two must be Chinese-to-Korean');
 gap(50);
 assert.equal(answer(target,'meaning',true,60),'LEARNING','third recall must not graduate without the spaced second direction');
 gap(70);
