@@ -1,0 +1,52 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const context={window:{},Date,Math};
+vm.runInNewContext(fs.readFileSync('topik-vocab/first-learning.js','utf8'),context);
+vm.runInNewContext(fs.readFileSync('topik-vocab/smart-scheduler.js','utf8'),context);
+const S=context.window.TOPIK_SMART,F=context.window.TOPIK_FIRST_LEARNING,now=Date.now(),target='학생';
+const state={progress:{},lifecycle:{},daily:{},learningActiveWindow:5};
+F.shown(state,target);assert.equal(S.wordState(state,target),'LEARNING');
+assert.equal(state.lifecycle[target].learningStreak,0,'intro never counts');
+function answer(ko,mode,ok,t){
+ if(!state.lifecycle[ko]){F.shown(state,ko);S.wordState(state,ko)}
+ return S.learningResult(state,ko,mode,ok,now+t,ok?'good':'again');
+}
+function gap(t){for(let i=0;i<3;i++)answer('间隔词'+i,'meaning',true,t+i)}
+assert.equal(answer(target,'meaning',true,1),'LEARNING','round one not graduation');
+gap(10);
+assert.equal(answer(target,'spell',true,20),'LEARNING','round two not graduation');
+assert.equal(answer(target,'meaning',false,21),'LEARNING','wrong answer cannot graduate');
+assert.equal(state.lifecycle[target].learningStreak,0,'wrong resets streak');
+assert.equal(state.lifecycle[target].learningProof.round,0,'wrong resets proof');
+assert.equal(state.lifecycle[target].graduatedAt,undefined,'wrong cannot increment learned');
+assert.equal(answer(target,'meaning',true,22),'LEARNING');
+assert.equal(answer(target,'spell',true,23),'LEARNING','back-to-back cannot qualify');
+gap(30);
+assert.equal(answer(target,'spell',true,40),'LEARNING','round one must be Korean-to-Chinese');
+gap(50);
+assert.equal(answer(target,'meaning',true,60),'LEARNING','wrong direction cannot advance round two');
+gap(70);
+assert.equal(answer(target,'spell',true,80),'LEARNING');
+gap(90);
+assert.equal(answer(target,'meaning',true,100),'REVIEW','third spaced correct recall graduates');
+assert.ok(state.lifecycle[target].graduationEvidence.verifiedAt);
+const graduatedAt=state.lifecycle[target].graduatedAt;
+assert.equal(S.learningResult(state,target,'meaning',true,now+101),'REVIEW','duplicate grading cannot regraduate');
+assert.equal(state.lifecycle[target].graduatedAt,graduatedAt);
+assert.equal(S.select(state,[[1,target,'学生']],{learned:[target]},1,[],now+102,null,'learn'),null,'graduated words excluded from learn pool');
+S.review(state,target,'meaning',false,now+S.DAY*2,'again');
+state.lifecycle[target].wordState='RELEARNING';
+assert.equal(state.lifecycle[target].graduatedAt,graduatedAt,'review error preserves graduation');
+const saved=JSON.parse(JSON.stringify(state)),restored=JSON.parse(JSON.stringify(saved));
+assert.equal(S.wordState(restored,target),'RELEARNING');
+assert.equal(restored.lifecycle[target].learningProof.round,3);
+assert.equal(restored.learningRecallSerial,state.learningRecallSerial,'recall event sequence survives refresh');
+const old={progress:{old:{meaning:{correct:5,last:now},spell:{correct:5,last:now}}},lifecycle:{old:{seenAt:now}}};
+assert.equal(S.wordState(old,'old'),'LEARNING','legacy correct totals are not proof');
+const historical={progress:{old:{meaning:{memory:{phase:'review'}}}},lifecycle:{old:{seenAt:now}}};
+assert.equal(S.wordState(historical,'old'),'REVIEW','existing historical review schedule remains intact');
+const app=fs.readFileSync('topik-vocab/app.js','utf8');
+assert.ok(app.includes("if(correct)markRecall(word[1],mode)"),'wrong answer cannot mark first recall');
+assert.ok(app.includes("stats.graduated+' <small>/ '"),'home goal counts graduates');
+assert.ok(app.includes('今日接触新词')&&app.includes('学习中'));
+console.log('Graduation, wrong-answer reset, three spaced rounds, legacy preservation, reload and unique count verified');
