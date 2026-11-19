@@ -131,7 +131,10 @@ function smartNext(){
  }else if(smartTask.type==='show'){
    markShown(smartTask.word[1]);
  }else if(!didCheck){notify('请先提交答案');return}
- if(smartTask.type==='typing')state.smartInputDirection=smartTask.mode;
+ if(smartTask.type==='typing'){
+  state.smartInputDirection=smartTask.mode;
+  state.smartDirectionHistory=(state.smartDirectionHistory||[]).concat(smartTask.mode).slice(-12);
+ }
  state.smartHistory=(state.smartHistory||[]).concat([smartTask.word[1]]).slice(-30);
  persist();smartPick();render();
 }
