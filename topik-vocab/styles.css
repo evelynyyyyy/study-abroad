@@ -98,3 +98,10 @@
  .smart-study:has(.smart-actions){min-height:0}
  .smart-study:has(.smart-actions) .smart-focus{min-height:150px;padding:16px 4px}
 }
+
+/* Accessible slow Korean speech control next to every word/example play button. */
+.slow-speak{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-inline-start:8px;padding:7px 11px;min-height:36px;border:1px solid var(--edge);border-radius:9px;background:transparent;color:var(--soft);font:inherit;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation}
+.slow-speak:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.slow-speak:hover{color:var(--ink);background:var(--hover)}
+.smart-speak+.slow-speak{margin-top:8px}
+@media(max-width:760px){.slow-speak{min-height:40px;padding:9px 12px}}
