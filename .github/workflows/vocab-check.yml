@@ -26,6 +26,7 @@ jobs:
           node --check topik-vocab/korean-ime-engine.js
           node --check topik-vocab/korean-ime-adapter.js
           node --check topik-vocab/hangul-keyboard.js
+          node --check topik-vocab/answer-evaluator.js
           node --check topik-vocab/app.js
           node --check topik-vocab/vocabulary.js
           node --check topik-vocab/study-context.js
@@ -41,6 +42,7 @@ jobs:
           node topik-vocab/tests/pinyin-keyboard.test.cjs
           node topik-vocab/tests/hangul-keyboard.test.cjs
           node topik-vocab/tests/korean-ime.test.cjs
+          node topik-vocab/tests/answer-evaluator.test.cjs
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
