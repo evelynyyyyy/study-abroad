@@ -23,7 +23,6 @@ const release={version,buildSha:sha,buildTime:new Date().toISOString(),assetVers
 html=html.replace(/(<meta name="topik-version" content=")[^"]+(")/,'$1'+version+'$2')
  .replace(/(<meta name="topik-app-version" content=")[^"]+(")/,'$1'+version+'$2')
  .replace(/<title>TOPIK单词 · v[^<]+<\/title>/,'<title>TOPIK单词 · v'+version+'</title>');
-html=html.replace('<script src="./release-client.', '<script src="./release-client.'); // Keep hashed client reference.
 const boot='<script>window.TOPIK_RELEASE='+JSON.stringify({version,buildSha:sha,buildTime:release.buildTime,assetVersion}).replace(/</g,'\\u003c')+';<\/script>';
 html=html.replace('<script src="./release-client.',boot+'<script src="./release-client.');
 fs.writeFileSync(htmlPath,html);
