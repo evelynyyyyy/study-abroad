@@ -80,4 +80,43 @@ assert.ok(maxRun<=4,'comparable due directions cannot be starved by a long same-
 assert.ok(web.state.progress[pool[0][1]].meaning&&web.state.progress[pool[0][1]].spell);
 assert.equal(web.state.inputMethod,'web','keyboard preference persists');
 
+
+// Reproduce the real starvation bug: dozens of previously practiced meaning
+// cards competed against completely untested spell cards. Old scores 120 vs 95
+// made one direction dominate. Every keyboard mode must give the untested
+// direction a fair chance, without changing any existing progress records.
+const mixedPool=Array.from({length:32},(_,i)=>[1,'未测词'+i,'释义'+i]);
+const mixed={progress:{},lifecycle:{},smartHistory:[],smartDirectionHistory:[]};
+for(const w of mixedPool){
+ F.shown(mixed,w[1]);
+ S.review(mixed,w[1],'meaning',true,now-2*S.DAY,'good');
+ F.recall(mixed,w[1],'meaning');
+}
+function run50(inputMethod){
+ const st=JSON.parse(JSON.stringify(mixed));st.inputMethod=inputMethod;
+ const modes=[];
+ for(let i=0;i<50;i++){
+  const task=S.select(st,mixedPool,{learned:[]},0,st.smartHistory,now+i*1000,st.smartInputDirection||null);
+  assert.ok(task&&task.type==='typing','must provide due task '+i);
+  modes.push(task.mode);
+  S.review(st,task.word[1],task.mode,true,now+i*1000,'good');
+  F.recall(st,task.word[1],task.mode);
+  st.smartHistory.push(task.word[1]);st.smartDirectionHistory.push(task.mode);st.smartInputDirection=task.mode;
+ }
+ return {modes,counts:{zhToKoCount:modes.filter(m=>m==='spell').length,koToZhCount:modes.filter(m=>m==='meaning').length},state:st};
+}
+const skewWeb=run50('web'),skewSystem=run50('system'),skewSmart=run50('smart');
+assert.deepEqual(skewWeb.modes,skewSystem.modes);
+assert.deepEqual(skewWeb.modes,skewSmart.modes);
+assert.ok(skewWeb.counts.zhToKoCount>0&&skewWeb.counts.koToZhCount>0,'50 tasks must cover both due directions');
+assert.ok(skewWeb.counts.zhToKoCount>=15,'untested production direction must not starve');
+assert.ok(skewWeb.counts.koToZhCount>=5,'recognition due tasks must remain available');
+assert.equal(S.inspect(skewWeb.state,mixedPool,now+60000).preGenerated,false);
+assert.equal(skewWeb.state.inputMethod,'web');
+assert.ok(app.includes("smartTask=TOPIK_SMART.select(state,words"),'scheduler chooses task without input method');
+assert.ok(app.includes("const webKeyboard=!isShow&&!isMeaning&&useHangulKeyboard()"),'UI keyboard follows task mode');
+assert.ok(app.includes("state.studyDebug"),'opt-in diagnostic console trace');
+assert.ok(app.includes("Recognition due: "),'visible due counts');
+console.log('50-question skewed direction results:',JSON.stringify(skewWeb.counts));
+
 console.log('Minute steps, cross-day review, independent directions, lapse, persistence and legacy migration passed.');
