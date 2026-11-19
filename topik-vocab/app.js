@@ -328,8 +328,7 @@ function bindDeleteRepeat(button,action){
   button.addEventListener(event,()=>{if(down){suppressClick=true;stop()}});
  }
  button.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();return}if(!down)action()});
- window.addEventListener('blur',stop);
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
+ // Global blur/visibility handlers reset both timers without per-render listener leaks.
 }
 
 let hangulMode='letters';
