@@ -80,7 +80,7 @@ function onboardScreen(){
  const actions=isShow?'<button class="secondary" data-speak="'+k+'">听发音</button><button class="primary" data-next-reveal="1">'+(b.index===b.words.length-1?'开始记忆 →':'下一个 →')+'</button>':
    didCheck?'<button class="primary" data-next-question="1">下一题 →</button>':'<button class="primary" data-check-onboard="1">检查答案</button>';
  const count=isShow?b.index+1:b.attempts+1,total=isShow?b.words.length:b.words.length*2;
- return '<div class="study-head"><div><div class="eyebrow">TOPIK '+state.level+' · '+(isShow?'第一阶段：新词认识':'第二阶段：双向 Typing')+'</div><span class="tiny quiet">'+count+' / '+total+' · 新词按单词计数</span></div><button class="text-btn" data-view="home">保存并退出 ×</button></div><div class="progress-track"><i style="width:'+Math.min(100,100*(isShow?b.index:b.attempts)/total)+'%"></i></div><section class="study-screen onboard-screen '+(isShow?'onboard-reveal':'onboard-test')+'">'+content+'</section><div class="study-actions">'+actions+'</div>';
+ return '<div class="study-head"><div><div class="eyebrow">TOPIK '+state.level+' · '+(isShow?'第一阶段：新词认识':'第二阶段：双向 Typing')+'</div><span class="tiny quiet">'+count+' / '+total+' · 新词按单词计数</span></div><button class="text-btn" data-view="home">退出学习 ×</button></div><div class="progress-track"><i style="width:'+Math.min(100,100*(isShow?b.index:b.attempts)/total)+'%"></i></div><section class="study-screen onboard-screen '+(isShow?'onboard-reveal':'onboard-test')+'">'+content+'</section><div class="study-actions">'+actions+'</div>';
 }
 
 function start(mode){if(mode==='learn'){startOnboarding();return}practiceReturn=null;session={mode,deck:choose(mode),index:0,flipped:false};view=mode;typed='';didCheck=false;feedback='';render()}
