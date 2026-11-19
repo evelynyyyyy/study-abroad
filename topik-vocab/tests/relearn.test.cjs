@@ -35,6 +35,6 @@ assert.equal(state.progress.학생.spell.memory.stability<4,true);
 const restored=JSON.parse(JSON.stringify(state));
 assert.equal(R.count(restored),1,'queued relearning survives localStorage JSON roundtrip');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
-for(const marker of ['data-relearn-selected','data-relearn-batch','data-unfamiliar','TOPIK_RELEARN.afterShow','TOPIK_RELEARN.afterAnswer',"'relearn','legacyMigrated']"])assert.ok(app.includes(marker),marker);
+for(const marker of ['data-relearn-selected','data-relearn-batch','data-unfamiliar','TOPIK_RELEARN.afterShow','TOPIK_RELEARN.afterAnswer',"'relearn','legacyMigrated','collection']"])assert.ok(app.includes(marker),marker);
 assert.ok(html.includes('./relearn.js'));
 console.log('Relearning tests passed: directional preservation, full reveal, delay, retry, completion, backup, reload.');
