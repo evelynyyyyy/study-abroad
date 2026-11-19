@@ -135,7 +135,7 @@ function smartPick(){
    queueLength:d.queueLength,queueKoToZh:d.queue.meaning,queueZhToKo:d.queue.spell
   });
  }
- resetKeyboardInteraction();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
+ resetKeyboardInteraction();if(typeof simpleIme!=='undefined'&&simpleIme)simpleIme.reset();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
 }
 function resetKeyboardInteraction(){clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null;}
 function smartNext(){
@@ -212,48 +212,88 @@ function useVirtualKeyboard(){return state.inputMethod!=='system'&&view==='smart
 function useHangulKeyboard(){return useVirtualKeyboard()&&smartTask.mode==='spell'}
 function useChineseKeyboard(){return useVirtualKeyboard()&&smartTask.mode==='meaning'}
 function chineseGlosses(){return scope().map(w=>w[2])}
+// Chinese IME is input-only; no scheduler, FSRS or study persistence changes.
+const CHINESE_IME_ENGINE=new URLSearchParams(location.search).get('chineseIme')==='legacy'?'legacy':'simple-ime';
+window.CHINESE_IME_ENGINE=CHINESE_IME_ENGINE;
+const simpleIme=CHINESE_IME_ENGINE==='simple-ime'&&window.SimpleImeCore&&window.TOPIK_SimpleImeAdapter
+ ?new window.TOPIK_SimpleImeAdapter(window.SimpleImeCore,10):null;
+if(CHINESE_IME_ENGINE==='simple-ime'&&!simpleIme)console.error('simple-ime assets unavailable: legacy candidate fallback is intentionally disabled');
+function chineseImeCandidates(){
+ if(CHINESE_IME_ENGINE==='legacy')return TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses());
+ return simpleIme?simpleIme.getCandidates():[];
+}
+function syncChineseAnswer(){
+ const input=document.getElementById('spell-input');if(input)input.value=typed;
+}
+function commitChineseCandidate(index=0){
+ if(CHINESE_IME_ENGINE==='legacy'){
+  const choice=chineseImeCandidates()[index];if(!choice)return false;
+  const result=TOPIK_PINYIN.select(typed,pinyinComposition,choice);
+  typed=result.answer;pinyinComposition=result.composition;
+ }else{
+  if(!simpleIme)return false;
+  const choice=simpleIme.selectCandidate(index);if(!choice)return false;
+  typed+=choice;pinyinComposition=simpleIme.getComposition();
+ }
+ pinyinPage=0;pinyinExpanded=false;syncChineseAnswer();updatePinyinDisplay();return true;
+}
 function updatePinyinDisplay(){
  const label=document.getElementById('pinyin-composition'),list=document.getElementById('pinyin-candidates');
  if(!label||!list)return;
+ if(CHINESE_IME_ENGINE==='simple-ime')pinyinComposition=simpleIme?.getComposition()||'';
  label.textContent=pinyinComposition||'';
- const choices=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses());
- pinyinPage=0;
- list.innerHTML=choices.map((w,i)=>'<button type="button" data-pinyin-choice="'+i+'">'+quote(w)+'</button>').join('');
+ const choices=chineseImeCandidates();
+ const isSimple=CHINESE_IME_ENGINE==='simple-ime';
+ const pageSize=10;
+ const page=isSimple?(simpleIme?.page||0):0;
+ const shown=pinyinExpanded?choices:choices.slice(page*pageSize,(page+1)*pageSize);
+ list.innerHTML=shown.map((w,i)=>'<button type="button" data-pinyin-choice="'+(pinyinExpanded?i:page*pageSize+i)+'">'+quote(w)+'</button>').join('');
+ if(isSimple&&!pinyinExpanded&&choices.length>pageSize){
+  if(page>0)list.insertAdjacentHTML('afterbegin','<button type="button" data-ime-prev aria-label="上一页候选">‹</button>');
+  if((page+1)*pageSize<choices.length)list.insertAdjacentHTML('beforeend','<button type="button" data-ime-next aria-label="下一页候选">›</button>');
+ }
  const expand=document.querySelector('[data-pinyin-expand]');
  if(expand){expand.hidden=choices.length<4;expand.setAttribute('aria-expanded',String(pinyinExpanded));}
  list.classList.toggle('expanded',pinyinExpanded);
- list.querySelectorAll('[data-pinyin-choice]').forEach(b=>b.onclick=()=>{
-  const choice=choices[Number(b.dataset.pinyinChoice)];if(!choice)return;
-  const result=TOPIK_PINYIN.select(typed,pinyinComposition,choice);
-  typed=result.answer;pinyinComposition=result.composition;pinyinPage=0;pinyinExpanded=false;
-  const input=document.getElementById('spell-input');if(input)input.value=typed;updatePinyinDisplay();
- });
-
+ list.querySelectorAll('[data-pinyin-choice]').forEach(b=>b.onclick=()=>commitChineseCandidate(Number(b.dataset.pinyinChoice)));
+ const next=list.querySelector('[data-ime-next]');if(next)next.onclick=()=>{simpleIme.nextPage();updatePinyinDisplay()};
+ const prev=list.querySelector('[data-ime-prev]');if(prev)prev.onclick=()=>{simpleIme.previousPage();updatePinyinDisplay()};
+ if(isSimple&&pinyinComposition)console.debug({engine:'simple-ime',composition:pinyinComposition,candidateCount:choices.length,candidates:choices.slice(0,50)});
 }
 function applyPinyinSymbol(symbol){
  if(!useChineseKeyboard()||didCheck||pendingRating)return;
- if(pinyinComposition){const first=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];if(first){const result=TOPIK_PINYIN.select(typed,pinyinComposition,first);typed=result.answer;pinyinComposition=''}else{notify('请先选择拼音候选');return}}
- const result=TOPIK_PINYIN.update(typed,pinyinComposition,'insert:'+symbol);
- typed=result.answer;pinyinComposition=result.composition;
- const input=document.getElementById('spell-input');if(input)input.value=typed;
- updatePinyinDisplay();
+ if(pinyinComposition&&!commitChineseCandidate(0)){notify('请先选择拼音候选');return}
+ if(CHINESE_IME_ENGINE==='legacy'){
+  const result=TOPIK_PINYIN.update(typed,pinyinComposition,'insert:'+symbol);
+  typed=result.answer;pinyinComposition=result.composition;
+ }else typed+=symbol;
+ syncChineseAnswer();updatePinyinDisplay();
 }
 function applyPinyinKey(key){
  if(!useChineseKeyboard()||didCheck||pendingRating)return;
- if(key==='space'&&pinyinComposition){const c=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];if(c){const result=TOPIK_PINYIN.select(typed,pinyinComposition,c);typed=result.answer;pinyinComposition=''}else notify('没有匹配候选，请修改拼音')}
- else{const result=TOPIK_PINYIN.update(typed,pinyinComposition,key);typed=result.answer;pinyinComposition=result.composition}
+ if(CHINESE_IME_ENGINE==='legacy'){
+  if(key==='space'&&pinyinComposition){if(!commitChineseCandidate(0))notify('没有匹配候选，请修改拼音')}
+  else{const result=TOPIK_PINYIN.update(typed,pinyinComposition,key);typed=result.answer;pinyinComposition=result.composition}
+ }else{
+  if(!simpleIme){notify('中文输入引擎尚未加载，请刷新页面');return}
+  if(key==='backspace'){
+   if(simpleIme.getComposition())simpleIme.backspace();
+   else typed=Array.from(typed).slice(0,-1).join('');
+  }else if(key==='space'){
+   if(simpleIme.getComposition()){if(!commitChineseCandidate(0)){notify('没有匹配候选，请修改拼音');return}}
+   else typed+=' ';
+  }else if(/^[a-z]$/i.test(key))simpleIme.input(key);
+  pinyinComposition=simpleIme.getComposition();
+ }
  if(pinyinShift&&/^[a-z]$/i.test(key)){pinyinShift=false;TOPIK_PINYIN.updateShift(document.querySelector('.pinyin-keyboard'),false)}
- pinyinPage=0;const input=document.getElementById('spell-input');if(input)input.value=typed;updatePinyinDisplay();
+ pinyinPage=0;syncChineseAnswer();updatePinyinDisplay();
 }
 function keyboardReturn(){
  if(didCheck||pendingRating)return;
- if(useChineseKeyboard()&&pinyinComposition){
-  const first=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];
-  if(!first){notify('没有匹配候选，请修改拼音');return}
-  const result=TOPIK_PINYIN.select(typed,pinyinComposition,first);
-  typed=result.answer;pinyinComposition=result.composition;
-  const input=document.getElementById('spell-input');if(input)input.value=typed;
-  updatePinyinDisplay();return;
+ if(useChineseKeyboard()){
+  if(pinyinComposition&&!commitChineseCandidate(0))notify('没有匹配候选，请修改拼音');
+  // Return never submits a study answer in Chinese keyboard mode.
+  return;
  }
  // Korean jamo are already synchronously assembled by TOPIK_HANGUL.edit.
  smartSubmit();
