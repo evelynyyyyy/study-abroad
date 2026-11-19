@@ -17,7 +17,6 @@ assert.match(css,/\.smart-bottom\.has-keyboard[\s\S]*?position:fixed!important;l
 assert.match(css,/\.study-keyboard-dock\{[^}]*safe-area-inset-bottom/,'virtual keyboard retains bottom safe area');
 assert.match(patch,/\.smart-feedback\.good\{color:#A8E6CF\}/,'correct feedback is mint');
 assert.ok(!patch.includes('--success:'),'mint does not change the global success palette');
-assert.ok(!patch.includes('--success:'),'global success palette unchanged');
 assert.ok(!patch.includes('.smart-progress i{'),'progress color unchanged');
 assert.match(css,/\.smart-start-stack\{display:flex;flex-direction:column;gap:16px/,'home actions retain separate spacing');
 assert.ok(app.includes('data-smart-start="learn"')&&app.includes('data-smart-start="review"'),'two independent actions');
