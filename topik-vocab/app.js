@@ -121,7 +121,7 @@ function smartPick(){
  const history=state.smartHistory||[];
  const previousMode=state.smartInputDirection||null;
  smartTask=TOPIK_SMART.select(state,scope(),levelDayInfo(),state.dailyGoal,history,Date.now(),previousMode);
- typed='';didCheck=false;pendingRating=false;smartResult=null;
+ typed='';hangulShift=false;didCheck=false;pendingRating=false;smartResult=null;
 }
 function smartNext(){
  if(!smartTask)return;
