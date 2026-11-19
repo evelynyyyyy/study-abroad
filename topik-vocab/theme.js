@@ -20,7 +20,10 @@ function create(options){
   doc.documentElement.style.colorScheme=effective;
   const meta=themeMeta();if(meta)meta.setAttribute('content',effective==='dark'?'#1c1c1e':'#f7f7f9');
   const toggle=doc.getElementById('theme-toggle');
-  if(toggle)toggle.setAttribute('aria-label','主题：'+(mode==='system'?'跟随系统':mode==='dark'?'深色':'浅色')+'，点击切换');
+  const names={system:'◐ 跟随系统',light:'☀ 浅色',dark:'☾ 深色'};
+  if(toggle){toggle.textContent=names[mode];toggle.setAttribute('aria-label','外观：'+names[mode]+'，当前'+(effective==='dark'?'深色':'浅色')+'，打开主题选项')}
+  const choice=doc.getElementById('theme-choice');if(choice)choice.value=mode;
+  doc.querySelectorAll?.('[data-theme-option]').forEach(button=>{const selected=button.dataset.themeOption===mode;button.setAttribute('aria-checked',String(selected));button.classList.toggle('selected',selected)});
   return effective;
  }
  function setMode(next){
