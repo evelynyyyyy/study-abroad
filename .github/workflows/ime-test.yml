@@ -1,0 +1,60 @@
+name: Test real simple-ime engine
+on:
+  workflow_dispatch:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/ime-test.yml'
+      - 'topik-vocab/ime-experiment/simple-ime.acceptance.test.ts'
+permissions:
+  contents: write
+jobs:
+  verify-simple-ime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'upstream-simple-ime/package-lock.json'
+      - name: Fetch pinned upstream simple-ime source (MIT)
+        run: |
+          git clone https://github.com/nieyuyao/simple-ime.git upstream-simple-ime
+          cd upstream-simple-ime
+          git checkout d503bee97392f3b99e1fb9d6f23cecc86ced6f26
+          test "$(git rev-parse HEAD)" = "d503bee97392f3b99e1fb9d6f23cecc86ced6f26"
+          cp ../topik-vocab/ime-experiment/simple-ime.acceptance.test.ts tests/topik-integration.test.ts
+      - name: Install actual upstream dependencies
+        working-directory: upstream-simple-ime
+        run: npm ci
+      - name: Build actual upstream engine package
+        working-directory: upstream-simple-ime
+        run: npm run build
+      - name: Test real candidate engine and print returned candidates
+        id: acceptance
+        working-directory: upstream-simple-ime
+        env:
+          IME_UPSTREAM_SHA: d503bee97392f3b99e1fb9d6f23cecc86ced6f26
+          IME_RESULTS_PATH: ../topik-vocab/ime-experiment/results.json
+        run: npx vitest run tests/topik-integration.test.ts --reporter=verbose
+      - name: Record actual candidate results even when acceptance fails
+        if: always()
+        run: |
+          if [ ! -f topik-vocab/ime-experiment/results.json ]; then
+            printf '{"engine":"simple-ime","status":"build-or-test-failed-before-report","run":"%s","sha":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > topik-vocab/ime-experiment/results.json
+          fi
+          cat topik-vocab/ime-experiment/results.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add topik-vocab/ime-experiment/results.json
+          if ! git diff --cached --quiet; then git commit -m 'Record actual simple-ime acceptance results [skip ci]' && git push; fi
+      - name: Publish results in workflow summary
+        if: always()
+        run: |
+          echo '## Real simple-ime engine acceptance' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Upstream: nieyuyao/simple-ime @ d503bee97392f3b99e1fb9d6f23cecc86ced6f26' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Results: topik-vocab/ime-experiment/results.json' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The production keyboard is unchanged.' >> "$GITHUB_STEP_SUMMARY"
