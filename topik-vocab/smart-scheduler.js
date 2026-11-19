@@ -15,24 +15,49 @@ window.TOPIK_SMART={
   if(!seen)return 'NEW';
   // Preserve old review schedules and historical answers, never erase or re-grade them.
   const reviewEvidence=['meaning','spell'].some(m=>p[m]?.memory?.phase==='review'||Number(p[m]?.memory?.crossDaySuccess)>0);
-  const historical=(Number(p.meaning?.correct||0)+Number(p.spell?.correct||0))>=4&&!!p.meaning?.last&&!!p.spell?.last;
-  const wordState=reviewEvidence||historical?'REVIEW':'LEARNING';
-  state.lifecycle[ko]={...r,wordState,learningSuccessCount:0,learningFailureCount:0,lastLearningSeenAt:Number(r.seenAt||0),learningByMode:{meaning:0,spell:0},learningStreak:0};
+  // Legacy REVIEW schedules are preserved, but raw answer totals are not proof
+  // of the new three-round graduation requirement.
+  const wordState=reviewEvidence?'REVIEW':'LEARNING';
+  state.lifecycle[ko]={...r,wordState,learningSuccessCount:Number(r.learningSuccessCount)||0,learningFailureCount:Number(r.learningFailureCount)||0,lastLearningSeenAt:Number(r.lastLearningSeenAt||r.seenAt||0),learningByMode:r.learningByMode||{meaning:0,spell:0},learningStreak:Number(r.learningStreak)||0};
   return wordState;
  },
  learningResult(state,ko,mode,success,now=Date.now(),rating='good'){
-  const r=state.lifecycle[ko],counts=r.learningByMode||(r.learningByMode={meaning:0,spell:0});
+  const r=state.lifecycle?.[ko];
+  if(!r||r.wordState!=='LEARNING'||!['meaning','spell'].includes(mode))return r?.wordState||'NEW';
+  const counts=r.learningByMode||(r.learningByMode={meaning:0,spell:0});
+  // Durable global event numbers survive reloads and pool switching.
+  const serial=state.learningRecallSerial=(Number(state.learningRecallSerial)||0)+1;
+  const events=state.learningRecallEvents||(state.learningRecallEvents=[]);
+  const proof=r.learningProof||(r.learningProof={round:0,lastSerial:0});
+  const lastSerial=Number(proof.lastSerial)||0;
+  const between=lastSerial?new Set(events.filter(e=>e.serial>lastSerial&&e.ko!==ko).map(e=>e.ko)).size:0;
+  const available=Number(state.learningActiveWindow)||10;
+  const required=Math.min(3,Math.max(1,available-1));
+  const spacingOk=!lastSerial||between>=required;
+  const expected=proof.round===0?'meaning':proof.round===1?'spell':null;
+  const orderOk=!expected||mode===expected;
+  events.push({serial,ko,mode,success:!!success,at:now});
+  if(events.length>150)events.splice(0,events.length-150);
   r.lastLearningSeenAt=now;
   if(success){
-   counts[mode]=(counts[mode]||0)+1;r.learningSuccessCount=(r.learningSuccessCount||0)+1;
-   r.learningStreak=(r.learningStreak||0)+1;
+   counts[mode]=(Number(counts[mode])||0)+1;
+   r.learningSuccessCount=(Number(r.learningSuccessCount)||0)+1;
+   if(spacingOk&&orderOk){
+    proof.round=Math.min(3,proof.round+1);
+    proof.lastSerial=serial;
+    proof.directions=(proof.directions||[]).concat(mode).slice(-3);
+    r.learningStreak=proof.round;
+   }
   }else{
-   r.learningFailureCount=(r.learningFailureCount||0)+1;r.learningStreak=0;
+   r.learningFailureCount=(Number(r.learningFailureCount)||0)+1;
+   r.learningStreak=0;
+   proof.round=0;proof.lastSerial=0;proof.directions=[];
   }
-  // Dynamic 3-5+ successful retrievals, both directions, with a stable recent streak.
-  const threshold=Math.min(6,3+Math.min(3,r.learningFailureCount||0)+(rating==='hard'?1:0));
-  if(success&&counts.meaning>=1&&counts.spell>=1&&r.learningSuccessCount>=threshold&&r.learningStreak>=3){
-   r.wordState='REVIEW';r.graduatedAt=now;
+  // Only a meaning -> spell -> spaced third recall without intervening
+  // mistakes is valid; a retry after a wrong answer begins at round one.
+  if(success&&proof.round===3&&proof.directions[0]==='meaning'&&proof.directions[1]==='spell'&&
+     proof.directions.length===3&&!r.graduatedAt){
+   r.wordState='REVIEW';r.graduatedAt=now;r.graduationEvidence={...proof,verifiedAt:now};
    state.progress=state.progress||{};const p=state.progress[ko]||(state.progress[ko]={});
    for(const direction of ['meaning','spell']){
     const old=p[direction]||{};
