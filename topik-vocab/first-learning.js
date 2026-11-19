@@ -25,15 +25,18 @@ mastery(state,ko){
 },
 shuffle(items){let a=items.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a},
 questions(words){
- let a=this.shuffle(words.map(word=>({word,mode:'meaning',retry:false})));
- let b=this.shuffle(words.map(word=>({word,mode:'spell',retry:false})));
+ const pool=this.shuffle(words.flatMap(word=>[{word,mode:'meaning',retry:false},{word,mode:'spell',retry:false}]));
  const out=[];
- while(a.length||b.length){
-  let src=out.length%2===0?a:b;if(!src.length)src=src===a?b:a;
-  const last=out.at(-1)?.word[1];let idx=src.findIndex(x=>x.word[1]!==last);if(idx<0)idx=0;
-  out.push(src.splice(idx,1)[0]);
+ while(pool.length){
+  const last=out.at(-1)?.word[1];
+  const counts=new Map();
+  for(const q of pool)counts.set(q.word[1],(counts.get(q.word[1])||0)+1);
+  let candidates=pool.filter(q=>q.word[1]!==last);
+  if(!candidates.length)candidates=pool;
+  candidates.sort((a,b)=>counts.get(b.word[1])-counts.get(a.word[1]));
+  const pick=candidates[0],i=pool.indexOf(pick);
+  out.push(pool.splice(i,1)[0]);
  }
- for(let i=1;i<out.length;i++)if(out[i].word[1]===out[i-1].word[1]){let j=out.findIndex((q,k)=>k>i&&q.word[1]!==out[i-1].word[1]&&(k===out.length-1||out[k+1].word[1]!==out[i].word[1]));if(j>i)[out[i],out[j]]=[out[j],out[i]]}
  return out;
 },
 newBatch(words){return {phase:'show',words:words.slice(0,this.LIMIT),index:0,queue:[],retry:[],retryCount:{},question:null,attempts:0,correct:0}},
