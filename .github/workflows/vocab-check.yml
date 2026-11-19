@@ -24,7 +24,10 @@ jobs:
           node --check topik-vocab/vocabulary.js
           node --check topik-vocab/study-context.js
           node --check topik-vocab/first-learning.js
-      - name: Test first learning lifecycle and independent recall\n        run: |\n          node topik-vocab/tests/first-learning.test.cjs\n      - name: Check site structure and title
+      - name: Test first learning lifecycle and independent recall
+        run: |
+          node topik-vocab/tests/first-learning.test.cjs
+      - name: Check site structure and title
         run: |
           node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./styles.css'])if(!h.includes(x))process.exit(1)"
           test -f topik-vocab/styles.css
