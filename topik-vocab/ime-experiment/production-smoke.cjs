@@ -14,8 +14,9 @@ async function typeKorean(page,keys){const shifted={'ㅃ':'ㅂ','ㅉ':'ㅈ','ㄸ
  await setTask(page,'meaning');
  await page.waitForFunction(()=>typeof simpleIme!=='undefined'&&!!simpleIme,{timeout:30000});
  const lazyMs=Date.now()-start;
+ const candidateTimings=[];
  for(const [py,expected] of Object.entries(words)){
-   await setTask(page,'meaning');await typeChinese(page,py);
+   await setTask(page,'meaning');const candidateStart=Date.now();await typeChinese(page,py);candidateTimings.push(Date.now()-candidateStart);
    const all=await page.evaluate(()=>simpleIme.getCandidates());
    assert.ok(all.includes(expected),name+' '+py+' missing '+expected+' in '+all.slice(0,20));
    const index=all.indexOf(expected);
@@ -67,6 +68,6 @@ async function typeKorean(page,keys){const shifted={'ㅃ':'ㅂ','ㅉ':'ㅈ','ㄸ
  for(const mode of directions){await setTask(page,mode);assert.equal(await page.locator(mode==='meaning'?'.pinyin-keyboard':'.hangul-keyboard').count(),1);assert.equal(await page.evaluate(()=>smartTask.mode),mode)}
  for(let i=0;i<100;i++){const mode=i%2?'meaning':'spell';await setTask(page,mode);if(mode==='meaning'){await typeChinese(page,'jian');assert.ok((await page.evaluate(()=>simpleIme.getCandidates())).includes('间'))}else{await typeKorean(page,['ㅎ','ㅏ','ㄱ']);assert.equal(await page.locator('#spell-input').inputValue(),'학')}}
  assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
- console.log(JSON.stringify({browser:name,kind:'study-page-100-tasks',tasks:100,lazyReadyMs:lazyMs,engine:'simple-ime',koreanSamples:samples.length,chineseSamples:Object.keys(words).length,errors,failed}));
+ console.log(JSON.stringify({browser:name,kind:'study-page-100-tasks',tasks:100,lazyReadyMs:lazyMs,engine:'simple-ime',koreanSamples:samples.length,chineseSamples:Object.keys(words).length,firstPhraseInputMs:candidateTimings[0],subsequentPhraseInputMeanMs:Math.round(candidateTimings.slice(1).reduce((a,b)=>a+b,0)/(candidateTimings.length-1)),errors,failed}));
  await browser.close();
 }})().catch(e=>{console.error(e);process.exit(1)});
