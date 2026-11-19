@@ -96,7 +96,7 @@ function levelBar(){return '<div class="level-switch" role="group" aria-label="é
 function smartDailyStats(){
  const key=today(), d=dayInfo(), words=scope(), allowed=new Set(words.map(w=>w[1]));
  const learned=new Set((d.learned||[]).filter(ko=>allowed.has(ko)));
- const graduated=words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.graduatedAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
+ const graduated=words.filter(w=>{const life=state.lifecycle?.[w[1]];const t=Number(life?.graduationEvidence?.verifiedAt||0);return t&&life?.graduatedAt&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
  const completed=new Set((d.smartReviewCompleted||[]).filter(ko=>allowed.has(ko)));
  const due=words.filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
  const reviewGoal=Math.max(Number(d.smartReviewGoal)||0,due+completed.size);
