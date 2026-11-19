@@ -1,3 +1,4 @@
+const releaseVersion=JSON.parse(require('node:fs').readFileSync('topik-vocab/release-source.json','utf8')).version;
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const c={window:{},Date,Math};vm.runInNewContext(fs.readFileSync('topik-vocab/first-learning.js','utf8'),c);
 vm.runInNewContext(fs.readFileSync('topik-vocab/smart-scheduler.js','utf8'),c);
@@ -45,7 +46,7 @@ assert.equal(F.stage(old,'집'),'consolidating');
 assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for consolidation');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const marker of ['data-smart-start="learn"','data-smart-start="review"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
-assert.ok(html.includes('smart-scheduler.js?v=3.8.5'));
+assert.ok(html.includes('smart-scheduler.js?v='+releaseVersion+''));
 assert.ok(app.includes('window.TOPIK_APP_VERSION'));
 
 // 30-task keyboard-mode independence: both due directions must appear.
