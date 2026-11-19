@@ -21,7 +21,7 @@ t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深�
 t.ctrl.setMode('system');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
-assert.ok(html.indexOf('theme.js?v=3.5.1')<html.indexOf('styles.css?v=3.5.3'),'theme must initialize before CSS');
+assert.ok(html.indexOf('theme.js?v=3.5.1')<html.indexOf('styles.css?v=3.5.4'),'theme must initialize before CSS');
 assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
