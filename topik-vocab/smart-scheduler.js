@@ -86,13 +86,19 @@ window.TOPIK_SMART={
   if(!eligible.length)eligible=candidates;
   const due=eligible.filter(c=>c.type==='typing').sort((a,b)=>b.score-a.score);
   const fresh=eligible.filter(c=>c.type==='show');
+  // Avoid introducing very similar Hangul spellings back-to-back when alternatives exist.
+  const recentSpellings=history.slice(-3);
+  const distinctFresh=fresh.filter(c=>!recentSpellings.some(prev=>{
+   const ko=c.word[1];return ko.length>=3&&prev.length>=3&&ko.slice(0,2)===prev.slice(0,2)&&Math.abs(ko.length-prev.length)<=2;
+  }));
+  const nextFresh=(distinctFresh.length?distinctFresh:fresh)[0];
   // Explicit relearning takes priority when it does not repeat the immediately previous word.
   if(relearn&&relearn.word[1]!==history.at(-1))return relearn;
   // Dynamically interleave new words among due work without a fixed-size batch.
   const newSlot=history.length%4===0;
-  if(fresh.length&&(!due.length||newSlot))return fresh[0];
+  if(fresh.length&&(!due.length||newSlot))return nextFresh;
   // Avoid the same word in both directions back-to-back whenever alternatives exist.
-  return due[0]||fresh[0]||null;
+  return due[0]||nextFresh||null;
  },
  summary(state,words,day,goal,now=Date.now()){
   let due=0;
