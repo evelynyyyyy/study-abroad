@@ -6,6 +6,11 @@ on:
     paths:
       - '.github/workflows/ime-study-e2e.yml'
       - 'topik-vocab/ime-experiment/production-smoke.cjs'
+      - 'topik-vocab/app.js'
+      - 'topik-vocab/index.html'
+      - 'topik-vocab/hangul-keyboard.js'
+      - 'topik-vocab/pinyin-keyboard.js'
+      - 'topik-vocab/styles.css'
 permissions:
   contents: read
 jobs:
