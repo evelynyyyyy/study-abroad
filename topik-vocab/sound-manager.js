@@ -43,34 +43,31 @@
      osc.start(at);osc.stop(at+len+.005);
     };
     if(type==='key'||type==='function'){
-     // Short, dry iOS-style synthetic click: filtered transient + subdued body.
-     // Keep the whole click in one voice to avoid exhausting the polyphony cap.
-     const isFunction=type==='function',variation=(Math.random()-.5)*.10;
-     const duration=isFunction?.032:.025,noiseLength=isFunction?.021:.017;
-     const samples=Math.ceil(ctx.sampleRate*noiseLength);
-     const buffer=ctx.createBuffer(1,samples,ctx.sampleRate),data=buffer.getChannelData(0);
-     for(let i=0;i<samples;i++)data[i]=(Math.random()*2-1);
-     const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),noiseGain=ctx.createGain();
-     const body=ctx.createOscillator(),bodyGain=ctx.createGain();
-     const output=ctx.createGain();this.active++;
-     noise.buffer=buffer;filter.type='bandpass';
-     filter.frequency.setValueAtTime((isFunction?1950:2650)*(1+variation),now);
-     filter.Q.value=isFunction?.7:.85;
-     noiseGain.gain.setValueAtTime(.0001,now);
-     noiseGain.gain.linearRampToValueAtTime(1,now+.001);
-     noiseGain.gain.exponentialRampToValueAtTime(.0001,now+noiseLength);
-     body.type='triangle';
-     body.frequency.setValueAtTime((isFunction?650:900)*(1+variation*.35),now);
-     bodyGain.gain.setValueAtTime(.0001,now);
-     bodyGain.gain.linearRampToValueAtTime(isFunction?.018:.011,now+.001);
-     bodyGain.gain.exponentialRampToValueAtTime(.0001,now+(isFunction?.018:.012));
-     output.gain.value=(isFunction?.24:.19)*(1+variation)*(this.mode==='standard'?1:.58)*scale;
-     noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(output);
-     body.connect(bodyGain);bodyGain.connect(output);output.connect(ctx.destination);
-     body.onended=()=>{this.active=Math.max(0,this.active-1);
-      try{noise.disconnect();filter.disconnect();noiseGain.disconnect();body.disconnect();bodyGain.disconnect();output.disconnect()}catch(_){}};
-     noise.start(now);noise.stop(now+noiseLength+.001);
-     body.start(now);body.stop(now+duration);
+     // Two tightly spaced, band-limited PCM impulses; no pitched oscillator.
+     const isFunction=type==='function';
+     const sampleRate=ctx.sampleRate, length=Math.ceil(sampleRate*(isFunction?.028:.023));
+     const buffer=ctx.createBuffer(1,length,sampleRate),samples=buffer.getChannelData(0);
+     const jitter=1+(Math.random()-.5)*.045;
+     // High-pass colored noise avoids hiss and removes any discernible note.
+     let previous=0;
+     for(let i=0;i<length;i++){
+      const t=i/sampleRate;
+      const white=Math.random()*2-1;
+      const high=white-previous*.86;previous=white;
+      const tick=t<.012?Math.exp(-t/(isFunction?.0038:.0031)):0;
+      const tockTime=t-.0042;
+      const tock=tockTime>=0?Math.exp(-tockTime/(isFunction?.0065:.0047)):0;
+      samples[i]=Math.max(-1,Math.min(1,high*(tick*.75+tock*.38)*jitter));
+     }
+     const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
+     source.buffer=buffer;filter.type='lowpass';
+     filter.frequency.value=(isFunction?3200:4200)*(1+(Math.random()-.5)*.05);
+     gain.gain.value=(isFunction?.36:.29)*(this.mode==='standard'?1:.58)*scale;
+     source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+     this.active++;
+     source.onended=()=>{this.active=Math.max(0,this.active-1);
+      try{source.disconnect();filter.disconnect();gain.disconnect()}catch(_){}};
+     source.start(now);
      return;
     }
     if(type==='test'){playTone(950,now,.09,.30);playTone(1180,now+.09,.09,.27)}
