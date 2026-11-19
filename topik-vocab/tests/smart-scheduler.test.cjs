@@ -45,5 +45,5 @@ assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const marker of ['data-smart-start="1"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;persist();render()'])assert.ok(app.includes(marker),marker);
 assert.ok(html.includes('smart-scheduler.js?v=3.1.0'));
-assert.ok(app.includes('版本 v3.0.0'));
+assert.ok(app.includes('版本 v3.1.0'));
 console.log('Minute steps, cross-day review, independent directions, lapse, persistence and legacy migration passed.');
