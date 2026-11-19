@@ -15,13 +15,13 @@ function make(initialDark,preference){
  return {ctrl:ctx.window.TOPIK_THEME.create({document:doc,media,storage}),doc,media,meta,store,toggle,choice,buttons};
 }
 let t=make(false);assert.equal(t.ctrl.getMode(),'system');assert.equal(t.doc.documentElement.dataset.theme,'light');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');
-t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');assert.equal(t.meta.value,'#1c1c1e');
+t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');assert.equal(t.meta.value,'#000000');
 t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'light');
 t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深色'));assert.equal(t.choice.value,'dark');t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t.ctrl.setMode('system');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
-assert.ok(html.indexOf('theme.js?v=3.3.2')<html.indexOf('styles.css?v=3.3.2'),'theme must initialize before CSS');
+assert.ok(html.indexOf('theme.js?v=3.4.0')<html.indexOf('styles.css?v=3.4.0'),'theme must initialize before CSS');
 assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
@@ -33,4 +33,8 @@ assert.ok(!app.includes("persist();render()});\ndocument.addEventListener('keydo
 assert.ok(!source.includes('smartTask')&&!source.includes('TOPIK_SMART')&&!source.includes('typed'),'theme controller must not access learning state');
 for(const token of ['--bg-primary','--bg-secondary','--surface','--text-primary','--text-secondary','--text-muted','--border','--button-primary','--button-primary-text','--input-bg','--input-border','--keyboard-bg','--keyboard-key-bg','--keyboard-key-text','--candidate-bg','--candidate-text'])assert.ok(css.includes(token),token);
 assert.ok(css.includes('.hangul-keyboard,.pinyin-keyboard'));
+for(const token of ['--background:#ffffff','--background:#000000','--surface-secondary:#f5f5f5','--surface-secondary:#1a1a1a','--keyboard-bg:#000000','--keyboard-bg:#ffffff','--radius-pill:9999px'])assert.ok(css.includes(token),token);
+assert.ok(css.includes('.level-switch button.active')&&css.includes('var(--button-primary-bg)'));
+assert.ok(css.includes('.toast{background:var(--surface-secondary)'));
+assert.ok(html.includes('◐ 主题')&&!html.includes('id="theme-menu"'));
 console.log('System theme startup, live changes, overrides, restore, metadata and learning isolation passed.');
