@@ -21,7 +21,7 @@ function update(answer,composition,key){
  if(key==='clear')return {answer:'',composition:''};
  if(key==='backspace')return composition?{answer,composition:composition.slice(0,-1)}:{answer:answer.slice(0,-1),composition};
  if(key==='space')return {answer:answer+' ',composition};
- if(/^[a-z]$/.test(key))return {answer,composition:composition+key};
+ if(/^[a-z]$/i.test(key))return {answer,composition:composition+key.toLowerCase()};
  return {answer,composition};
 }
 function select(answer,composition,candidate){return {answer:answer+candidate,composition:''}}
@@ -32,8 +32,9 @@ function render(){
  '<div class="ios-candidate-strip"><div class="pinyin-composition" id="pinyin-composition" aria-live="polite"></div><div class="pinyin-candidates" id="pinyin-candidates" aria-label="汉字候选"></div></div>'+
  '<div class="pinyin-row ios-row-first">'+[...rows[0]].map(key).join('')+'</div>'+
  '<div class="pinyin-row ios-row-second">'+[...rows[1]].map(key).join('')+'</div>'+
- '<div class="pinyin-row ios-row-third"><button type="button" class="pinyin-key pinyin-action ios-special ios-clear" data-pinyin-key="clear" aria-label="清空">清空</button>'+[...rows[2]].map(key).join('')+'<button type="button" class="pinyin-key pinyin-action ios-special ios-delete" data-pinyin-key="backspace" aria-label="删除">⌫</button></div>'+
+ '<div class="pinyin-row ios-row-third"><button type="button" class="pinyin-key pinyin-action ios-special ios-shift" data-pinyin-shift="1" aria-label="Shift" aria-pressed="false"><span aria-hidden="true">⇧</span></button>'+[...rows[2]].map(key).join('')+'<button type="button" class="pinyin-key pinyin-action ios-special ios-delete" data-pinyin-key="backspace" aria-label="删除">⌫</button></div>'+
  '<div class="pinyin-row ios-row-bottom"><button type="button" class="pinyin-key pinyin-space ios-space" data-pinyin-key="space" aria-label="空格">中文</button><button type="button" class="pinyin-key pinyin-action ios-return" data-smart-submit="1" aria-label="提交答案">↵</button></div></div>';
 }
-root.TOPIK_PINYIN={candidates,update,select,render,dictionary};
+function updateShift(container,shift){if(!container)return;container.querySelectorAll('[data-pinyin-key]').forEach(b=>{if(/^[a-z]$/.test(b.dataset.pinyinKey||''))b.textContent=shift?b.dataset.pinyinKey.toUpperCase():b.dataset.pinyinKey});const b=container.querySelector('[data-pinyin-shift]');if(b){b.setAttribute('aria-pressed',String(shift));const icon=b.querySelector('span');if(icon)icon.textContent=shift?'⬆':'⇧';}}
+root.TOPIK_PINYIN={candidates,update,select,render,updateShift,dictionary};
 })(typeof window!=='undefined'?window:globalThis);
