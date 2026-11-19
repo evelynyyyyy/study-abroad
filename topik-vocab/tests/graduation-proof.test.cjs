@@ -24,7 +24,7 @@ assert.equal(answer(target,'spell',true,23),'LEARNING','back-to-back cannot qual
 gap(30);
 assert.equal(answer(target,'spell',true,40),'LEARNING','round one must be Korean-to-Chinese');
 gap(50);
-assert.equal(answer(target,'meaning',true,60),'LEARNING','wrong direction cannot advance round two');
+assert.equal(answer(target,'meaning',true,60),'LEARNING','third recall must not graduate without the spaced second direction');
 gap(70);
 assert.equal(answer(target,'spell',true,80),'LEARNING');
 gap(90);
