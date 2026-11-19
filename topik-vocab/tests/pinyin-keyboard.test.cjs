@@ -34,7 +34,7 @@ assert.ok(K.render().includes('data-smart-submit="1"'));
 assert.ok(app.includes('function keyboardReturn()'));
 assert.ok(app.includes('function bindDeleteRepeat('));
 assert.ok(app.includes('pinyinShift=!pinyinShift'));
-assert.ok(app.includes('const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck'));
+assert.ok(app.includes('const webKeyboard=!isShow&&useVirtualKeyboard()&&!didCheck'));
 assert.ok(app.includes('pinyinComposition||\'\''));
 
 const jian=K.candidates('jian');assert.ok(jian.length>=20);
