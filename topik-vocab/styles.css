@@ -271,3 +271,9 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
  .study-focus-mode .topbar>strong{font-size:15px!important;font-weight:500!important}
  .study-focus-mode .content{padding-top:14px}
 }
+
+.study-back{display:none}
+@media(max-width:760px){
+ .study-focus-mode .header-brand{display:none}
+ .study-focus-mode .study-back{display:inline-flex;align-items:center;font-size:14px;font-weight:500;padding:6px 0}
+}
