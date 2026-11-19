@@ -4,7 +4,44 @@
  */
 'use strict';
 window.TOPIK_SMART={
- DAY:86400000, MIN_GAP:2, VERSION:'3.7.4',
+ DAY:86400000, MIN_GAP:2, VERSION:'3.7.23',
+ // Explicit lifecycle: short-term learning never invokes FSRS; graduated words enter dated review.
+ wordState(state,ko){
+  state.lifecycle=state.lifecycle||{};
+  const r=state.lifecycle[ko]||{};
+  if(['NEW','LEARNING','REVIEW','RELEARNING'].includes(r.wordState))return r.wordState;
+  const p=state.progress?.[ko]||{};
+  const seen=!!(r.seenAt||p.read?.last||p.meaning?.last||p.spell?.last);
+  if(!seen)return 'NEW';
+  // Preserve old review schedules and historical answers, never erase or re-grade them.
+  const reviewEvidence=['meaning','spell'].some(m=>p[m]?.memory?.phase==='review'||Number(p[m]?.memory?.crossDaySuccess)>0);
+  const historical=(Number(p.meaning?.correct||0)+Number(p.spell?.correct||0))>=4&&!!p.meaning?.last&&!!p.spell?.last;
+  const wordState=reviewEvidence||historical?'REVIEW':'LEARNING';
+  state.lifecycle[ko]={...r,wordState,learningSuccessCount:0,learningFailureCount:0,lastLearningSeenAt:Number(r.seenAt||0),learningByMode:{meaning:0,spell:0},learningStreak:0};
+  return wordState;
+ },
+ learningResult(state,ko,mode,success,now=Date.now(),rating='good'){
+  const r=state.lifecycle[ko],counts=r.learningByMode||(r.learningByMode={meaning:0,spell:0});
+  r.lastLearningSeenAt=now;
+  if(success){
+   counts[mode]=(counts[mode]||0)+1;r.learningSuccessCount=(r.learningSuccessCount||0)+1;
+   r.learningStreak=(r.learningStreak||0)+1;
+  }else{
+   r.learningFailureCount=(r.learningFailureCount||0)+1;r.learningStreak=0;
+  }
+  // Dynamic 3-5+ successful retrievals, both directions, with a stable recent streak.
+  const threshold=Math.min(6,3+Math.min(3,r.learningFailureCount||0)+(rating==='hard'?1:0));
+  if(success&&counts.meaning>=1&&counts.spell>=1&&r.learningSuccessCount>=threshold&&r.learningStreak>=3){
+   r.wordState='REVIEW';r.graduatedAt=now;
+   state.progress=state.progress||{};const p=state.progress[ko]||(state.progress[ko]={});
+   for(const direction of ['meaning','spell']){
+    const old=p[direction]||{};
+    p[direction]={...old,due:now+this.DAY,last:now,memory:{...(old.memory||{}),schedulerVersion:3,phase:'review',learningStep:0,stability:.35,difficulty:5,lastReview:now,nextReview:now+this.DAY,successes:0,crossDaySuccess:0}};
+   }
+  }
+  return r.wordState;
+ },
+
  session:null,
  resetSession(){this.session={index:0,words:new Map()};},
  sessionEntry(ko){if(!this.session)this.resetSession();if(!this.session.words.has(ko))this.session.words.set(ko,{count:0,last:-1000,byMode:{meaning:{wins:0,last:-1000},spell:{wins:0,last:-1000}},failed:false,outcome:'correct'});return this.session.words.get(ko)},
@@ -113,50 +150,37 @@ window.TOPIK_SMART={
  },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
  select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null){
-  const relearn=window.TOPIK_RELEARN?.select(state,words,history,now);
-  const recent=history.slice(-this.MIN_GAP),introduced=new Set(day.learned||[]);
-  const candidates=[],fresh=[];
+  const recent=history.slice(-3),introduced=new Set(day.learned||[]);
+  const learning=[],review=[],fresh=[];
   for(const word of words){
-   const ko=word[1],stage=this.stage(state,ko,now),p=state.progress?.[ko]||{};
-   if(stage==='unseen'){fresh.push({word,type:'show',mode:null,score:0});continue}
-   for(const mode of ['meaning','spell']){
-    const q=p[mode],first=!!state.lifecycle?.[ko]?.first?.[mode]||!!q?.last;
-    const seenAt=state.lifecycle?.[ko]?.seenAt||p.read?.last||0;
-    if(!this.due(state,ko,mode,now))continue;
-    if(!first&&seenAt&&now-seenAt<3000)continue;
-    const m=this.normalize(state,ko,mode,now);
-    const overdue=q?.due?Math.max(0,(now-q.due)/this.DAY):0;
-    // First-time recall is a real due task: never bury the untested direction
-    // beneath an unlimited backlog of already-practiced short-step cards.
-    const score=(!first?this.CONFIG.firstRecallPriority:m.phase==='relearning'?145:m.phase==='learning'?120:100)+
-     (m.lastResult==='again'?20:0)+Math.min(80,overdue*12)+
-     (1-m.retrievability)*30+Math.min(20,(q?.wrong||0)*2);
-    candidates.push({word,type:'typing',mode,score});
+   const ko=word[1],phase=this.wordState(state,ko);
+   if(phase==='NEW'){if(introduced.size<goal)fresh.push({word,type:'show',mode:null,reason:'new-introduction'});continue}
+   if(phase==='LEARNING'){
+    const r=state.lifecycle[ko],counts=r.learningByMode||{};
+    const mode=(counts.meaning||0)<=(counts.spell||0)?'meaning':'spell';
+    const alternate=mode==='meaning'?'spell':'meaning';
+    for(const m of [mode,alternate]){
+     const candidate={word,type:'typing',mode:m,reason:'learning-recall'};
+     if(this.sessionEligible(candidate)&&!recent.includes(ko)){learning.push(candidate);break}
+    }
+    continue;
+   }
+   if(phase==='REVIEW'||phase==='RELEARNING'){
+    for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
+     const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
+     if(this.sessionEligible(candidate))review.push(candidate);
+    }
    }
   }
-  let eligible=candidates.filter(c=>this.sessionEligible(c));
-  eligible.sort((a,b)=>b.score-a.score);
-  // Soft anti-starvation: keyboard preference never enters task selection.
-  // Direction streak is a scheduling hint, not a reason to skip urgent lapses.
-  const best=eligible[0],recentModes=(state.smartDirectionHistory||[]).slice(-this.CONFIG.maxComparableRun);
-  const sameRun=preferredMode&&recentModes.length===this.CONFIG.maxComparableRun&&recentModes.every(m=>m===preferredMode);
-  const other=preferredMode&&best?eligible.find(c=>c.mode!==preferredMode):null;
-  const comparable=other&&other.score>=best.score-this.CONFIG.alternateScoreTolerance;
-  const same=preferredMode&&!sameRun&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-5):null;
-  const due=(sameRun&&comparable?other:null)||same||best,backlog=candidates.length;
-  const freshAllowed=introduced.size<goal&&
-   (!eligible.length||backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
-  const recentSpellings=history.slice(-3);
-  const distinct=fresh.filter(c=>!recentSpellings.some(prev=>window.TOPIK_LEXICON?.similar(c.word[1],prev)));
-  const nextFresh=(distinct.length?distinct:fresh).find(c=>this.sessionEligible(c))||
-    fresh.find(c=>this.sessionEligible(c));
-  let picked,reason;
-  if(relearn&&this.sessionEligible(relearn)){picked=relearn;reason='relearn'}
-  else if(due&&(!freshAllowed||this.session.index%5!==0)){picked=due;reason=sameRun&&comparable&&due===other?'direction-starvation-guard':!state.lifecycle?.[due.word[1]]?.first?.[due.mode]?'new-word-'+(due.mode==='meaning'?'recognition':'production'):'due-review'}
-  else if(freshAllowed&&nextFresh){picked=nextFresh;reason='new-word-introduction'}
-  else {picked=due||relearn||null;reason=picked?'due-review':'no-due-task'}
-  if(picked){picked={...picked,reason};}
-  return picked;
+  const byRecent=(a,b)=>recent.indexOf(a.word[1])-recent.indexOf(b.word[1]);
+  const nextReview=review.sort((a,b)=>(state.progress?.[a.word[1]]?.[a.mode]?.due||0)-(state.progress?.[b.word[1]]?.[b.mode]?.due||0))[0];
+  const nextLearning=learning.sort((a,b)=>(state.lifecycle[a.word[1]]?.lastLearningSeenAt||0)-(state.lifecycle[b.word[1]]?.lastLearningSeenAt||0))[0];
+  const nextFresh=fresh.find(c=>!recent.includes(c.word[1])&&this.sessionEligible(c));
+  // Separate pools; interleave tasks, never put new words into FSRS before graduation.
+  if(nextReview&&this.session.index%3===0)return nextReview;
+  if(nextLearning)return nextLearning;
+  if(nextFresh)return nextFresh;
+  return nextReview||null;
  },
  // Lightweight on-demand diagnostics; no persistent pre-generated direction queue.
  inspect(state,words,now=Date.now()){
@@ -176,17 +200,16 @@ window.TOPIK_SMART={
  },
  summary(state,words,day,goal,now=Date.now()){
   let due=0,consolidating=0,mastered=0,firstRecall=0;
-  const today=this.dayKey(now);
   for(const word of words){
-   const ko=word[1],stage=this.stage(state,ko,now);
-   if(stage==='unseen')continue;
-   if(stage==='mastered')mastered++;
-   if(['learning','consolidating'].includes(stage))consolidating++;
+   const ko=word[1],phase=this.wordState(state,ko);
+   if(phase==='LEARNING')consolidating++;
+   if(phase==='REVIEW'||phase==='RELEARNING'){
+    if(this.mastered(state,ko,now))mastered++;
+    if(['meaning','spell'].some(mode=>this.due(state,ko,mode,now)))due++;
+   }
    const firstAt=Number(state.lifecycle?.[ko]?.firstBothAt||0);
-   if(firstAt&&this.dayKey(firstAt)===today)firstRecall++;
-   for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now))due++;
+   if(firstAt&&this.dayKey(firstAt)===this.dayKey(now))firstRecall++;
   }
-  return {due,newCount:(day.learned||[]).length,firstRecall,consolidating,mastered,goal,
-   remaining:Math.max(0,goal-(day.learned||[]).length)};
+  return {due,newCount:(day.learned||[]).length,firstRecall,consolidating,mastered,goal,remaining:Math.max(0,goal-(day.learned||[]).length)};
  }
 };
