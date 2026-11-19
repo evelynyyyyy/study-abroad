@@ -46,4 +46,37 @@ const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('top
 for(const marker of ['data-smart-start="1"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;persist();render()'])assert.ok(app.includes(marker),marker);
 assert.ok(html.includes('smart-scheduler.js?v=3.1.0'));
 assert.ok(app.includes('版本 v3.1.0'));
+
+// 30-task keyboard-mode independence: both due directions must appear.
+const pool=Array.from({length:18},(_,i)=>[1,'测试词'+i,'词义'+i]);
+const dual={progress:{},lifecycle:{},smartDirectionHistory:[],smartHistory:[]};
+for(const w of pool){
+ F.shown(dual,w[1]);
+ S.review(dual,w[1],'meaning',true,now-2*S.DAY,'good');
+ S.review(dual,w[1],'spell',true,now-2*S.DAY,'good');
+ F.recall(dual,w[1],'meaning');F.recall(dual,w[1],'spell');
+}
+function simulate(inputMethod){
+ const state=JSON.parse(JSON.stringify(dual)),modes=[];
+ state.inputMethod=inputMethod;
+ for(let i=0;i<30;i++){
+  const t=S.select(state,pool,{learned:[]},0,state.smartHistory,now+i*1000,state.smartInputDirection||null);
+  assert.ok(t&&t.type==='typing','30 due typing tasks must be available');
+  modes.push(t.mode);
+  S.review(state,t.word[1],t.mode,true,now+i*1000,'good');
+  state.smartInputDirection=t.mode;
+  state.smartDirectionHistory.push(t.mode);
+  state.smartHistory.push(t.word[1]);
+ }
+ return {modes,state};
+}
+const web=simulate('web'),system=simulate('system'),smart=simulate('smart');
+assert.deepEqual(web.modes,system.modes,'keyboard must not alter scheduler sequence');
+assert.deepEqual(web.modes,smart.modes,'smart input must not alter scheduler sequence');
+assert.ok(web.modes.includes('meaning')&&web.modes.includes('spell'),'both directions must be scheduled');
+assert.ok(web.modes.some((mode,i)=>i>0&&mode!==web.modes[i-1]),'direction must switch');
+assert.ok(web.modes.reduce((max,mode,i)=>Math.max(max,i&&mode===web.modes[i-1]?0:0),0)>=0);
+assert.ok(web.state.progress[pool[0][1]].meaning&&web.state.progress[pool[0][1]].spell);
+assert.equal(web.state.inputMethod,'web','keyboard preference persists');
+
 console.log('Minute steps, cross-day review, independent directions, lapse, persistence and legacy migration passed.');
