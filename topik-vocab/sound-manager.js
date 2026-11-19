@@ -2,7 +2,7 @@
 (function(root){
  'use strict';
  const SoundManager={
-  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},
+  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,lastKeyTarget:null,deleteRepeat:0,
   init(){
    if(this.mode==='off'||typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
    try{if(!this.context)this.context=new (root.AudioContext||root.webkitAudioContext)();
@@ -42,31 +42,44 @@
      osc.onended=()=>{this.active=Math.max(0,this.active-1);try{osc.disconnect();gain.disconnect()}catch(_){}};
      osc.start(at);osc.stop(at+len+.005);
     };
-    if(type==='key'||type==='function'){
-     // Two tightly spaced, band-limited PCM impulses; no pitched oscillator.
-     const isFunction=type==='function';
-     const sampleRate=ctx.sampleRate, length=Math.ceil(sampleRate*(isFunction?.028:.023));
-     const buffer=ctx.createBuffer(1,length,sampleRate),samples=buffer.getChannelData(0);
-     const jitter=1+(Math.random()-.5)*.045;
-     // High-pass colored noise avoids hiss and removes any discernible note.
-     let previous=0;
-     for(let i=0;i<length;i++){
-      const t=i/sampleRate;
-      const white=Math.random()*2-1;
-      const high=white-previous*.86;previous=white;
-      const tick=t<.012?Math.exp(-t/(isFunction?.0038:.0031)):0;
-      const tockTime=t-.0042;
-      const tock=tockTime>=0?Math.exp(-tockTime/(isFunction?.0065:.0047)):0;
-      samples[i]=Math.max(-1,Math.min(1,high*(tick*.75+tock*.38)*jitter));
+    if(type==='key'||type==='function'||type==='delete'||type==='modifier'){
+     // Original, programmatically generated iOS-style approximation; not Apple audio.
+     // Precompute independent PCM samples once per AudioContext.
+     if(this.clickContext!==ctx||!this.clickBuffers){
+      const createClick=(kind)=>{
+       const rate=ctx.sampleRate;
+       const length=Math.ceil(rate*(kind==='delete'?.027:kind==='modifier'?.024:.021));
+       const buffer=ctx.createBuffer(1,length,rate),out=buffer.getChannelData(0);
+       let low=0,high=0;
+       for(let i=0;i<length;i++){
+        const t=i/rate,white=Math.random()*2-1;
+        low+=((kind==='delete'?.24:kind==='modifier'?.32:.42)*(white-low));
+        const band=low-high;high+=.09*band;
+        const first=Math.exp(-t/(kind==='delete'?.0037:.0026));
+        const offset=kind==='delete'?.006:kind==='modifier'?.0048:.0038;
+        const tail=t>=offset?Math.exp(-(t-offset)/(kind==='delete'?.0055:.0037)):0;
+        // Low-frequency rumble suppressed by differentiation; no oscillator or pitch.
+        out[i]=Math.max(-1,Math.min(1,band*(first*.85+tail*(kind==='delete'?.58:.34))));
+       }
+       return buffer;
+      };
+      this.clickBuffers={key:createClick('key'),delete:createClick('delete'),modifier:createClick('modifier')};
+      this.clickContext=ctx;
      }
-     const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
-     source.buffer=buffer;filter.type='lowpass';
-     filter.frequency.value=(isFunction?3200:4200)*(1+(Math.random()-.5)*.05);
-     gain.gain.value=(isFunction?.36:.29)*(this.mode==='standard'?1:.58)*scale;
-     source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+     const target=this.lastKeyTarget;
+     const descriptor=target?.dataset||{};
+     const keyName=String(descriptor.hangul||descriptor.pinyinKey||descriptor.hangulMode||descriptor.pinyinMode||'').toLowerCase();
+     const isDelete=type==='delete'||(type==='function'&&/backspace|delete/.test(keyName));
+     const isModifier=type==='modifier'||(type==='function'&&!isDelete);
+     const kind=isDelete?'delete':isModifier?'modifier':'key';
+     const source=ctx.createBufferSource(),gain=ctx.createGain();
+     source.buffer=this.clickBuffers[kind];
+     const isRepeat=isDelete&&stamp-(this.lastDeleteAt||0)<140;
+     if(isDelete)this.lastDeleteAt=stamp;
+     gain.gain.value=(kind==='key'?.36:kind==='delete'?.43:.39)*(this.mode==='standard'?1:.58)*scale*(isRepeat?.43:1);
+     source.connect(gain);gain.connect(ctx.destination);
      this.active++;
-     source.onended=()=>{this.active=Math.max(0,this.active-1);
-      try{source.disconnect();filter.disconnect();gain.disconnect()}catch(_){}};
+     source.onended=()=>{this.active=Math.max(0,this.active-1);try{source.disconnect();gain.disconnect()}catch(_){}};
      source.start(now);
      return;
     }
@@ -82,7 +95,7 @@
    try{if(document.hidden)SoundManager.context?.suspend().catch(()=>{});else if(SoundManager.mode!=='off')SoundManager.init()}catch(_){}
   });
   console.debug('[Sound] module loaded');
-  const unlock=()=>{SoundManager.unlocked=true;SoundManager.init()};
+  const unlock=e=>{SoundManager.unlocked=true;SoundManager.init();if(e.target?.closest)SoundManager.lastKeyTarget=e.target.closest('[data-hangul],[data-pinyin-key],[data-hangul-shift],[data-pinyin-shift],[data-hangul-mode],[data-pinyin-mode],[data-smart-submit]')};
   document.addEventListener('pointerdown',unlock,{capture:true,passive:true});
   document.addEventListener('touchstart',unlock,{capture:true,passive:true});
   document.addEventListener('click',unlock,{capture:true,passive:true});
