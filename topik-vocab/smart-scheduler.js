@@ -71,7 +71,7 @@ window.TOPIK_SMART={
     if(!first&&seenAt&&now-seenAt<3000)continue;
     const m=this.normalize(state,ko,mode,now);
     const lateness=q?.due?Math.max(0,(now-q.due)/this.DAY):0;
-    const score=(!first?90:60)+Math.min(40,lateness*8)+
+    const score=(m.lastResult==='again'?135:!first?90:60)+Math.min(40,lateness*8)+
      (q?.wrong?Math.min(30,q.wrong*3):0)+(m.lastResult==='wrong'?15:0)+
      Math.max(0,5-m.stability);
     candidates.push({word,type:'typing',mode,score});
