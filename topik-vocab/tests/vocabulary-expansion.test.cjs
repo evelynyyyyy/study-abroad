@@ -18,6 +18,6 @@ assert.equal(new Set([...before,...additions.map(w=>w[1])]).size,4571);
 assert.ok(app.includes('window.TOPIK_VERIFIED_ADDITIONS||[]'));
 assert.ok(app.includes('function lexicalRank(w)'));
 assert.ok(app.includes('function collectionChooser()'));
-assert.ok(html.includes('./data/verified-expansion.js?v=2.1.0'));
+assert.ok(html.includes('./data/verified-expansion.js?v='+JSON.parse(fs.readFileSync('topik-vocab/release-source.json','utf8')).version));
 assert.ok(app.includes("const STORAGE='topik_lab_v2'"),'progress key remains stable');
 console.log('Vocabulary audit and expansion passed: 4411 -> 4571 unique forms, 160 new, source ranks preserved.');
