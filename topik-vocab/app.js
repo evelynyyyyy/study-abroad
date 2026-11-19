@@ -12,7 +12,7 @@ const state=parse(STORAGE,{});
 state.progress=state.progress||{};state.lifecycle=state.lifecycle||{};state.dailyGoal=Math.max(0,Math.min(200,Number(state.dailyGoal??20)));state.smartHistory=state.smartHistory||[];state.smartAnswerHistory=state.smartAnswerHistory||[];state.relearn=state.relearn||{};state.favorites=state.favorites||[];state.daily=state.daily||{};delete state.goal;state.theme=window.TOPIK_THEME.getMode();state.level=Number(state.level)||1;state.collection=state.collection||'topik';state.inputMethod=state.inputMethod==='system'?'system':'bilingual';state.webChineseAutoFocus=state.webChineseAutoFocus===true;state.extra=Array.isArray(state.extra)?state.extra:parse('topik_extra',[]);
 let legacy=parse('topik_records',{});
 if(!state.legacyMigrated){Object.entries(legacy).forEach(([ko,r])=>{if(!state.progress[ko])state.progress[ko]={read:{step:Number(r.step)||0,due:Number(r.due)||0,wrong:0}}});state.legacyMigrated=true;}
-let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
+let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false,pinyinMode='letters',pinyinExpanded=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
 function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],window.TOPIK_VERIFIED_ADDITIONS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 const TOPIK_TOPICS={
@@ -135,7 +135,7 @@ function smartPick(){
    queueLength:d.queueLength,queueKoToZh:d.queue.meaning,queueZhToKo:d.queue.spell
   });
  }
- resetKeyboardInteraction();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;didCheck=false;pendingRating=false;smartResult=null;
+ resetKeyboardInteraction();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
 }
 function resetKeyboardInteraction(){clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null;}
 function smartNext(){
@@ -219,13 +219,24 @@ function updatePinyinDisplay(){
  const choices=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses());
  pinyinPage=0;
  list.innerHTML=choices.map((w,i)=>'<button type="button" data-pinyin-choice="'+i+'">'+quote(w)+'</button>').join('');
+ const expand=document.querySelector('[data-pinyin-expand]');
+ if(expand){expand.hidden=choices.length<4;expand.setAttribute('aria-expanded',String(pinyinExpanded));}
+ list.classList.toggle('expanded',pinyinExpanded);
  list.querySelectorAll('[data-pinyin-choice]').forEach(b=>b.onclick=()=>{
   const choice=choices[Number(b.dataset.pinyinChoice)];if(!choice)return;
   const result=TOPIK_PINYIN.select(typed,pinyinComposition,choice);
-  typed=result.answer;pinyinComposition=result.composition;pinyinPage=0;
+  typed=result.answer;pinyinComposition=result.composition;pinyinPage=0;pinyinExpanded=false;
   const input=document.getElementById('spell-input');if(input)input.value=typed;updatePinyinDisplay();
  });
 
+}
+function applyPinyinSymbol(symbol){
+ if(!useChineseKeyboard()||didCheck||pendingRating)return;
+ if(pinyinComposition){const first=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];if(first){const result=TOPIK_PINYIN.select(typed,pinyinComposition,first);typed=result.answer;pinyinComposition=''}else{notify('请先选择拼音候选');return}}
+ const result=TOPIK_PINYIN.update(typed,pinyinComposition,'insert:'+symbol);
+ typed=result.answer;pinyinComposition=result.composition;
+ const input=document.getElementById('spell-input');if(input)input.value=typed;
+ updatePinyinDisplay();
 }
 function applyPinyinKey(key){
  if(!useChineseKeyboard()||didCheck||pendingRating)return;
@@ -413,6 +424,9 @@ function bind(){const topLevel=document.getElementById('top-level-select');if(to
  document.querySelectorAll('[data-hangul]').forEach(b=>{const action=()=>applyHangulKey(hangulShift&&b.dataset.shift?b.dataset.shift:b.dataset.hangul);if(b.dataset.hangul==='Backspace')bindDeleteRepeat(b,action);else b.onclick=action});
  document.querySelectorAll('[data-hangul-shift]').forEach(b=>b.onclick=()=>{hangulShift=!hangulShift;TOPIK_HANGUL.updateShift(document.querySelector('.hangul-keyboard'),hangulShift)});
  document.querySelectorAll('[data-pinyin-key]').forEach(b=>{const action=()=>applyPinyinKey(b.dataset.pinyinKey);if(b.dataset.pinyinKey==='backspace')bindDeleteRepeat(b,action);else b.onclick=action});
+ document.querySelectorAll('[data-pinyin-symbol]').forEach(b=>b.onclick=()=>applyPinyinSymbol(decodeURIComponent(b.dataset.pinyinSymbol)));
+ document.querySelectorAll('[data-pinyin-mode]').forEach(b=>b.onclick=()=>{pinyinMode=b.dataset.pinyinMode;TOPIK_PINYIN.setMode(document.querySelector('.pinyin-keyboard'),pinyinMode)});
+ const expandCandidates=document.querySelector('[data-pinyin-expand]');if(expandCandidates)expandCandidates.onclick=()=>{pinyinExpanded=!pinyinExpanded;updatePinyinDisplay()};
  document.querySelectorAll('[data-pinyin-shift]').forEach(b=>b.onclick=()=>{pinyinShift=!pinyinShift;TOPIK_PINYIN.updateShift(document.querySelector('.pinyin-keyboard'),pinyinShift)});
  const inputMethodChoice=document.getElementById('input-method');if(inputMethodChoice)inputMethodChoice.onchange=e=>{state.inputMethod=e.target.value;persist();render()};
  const debugChoice=document.getElementById('study-debug');if(debugChoice)debugChoice.onchange=e=>{state.studyDebug=!!e.target.checked;persist();render()};document.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));document.querySelectorAll('[data-smart-unknown]').forEach(b=>b.onclick=smartDontKnow);document.querySelectorAll('[data-unfamiliar]').forEach(b=>b.onclick=markUnfamiliar);document.querySelectorAll('[data-relearn-batch]').forEach(b=>b.onclick=()=>relearnBatch(b.dataset.relearnBatch));document.querySelectorAll('[data-relearn-selected]').forEach(b=>b.onclick=()=>queueRelearn(all().filter(w=>relearnSelection.has(w[1])),relearnKind(),relearnModes()));document.querySelectorAll('[data-smart-example]').forEach(b=>b.onclick=()=>{let el=document.getElementById('smart-example');if(el)el.hidden=!el.hidden});enhanceSpeakButtons();document.querySelectorAll('[data-flip]').forEach(b=>b.onclick=()=>{session.flipped=true;render()});document.querySelectorAll('[data-next-learn]').forEach(b=>b.onclick=()=>next(true));document.querySelectorAll('[data-practice-word]').forEach(b=>b.onclick=()=>startSpecific(b.dataset.practiceWord));document.querySelectorAll('[data-resume-practice]').forEach(b=>b.onclick=resumePractice);document.querySelectorAll('[data-mark-fuzzy]').forEach(b=>b.onclick=()=>next('fuzzy'));document.querySelectorAll('[data-grade]').forEach(b=>b.onclick=()=>next(b.dataset.grade==='fuzzy'?'fuzzy':b.dataset.grade==='1'));document.querySelectorAll('[data-grade-spell]').forEach(b=>b.onclick=()=>next(true,true));document.querySelectorAll('[data-check]').forEach(b=>b.onclick=checkSpell);let i=document.getElementById('spell-input');if(i){i.oninput=e=>typed=e.target.value;i.onkeydown=e=>{if(e.isComposing||e.keyCode===229||i.dataset.composing==='1')return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(view==='smart'){if(didCheck)smartNext();else if(!pendingRating)smartSubmit()}else if(view==='onboard'){if(didCheck)nextOnboardQuestion();else submitOnboardAnswer()}else if(didCheck)next(true,true);else checkSpell()}};i.addEventListener('compositionstart',()=>i.dataset.composing='1');i.addEventListener('compositionend',()=>{i.dataset.composing='0';typed=i.value});if(!useVirtualKeyboard()&&!/iPad|iPhone|iPod/.test(navigator.userAgent))i.focus({preventScroll:true})}let search=document.getElementById('word-search');if(search)search.oninput=e=>{listQuery=e.target.value;let rows=scope().filter(w=>(w[1]+w[2]).toLowerCase().includes(listQuery.toLowerCase())).filter(w=>listFilter==='all'||(listFilter==='favorites'?state.favorites.includes(w[1]):weak(w[1])>0));document.getElementById('word-results').innerHTML=rowsHTML(rows);bindRows()};let filt=document.getElementById('word-filter');if(filt)filt.onchange=e=>{listFilter=e.target.value;render()};bindRows();let goal=document.getElementById('daily-goal');if(goal)goal.onchange=e=>{state.dailyGoal=Math.max(0,Math.min(200,Number(e.target.value)||0));persist();notify('每日新词目标已保存')};let ch=document.getElementById('theme-choice');if(ch)ch.onchange=e=>{state.theme=window.TOPIK_THEME.setMode(e.target.value)};let up=document.getElementById('csv-upload');if(up)up.onchange=importCSV;let resetBackup=document.getElementById('reset-backup');if(resetBackup)resetBackup.onclick=()=>document.getElementById('export-data')?.click();let bu=document.getElementById('backup-upload');if(bu)bu.onchange=importBackup;let ec=document.getElementById('export-csv');if(ec)ec.onclick=exportCSV;let ed=document.getElementById('export-data');if(ed)ed.onclick=()=>download('topik-lab-backup.json',JSON.stringify({version:2,state},null,2),'application/json')}
