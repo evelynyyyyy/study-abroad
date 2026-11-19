@@ -1,0 +1,23 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const ctx={window:{}};vm.runInNewContext(fs.readFileSync('topik-vocab/data/verified-expansion.js','utf8'),ctx);
+const additions=ctx.window.TOPIK_VERIFIED_ADDITIONS,meta=ctx.window.TOPIK_VOCAB_META;
+assert.equal(additions.length,160);
+assert.equal(new Set(additions.map(x=>x[1])).size,160);
+assert.ok(additions.every(x=>x.length===3&&x[2]&&!x[2].includes('无对应词汇')));
+assert.ok(additions.every(x=>meta[x[1]]&&meta[x[1]].rank>0));
+const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
+const built=JSON.parse(app.match(/const built=(\[[\s\S]*?\]);\nconst detail=/)[1]);
+const all=[...built];
+const extra=fs.readFileSync('topik-vocab/vocabulary.js','utf8');all.push(...JSON.parse(extra.match(/TOPIK_EXTRA_WORDS=(\[[\s\S]*?\]);/)[1]));
+for(let i=1;i<=6;i++){let s=fs.readFileSync('topik-vocab/data/yonsei-0'+i+'.js','utf8');all.push(...JSON.parse(s.match(/push\(\.\.\.(\[[\s\S]*\])\);/)[1]))}
+const before=new Set(all.map(w=>w[1]));
+assert.equal(before.size,4411);
+assert.ok(additions.every(w=>!before.has(w[1])),'new vocabulary does not overwrite old Korean surface forms');
+assert.equal(new Set([...before,...additions.map(w=>w[1])]).size,4571);
+assert.ok(app.includes('window.TOPIK_VERIFIED_ADDITIONS||[]'));
+assert.ok(app.includes('function lexicalRank(w)'));
+assert.ok(app.includes('function collectionChooser()'));
+assert.ok(html.includes('./data/verified-expansion.js?v=2.1.0'));
+assert.ok(app.includes("const STORAGE='topik_lab_v2'"),'progress key remains stable');
+console.log('Vocabulary audit and expansion passed: 4411 -> 4571 unique forms, 160 new, source ranks preserved.');
