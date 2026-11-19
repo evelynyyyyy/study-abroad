@@ -18,7 +18,7 @@ function create(options){
   doc.documentElement.dataset.theme=effective;
   doc.documentElement.dataset.themePreference=mode;
   doc.documentElement.style.colorScheme=effective;
-  const meta=themeMeta();if(meta)meta.setAttribute('content',effective==='dark'?'#1c1c1e':'#f7f7f9');
+  const meta=themeMeta();if(meta)meta.setAttribute('content',effective==='dark'?'#000000':'#ffffff');
   const toggle=doc.getElementById('theme-toggle');
   if(toggle)toggle.setAttribute('aria-label','主题：'+(mode==='system'?'跟随系统':mode==='light'?'浅色':'深色')+'，当前'+(effective==='dark'?'深色':'浅色')+'，点击切换');
   const choice=doc.getElementById('theme-choice');if(choice)choice.value=mode;
