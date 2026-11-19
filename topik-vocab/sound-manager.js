@@ -23,19 +23,40 @@
      this.keyboardGain.connect(this.masterGain);this.masterGain.connect(this.limiter);
      this.limiter.connect(ctx.destination);
     }
-    this.loadSamples();
    }catch(error){console.debug('[Sound] init failed',error)}
   },
   ensureAudioUnlocked(){
    this.init();
    const ctx=this.context;
-   if(!ctx||ctx.state==='closed')return;
-   if(ctx.state==='running'){this.audioUnlocked=true;return}
-   if(ctx.state==='suspended'&&!this.unlockPending){
-    this.unlockPending=ctx.resume().then(()=>{this.audioUnlocked=ctx.state==='running'})
-     .catch(error=>console.debug('[Sound] resume failed',error))
-     .finally(()=>{this.unlockPending=null});
+   if(!ctx)return Promise.resolve(false);
+   if(ctx.state==='running'){this.audioUnlocked=true;this.loadSamples();return Promise.resolve(true)}
+   if(ctx.state==='suspended'){
+    if(!this.unlockPending){
+     // resume() is called synchronously within the actual user gesture.
+     this.unlockPending=ctx.resume().then(()=>{
+      this.audioUnlocked=ctx.state==='running';
+      if(this.audioUnlocked)this.loadSamples();
+      return this.audioUnlocked;
+     }).catch(error=>{console.debug('[Sound] resume failed',error);return false})
+      .finally(()=>{this.unlockPending=null});
+    }
+    return this.unlockPending;
    }
+   return Promise.resolve(false);
+  },
+  async ensureUnlocked(){return this.ensureAudioUnlocked()},
+  playTestSound(){
+   const ctx=this.context;
+   if(!ctx||ctx.state!=='running')return false;
+   // Diagnostic tone only: independent of keyboard samples, mode gain and PCM.
+   const osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
+   osc.type='sine';osc.frequency.value=660;
+   gain.gain.setValueAtTime(.35,now);
+   gain.gain.exponentialRampToValueAtTime(.001,now+.2);
+   osc.connect(gain);gain.connect(ctx.destination);
+   osc.onended=()=>{try{osc.disconnect();gain.disconnect()}catch(_){}};
+   osc.start(now);osc.stop(now+.21);
+   return true;
   },
   loadSamples(){
    const ctx=this.context;if(!ctx||this.sampleContext===ctx)return;
@@ -88,6 +109,7 @@
    try{
     if(this.mode==='off'||document.hidden)return;
     this.init();const ctx=this.context;const keyboardType=['key','function','delete','modifier'].includes(type);if(!ctx||ctx.state!=='running'||(!keyboardType&&this.active>=this.maxVoices)){if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] skipped',type,ctx?.state);return;}
+    if(keyboardType)this.loadSamples();
     const stamp=performance.now();if(!keyboardType&&stamp-(this.lastPlayed[type]||0)<22)return;if(!keyboardType)this.lastPlayed[type]=stamp;
     if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{type,mode:this.mode,contextState:ctx.state});
     const now=ctx.currentTime;
@@ -167,7 +189,17 @@
   const attachTest=()=>{const choice=document.getElementById('sound-mode');if(!choice||document.getElementById('sound-test'))return;
    const button=document.createElement('button');button.id='sound-test';button.type='button';button.className='line-btn';button.textContent='测试音效';button.style.marginLeft='8px';choice.insertAdjacentElement('afterend',button);
    const status=document.createElement('small');status.id='sound-status';status.style.marginLeft='8px';button.insertAdjacentElement('afterend',status);
-   button.addEventListener('click',()=>{SoundManager.init();SoundManager.play('test');status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')});
+   const showStatus=()=>{status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')+' · Sound: '+SoundManager.mode};
+   button.addEventListener('click',async ()=>{
+    // Do not call play('test'): that path can be muted or skipped.
+    const ready=await SoundManager.ensureUnlocked();
+    const ctx=SoundManager.context;
+    const enabled=ready&&ctx?.state==='running';
+    console.log('[Sound] test',{state:ctx?.state,enabled,mode:SoundManager.mode,masterGain:SoundManager.masterGain?.gain?.value});
+    if(enabled)SoundManager.playTestSound();
+    showStatus();
+   });
+   showStatus();
   };
   new MutationObserver(attachTest).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});attachTest();
  }
