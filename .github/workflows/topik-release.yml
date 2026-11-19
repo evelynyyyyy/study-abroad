@@ -12,7 +12,7 @@ permissions:
   id-token: write
 concurrency:
   group: topik-pages-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
@@ -58,6 +58,7 @@ jobs:
   verify-online:
     needs: [test-and-build, deploy]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Verify published manifest, HTML and actual asset contents
