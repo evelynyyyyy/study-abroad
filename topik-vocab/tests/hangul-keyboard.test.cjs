@@ -15,7 +15,7 @@ assert.equal(K.backspace('값'),'갑');
 assert.equal(K.backspace('갑'),'가');
 assert.equal(K.backspace('과'),'고');
 assert.equal(K.backspace('고'),'ㄱ');
-assert.equal(K.edit('학교',1,1,'ㅏ').text,'하교');
+assert.equal(K.edit('학교',1,1,'ㅏ').text,'하가교');
 assert.equal(K.edit('학교',0,1,'ㄱ').text,'ㄱ교');
 assert.equal(K.edit('학교',2,2,'Backspace').text,'학ㄱ');
 assert.ok(K.render().includes('data-hangul="Backspace"'));
