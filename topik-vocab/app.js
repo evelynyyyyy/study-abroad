@@ -93,11 +93,20 @@ function navItems(){return [['home','◫','今日学习'],['words','≡','词库
 function renderNav(){let content=navItems().map(([v,ico,label])=>'<button type="button" data-view="'+v+'" class="'+(view===v?'active':'')+'" aria-current="'+(view===v?'page':'false')+'"><span class="ico" aria-hidden="true">'+ico+'</span>'+label+'</button>').join('');document.getElementById('desktop-nav').innerHTML=content;document.getElementById('mobile-nav').innerHTML=navItems().map(([v,ico,label])=>'<button data-view="'+v+'" class="'+(view===v?'active':'')+'" type="button">'+({'home':'今日学习','words':'词库','records':'记录','practice':'专项','settings':'设置'}[v]||label)+'</button>').join('')}
 function change(v){hangulShift=false;view=v;session=null;practiceReturn=null;onboarding=null;smartTask=null;typed='';didCheck=false;feedback='';render();window.scrollTo({top:0,behavior:'instant'})}
 function levelBar(){return '<div class="level-switch" role="group" aria-label="选择 TOPIK 难度">'+[1,2,3,4,5,6].map(n=>'<button type="button" data-level="'+n+'" class="'+(state.level===n?'active':'')+'">TOPIK '+n+'</button>').join('')+'</div>'}
+function smartDailyStats(){
+ const key=today(), d=dayInfo(), words=scope(), allowed=new Set(words.map(w=>w[1]));
+ const learned=new Set((d.learned||[]).filter(ko=>allowed.has(ko)));
+ const graduated=words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.graduatedAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
+ const completed=new Set((d.smartReviewCompleted||[]).filter(ko=>allowed.has(ko)));
+ const due=words.filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
+ const reviewGoal=Math.max(Number(d.smartReviewGoal)||0,due+completed.size);
+ return {goal:state.dailyGoal,introduced:learned.size,firstBoth:words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.firstBothAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length,learning:words.filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length,graduated,learnTasks:Number(d.smartLearnTasks)||0,reviewGoal,reviewDone:completed.size,reviewDue:due,reviewTasks:Number(d.smartReviewTasks)||0};
+}
 function home(){
- const n=counts(),sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal);
+ const n=counts(),sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal),stats=smartDailyStats();
  return '<div class="smart-home"><div class="eyebrow">今日学习 · '+today()+'</div><h1>TOPIK单词</h1>'+levelBar()+
  '<div class="smart-stats"><div><strong>'+sum.newCount+' <small>/ '+sum.goal+'</small></strong><span>今日新词</span></div><div><strong>'+sum.due+'</strong><span>今日待复习</span></div><div><strong>'+sum.consolidating+'</strong><span>学习中</span></div></div>'+
- '<button class="primary smart-start" data-smart-start="learn">开始学习 <span>→</span></button>'+ '<button class="primary smart-start" data-smart-start="review">开始复习 '+sum.due+' <span>→</span></button>'+ (sum.due===0?'<p class="tiny muted">今日复习已完成</p>':'')+
+ '<div class="smart-start-stack"><button class="primary smart-start" data-smart-start="learn">开始学习 · '+stats.introduced+'/'+stats.goal+' <span>→</span></button><button class="primary smart-start" data-smart-start="review">开始复习 · '+stats.reviewDone+'/'+stats.reviewGoal+' <span>→</span></button></div>'+ (stats.reviewDue===0?'<p class="tiny muted">今日复习已完成</p>':'')+
  '<p class="tiny muted smart-home-note">新词学习与到期复习分池安排 · 学习毕业后交给 FSRS。</p></div>';
 }
 function recordsHome(){
@@ -119,8 +128,10 @@ function choose(mode){let words=scope();if(mode==='learn')return words.filter(w=
 
 
 let smartPool='learn';
+let smartSessionTasks={learn:0,review:0};
 function startSmart(pool='learn'){
  smartPool=pool==='review'?'review':'learn';
+ smartSessionTasks[smartPool]=0;
  TOPIK_SMART.resetSession();
  view='smart';session=null;onboarding=null;typed='';didCheck=false;smartPick();render();
 }
@@ -177,7 +188,20 @@ function smartRecord(result){
   TOPIK_RELEARN.afterAnswer(state,word[1],mode,correct);
  }
  markRecall(word[1],mode);
- const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;state.daily[key]=d;
+ const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;
+ if(smartPool==='review'&&(phase==='REVIEW'||phase==='RELEARNING')){
+  const completed=new Set(d.smartReviewCompleted||[]);
+  completed.add(word[1]);d.smartReviewCompleted=[...completed];
+  // Freeze the daily target at its highest observed total; new due words cannot shrink it.
+  const dueNow=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
+  d.smartReviewGoal=Math.max(Number(d.smartReviewGoal)||0,dueNow+completed.size);
+  d.smartReviewTasks=(Number(d.smartReviewTasks)||0)+1;
+  smartSessionTasks.review++;
+ }else if(smartPool==='learn'&&phase==='LEARNING'){
+  d.smartLearnTasks=(Number(d.smartLearnTasks)||0)+1;
+  smartSessionTasks.learn++;
+ }
+ state.daily[key]=d;
  // Store the three outcomes separately, without changing legacy progress keys.
  state.smartAnswerHistory=(state.smartAnswerHistory||[]).concat([{
   ko:word[1],mode,result,at:Date.now()
@@ -387,11 +411,11 @@ function smartScreen(){
  pendingRating?'<div class="smart-actions"><button type="button" class="secondary" data-smart-rate="hard">很吃力</button><button type="button" class="secondary" data-smart-rate="good">一般</button><button type="button" class="primary" data-smart-rate="easy">很熟悉</button></div>':
  didCheck?'<div class="smart-actions"><button type="button" class="secondary" data-unfamiliar="1">还不熟悉</button><button class="primary smart-action" data-smart-next="1">继续 →</button></div>':
  '<div class="smart-actions"><button type="button" class="secondary smart-unknown" data-smart-unknown="1">不知道</button><button type="button" class="primary smart-submit" data-smart-submit="1">提交答案</button></div>';
- const sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal);
+ const sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal),stats=smartDailyStats();
  const debug=state.studyDebug?TOPIK_SMART.inspect(state,scope()):null;
  const debugHtml=debug?'<details class="study-debug" open><summary>学习调试信息</summary><p>当前方向：'+(mode==='meaning'?'韩→中':mode==='spell'?'中→韩':'首次展示')+' · 输入方式：'+quote(state.inputMethod)+'</p><p>Recognition due: '+debug.due.meaning+' · Production due: '+debug.due.spell+'</p><p>Queue ko→zh: '+debug.queue.meaning+' · Queue zh→ko: '+debug.queue.spell+' · 总计：'+debug.queueLength+'</p><p>选择原因：'+quote(smartTask.reason||'—')+'（队列按需生成，无预缓存）</p></details>':'';
- return '<div class="smart-study"><header class="smart-study-head"><button class="text-btn" data-view="home">← 返回</button><span class="tiny muted">'+sum.newCount+' / '+sum.goal+' 新词 · '+sum.due+' 待复习</span></header>'+
- debugHtml+'<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
+ return '<div class="smart-study"><header class="smart-study-head"><button class="text-btn" data-view="home">← 返回</button><span class="tiny muted">'+(smartPool==='learn'?'新词目标 '+stats.goal+' · 首次认识 '+stats.introduced+' · 学习中 '+stats.learning+' · 今日学会 '+stats.graduated+' · 本次答题 '+smartSessionTasks.learn:'复习目标 '+stats.reviewGoal+' · 唯一完成 '+stats.reviewDone+' · 仍待复习 '+stats.reviewDue+' · 本次答题 '+smartSessionTasks.review)+'</span></header>'+
+ debugHtml+'<div class="smart-progress"><i style="width:'+Math.min(100,100*(smartPool==='learn'?stats.graduated/Math.max(1,stats.goal):stats.reviewDone/Math.max(1,stats.reviewGoal)))+'%"></i></div>'+
  '<section class="smart-focus"><div class="smart-kind">'+(type==='relearn-show'?'重新认识':isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
  (d[0]&&isShow?example:'')+
  (didCheck&&d[0]?example:'')+'</section>'+
