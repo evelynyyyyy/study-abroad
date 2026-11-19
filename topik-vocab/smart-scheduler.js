@@ -4,7 +4,13 @@
  */
 'use strict';
 window.TOPIK_SMART={
- DAY:86400000, MIN_GAP:2, VERSION:'3.0.0',
+ DAY:86400000, MIN_GAP:2, VERSION:'3.7.4',
+ session:null,
+ resetSession(){this.session={index:0,words:new Map()};},
+ sessionEntry(ko){if(!this.session)this.resetSession();if(!this.session.words.has(ko))this.session.words.set(ko,{count:0,last:-1000,byMode:{meaning:{wins:0,last:-1000},spell:{wins:0,last:-1000}},failed:false,outcome:'correct'});return this.session.words.get(ko)},
+ recordExposure(ko,mode,result){const e=this.sessionEntry(ko);const index=this.session.index++;e.count++;e.last=index;e.outcome=result||'correct';if(mode){const m=e.byMode[mode];m.last=index;if(['again','wrong','incorrect','unfamiliar'].includes(result)){m.wins=0;e.failed=true}else if(['correct','good','easy','hard'].includes(result))m.wins++}},
+ gapFor(ko,mode){const e=this.sessionEntry(ko);const m=mode?e.byMode[mode]:null;if(['again','wrong','incorrect','unfamiliar'].includes(e.outcome))return 3;if(!m||!m.wins)return 6;if(m.wins===1)return 6;if(m.wins===2)return 18;return 1000},
+ sessionEligible(candidate){const e=this.sessionEntry(candidate.word[1]);const cap=e.failed?6:4;if(e.count>=cap)return false;const elapsed=this.session.index-e.last-1;return elapsed>=this.gapFor(candidate.word[1],candidate.mode)},
  CONFIG:{
   learningMinutes:[3,15,180],lapseMinutes:[3,15,180],
   targetRetention:.90,masteryRetention:.85,longTermRetention:.80,
@@ -128,9 +134,7 @@ window.TOPIK_SMART={
     candidates.push({word,type:'typing',mode,score});
    }
   }
-  let eligible=candidates.filter(c=>!recent.includes(c.word[1]));
-  if(!eligible.length)eligible=candidates.filter(c=>c.word[1]!==history.at(-1));
-  if(!eligible.length)eligible=candidates;
+  let eligible=candidates.filter(c=>this.sessionEligible(c));
   eligible.sort((a,b)=>b.score-a.score);
   // Soft anti-starvation: keyboard preference never enters task selection.
   // Direction streak is a scheduling hint, not a reason to skip urgent lapses.
@@ -144,11 +148,11 @@ window.TOPIK_SMART={
    (backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
   const recentSpellings=history.slice(-3);
   const distinct=fresh.filter(c=>!recentSpellings.some(prev=>window.TOPIK_LEXICON?.similar(c.word[1],prev)));
-  const nextFresh=(distinct.length?distinct:fresh).find(c=>!recent.includes(c.word[1]))||
-    (distinct.length?distinct:fresh)[0];
+  const nextFresh=(distinct.length?distinct:fresh).find(c=>this.sessionEligible(c))||
+    fresh.find(c=>this.sessionEligible(c));
   let picked,reason;
-  if(relearn&&relearn.word[1]!==history.at(-1)){picked=relearn;reason='relearn'}
-  else if(due&&(!freshAllowed||history.length%5!==0)){picked=due;reason=sameRun&&comparable&&due===other?'direction-starvation-guard':!state.lifecycle?.[due.word[1]]?.first?.[due.mode]?'new-word-'+(due.mode==='meaning'?'recognition':'production'):'due-review'}
+  if(relearn&&this.sessionEligible(relearn)){picked=relearn;reason='relearn'}
+  else if(due&&(!freshAllowed||this.session.index%5!==0)){picked=due;reason=sameRun&&comparable&&due===other?'direction-starvation-guard':!state.lifecycle?.[due.word[1]]?.first?.[due.mode]?'new-word-'+(due.mode==='meaning'?'recognition':'production'):'due-review'}
   else if(freshAllowed&&nextFresh){picked=nextFresh;reason='new-word-introduction'}
   else {picked=due||relearn||null;reason=picked?'due-review':'no-due-task'}
   if(picked){picked={...picked,reason};}
