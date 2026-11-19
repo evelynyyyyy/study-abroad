@@ -310,7 +310,21 @@ function resetLearning(scope){
  const outcome=TOPIK_RESET.reset(state,all(),level);
  relearnSelection.clear();persist();change('home');notify('已清空 '+outcome.removed+' 个词的学习状态'+(outcome.shared?'，保留 '+outcome.shared+' 个跨等级共用词':'') );
 }
-function render(){theme();renderNav();document.getElementById('top-status').textContent='TOPIK '+state.level;let app=document.getElementById('app');app.innerHTML=view==='home'?home():view==='words'?wordList():view==='settings'?settings():view==='records'?recordsHome():view==='practice'?practiceHome():view==='smart'?smartScreen():view==='onboard'?onboardScreen():sessionScreen();bind()}
+function render(){
+ theme();renderNav();document.getElementById('top-status').textContent='TOPIK '+state.level;
+ const app=document.getElementById('app');
+ const previous=app.querySelector('#spell-input');
+ const taskKey=view==='smart'&&smartTask?.type==='typing'?smartTask.word[1]+'|'+smartTask.mode:'';
+ const keep=previous&&previous.dataset.taskKey===taskKey&&document.activeElement===previous;
+ app.innerHTML=view==='home'?home():view==='words'?wordList():view==='settings'?settings():view==='records'?recordsHome():view==='practice'?practiceHome():view==='smart'?smartScreen():view==='onboard'?onboardScreen():sessionScreen();
+ const current=app.querySelector('#spell-input');
+ if(keep&&current&&taskKey){
+  previous.readOnly=didCheck||pendingRating;
+  previous.value=typed;
+  current.replaceWith(previous);
+ }else if(current&&taskKey)current.dataset.taskKey=taskKey;
+ bind();
+}
 function bind(){document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>change(b.dataset.view));document.querySelectorAll('[data-next-reveal]').forEach(b=>b.onclick=advanceReveal);document.querySelectorAll('[data-begin-typing]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-next-question]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-check-onboard]').forEach(b=>b.onclick=submitOnboardAnswer);document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{state.level=Number(b.dataset.level);persist();session=null;render()});document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start(b.dataset.start));document.querySelectorAll('[data-smart-start]').forEach(b=>b.onclick=startSmart);let collectionChoice=document.getElementById('collection-choice');if(collectionChoice)collectionChoice.onchange=e=>{state.collection=e.target.value;listQuery='';persist();render()};document.querySelectorAll('[data-reset-scope]').forEach(b=>b.onclick=()=>resetLearning(b.dataset.resetScope));document.querySelectorAll('[data-smart-next]').forEach(b=>b.onclick=smartNext);document.querySelectorAll('[data-smart-submit]').forEach(b=>b.onclick=smartSubmit);
  document.querySelectorAll('[data-hangul]').forEach(b=>b.onclick=()=>applyHangulKey(hangulShift&&b.dataset.shift?b.dataset.shift:b.dataset.hangul));
  document.querySelectorAll('[data-hangul-shift]').forEach(b=>b.onclick=()=>{hangulShift=!hangulShift;document.querySelectorAll('[data-hangul-shift]').forEach(k=>k.setAttribute('aria-pressed',String(hangulShift)))});
