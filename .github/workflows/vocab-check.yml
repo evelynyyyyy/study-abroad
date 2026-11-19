@@ -22,9 +22,11 @@ jobs:
         run: |
           node --check topik-vocab/app.js
           node --check topik-vocab/vocabulary.js
+          node --check topik-vocab/study-context.js
       - name: Check site structure and title
         run: |
-          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['韩语词汇实验室','./app.js','./styles.css'])if(!h.includes(x))process.exit(1)"
+          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./styles.css'])if(!h.includes(x))process.exit(1)"
           test -f topik-vocab/styles.css
           test -f topik-vocab/vocabulary.js
+          test -f topik-vocab/study-context.js
           test -f topik-vocab/SKILL.md
