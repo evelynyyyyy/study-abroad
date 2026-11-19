@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 function run(engine){
- const ctx={window:{},Date,Math};vm.runInNewContext(fs.readFileSync('topik-vocab/first-learning.js','utf8'),ctx);
+ const FixedDate=class extends Date{constructor(...args){super(...(args.length?args:[1763500000000]))}static now(){return 1763500000000}};
+ const ctx={window:{},Date:FixedDate,Math};vm.runInNewContext(fs.readFileSync('topik-vocab/first-learning.js','utf8'),ctx);
  vm.runInNewContext(fs.readFileSync('topik-vocab/smart-scheduler.js','utf8'),ctx);
  const S=ctx.window.TOPIK_SMART,F=ctx.window.TOPIK_FIRST_LEARNING,now=1763500000000;
  let seed=24681357;S.random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
