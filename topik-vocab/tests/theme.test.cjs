@@ -26,7 +26,7 @@ assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
 assert.ok(html.includes('id="theme-toggle"')&&!html.includes('id="theme-menu"'));
-assert.ok(html.includes('◐ 主题'));
+assert.ok(html.includes('>◐</button>'));
 assert.ok(!css.includes('.theme-trigger'));
 assert.ok(!app.includes("state.theme=state.theme||'dark'"));
 assert.ok(!app.includes("persist();render()});\ndocument.addEventListener('keydown'"),'theme toggle must not rerender');
