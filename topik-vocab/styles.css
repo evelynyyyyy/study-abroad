@@ -483,3 +483,10 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 .smart-start-stack{display:flex;flex-direction:column;gap:16px;width:100%;min-width:0}
 .smart-start-stack>.smart-start{box-sizing:border-box;width:100%;min-width:0;margin:0}
 .smart-study-head .tiny{min-width:0;overflow-wrap:anywhere;text-align:right}
+
+/* Compact Safari-safe study header. */
+.smart-study-head{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+.smart-study-head .smart-back{white-space:nowrap;word-break:keep-all;flex-shrink:0}
+.smart-head-total{text-align:right;white-space:nowrap;min-width:0;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+.smart-head-detail{text-align:center;color:var(--soft);font-size:12px;white-space:nowrap;margin:12px 0 0}
+@media(max-width:360px){.smart-study-head{gap:6px}.smart-head-total{font-size:12px}.smart-head-detail{font-size:11px}}
