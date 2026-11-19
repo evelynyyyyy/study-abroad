@@ -75,7 +75,8 @@ assert.deepEqual(web.modes,system.modes,'keyboard must not alter scheduler seque
 assert.deepEqual(web.modes,smart.modes,'smart input must not alter scheduler sequence');
 assert.ok(web.modes.includes('meaning')&&web.modes.includes('spell'),'both directions must be scheduled');
 assert.ok(web.modes.some((mode,i)=>i>0&&mode!==web.modes[i-1]),'direction must switch');
-assert.ok(web.modes.reduce((max,mode,i)=>Math.max(max,i&&mode===web.modes[i-1]?0:0),0)>=0);
+let run=1,maxRun=1;for(let i=1;i<web.modes.length;i++){run=web.modes[i]===web.modes[i-1]?run+1:1;maxRun=Math.max(maxRun,run)}
+assert.ok(maxRun<=4,'comparable due directions cannot be starved by a long same-direction run');
 assert.ok(web.state.progress[pool[0][1]].meaning&&web.state.progress[pool[0][1]].spell);
 assert.equal(web.state.inputMethod,'web','keyboard preference persists');
 
