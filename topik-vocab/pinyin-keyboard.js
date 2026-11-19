@@ -27,9 +27,13 @@ function update(answer,composition,key){
 function select(answer,composition,candidate){return {answer:answer+candidate,composition:''}}
 function render(){
  const rows=['qwertyuiop','asdfghjkl','zxcvbnm'];
- return '<div class="pinyin-keyboard" role="group" aria-label="中文拼音网页键盘"><div class="pinyin-composition" id="pinyin-composition" aria-live="polite"></div><div class="pinyin-candidates" id="pinyin-candidates" aria-label="汉字候选"></div>'+
- rows.map(r=>'<div class="pinyin-row">'+[...r].map(k=>'<button type="button" class="pinyin-key" data-pinyin-key="'+k+'">'+k+'</button>').join('')+'</div>').join('')+
- '<div class="pinyin-row"><button type="button" class="pinyin-key pinyin-action" data-pinyin-key="clear">清空</button><button type="button" class="pinyin-key pinyin-space" data-pinyin-key="space">空格</button><button type="button" class="pinyin-key pinyin-action" data-pinyin-key="backspace">⌫</button><button type="button" class="pinyin-key pinyin-action" data-smart-submit="1">提交</button></div></div>';
+ const key=k=>'<button type="button" class="pinyin-key" data-pinyin-key="'+k+'">'+k+'</button>';
+ return '<div class="pinyin-keyboard ios-keyboard" role="group" aria-label="中文拼音网页键盘">'+
+ '<div class="ios-candidate-strip"><div class="pinyin-composition" id="pinyin-composition" aria-live="polite"></div><div class="pinyin-candidates" id="pinyin-candidates" aria-label="汉字候选"></div></div>'+
+ '<div class="pinyin-row ios-row-first">'+[...rows[0]].map(key).join('')+'</div>'+
+ '<div class="pinyin-row ios-row-second">'+[...rows[1]].map(key).join('')+'</div>'+
+ '<div class="pinyin-row ios-row-third"><button type="button" class="pinyin-key pinyin-action ios-special ios-clear" data-pinyin-key="clear" aria-label="清空">清空</button>'+[...rows[2]].map(key).join('')+'<button type="button" class="pinyin-key pinyin-action ios-special ios-delete" data-pinyin-key="backspace" aria-label="删除">⌫</button></div>'+
+ '<div class="pinyin-row ios-row-bottom"><button type="button" class="pinyin-key pinyin-space ios-space" data-pinyin-key="space" aria-label="空格">中文</button><button type="button" class="pinyin-key pinyin-action ios-return" data-smart-submit="1" aria-label="提交答案">↵</button></div></div>';
 }
 root.TOPIK_PINYIN={candidates,update,select,render,dictionary};
 })(typeof window!=='undefined'?window:globalThis);
