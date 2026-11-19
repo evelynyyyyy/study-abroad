@@ -38,7 +38,7 @@ recall(state,ko,mode){
  if(!wasBoth&&r.first.meaning&&r.first.spell&&!state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=Date.now();
  else if(state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=state.lifecycle[ko].firstBothAt;
  r.stage=this.stage(state,ko);
- state.lifecycle[ko]=r;
+ state.lifecycle[ko]={...state.lifecycle[ko],...r};
  this.mastery(state,ko);
 },
 mastery(state,ko){
