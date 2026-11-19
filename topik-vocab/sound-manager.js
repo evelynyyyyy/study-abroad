@@ -58,6 +58,12 @@
     if(type==='key'||type==='function'||type==='delete'||type==='modifier'){
      // Original, programmatically generated iOS-style approximation; not Apple audio.
      // Precompute independent PCM samples once per AudioContext.
+     const target=this.lastKeyTarget;
+     const descriptor=target?.dataset||{};
+     const keyName=String(descriptor.hangul||descriptor.pinyinKey||descriptor.hangulMode||descriptor.pinyinMode||'').toLowerCase();
+     const isDelete=type==='delete'||(type==='function'&&/backspace|delete/.test(keyName));
+     const isModifier=type==='modifier'||(type==='function'&&!isDelete);
+     const kind=isDelete?'delete':isModifier?'modifier':'key';
      if(!this.samples?.[kind]&&(this.clickContext!==ctx||!this.clickBuffers)){
       const createClick=(kind)=>{
        const rate=ctx.sampleRate;
@@ -79,12 +85,6 @@
       this.clickBuffers={key:createClick('key'),delete:createClick('delete'),modifier:createClick('modifier')};
       this.clickContext=ctx;
      }
-     const target=this.lastKeyTarget;
-     const descriptor=target?.dataset||{};
-     const keyName=String(descriptor.hangul||descriptor.pinyinKey||descriptor.hangulMode||descriptor.pinyinMode||'').toLowerCase();
-     const isDelete=type==='delete'||(type==='function'&&/backspace|delete/.test(keyName));
-     const isModifier=type==='modifier'||(type==='function'&&!isDelete);
-     const kind=isDelete?'delete':isModifier?'modifier':'key';
      const source=ctx.createBufferSource(),gain=ctx.createGain();
      source.buffer=this.samples?.[kind]||this.clickBuffers[kind];
      const isRepeat=isDelete&&stamp-(this.lastDeleteAt||0)<140;
