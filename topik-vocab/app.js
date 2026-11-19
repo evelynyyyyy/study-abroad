@@ -200,7 +200,7 @@ window.addEventListener('pagehide',saveSmartSession);
 function smartNext(){
  if(!smartTask)return;
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
- if(pendingRating){notify('请先选择记忆感受');return}
+ 
  if(smartTask.type==='relearn-show'){
    TOPIK_RELEARN.afterShow(state,smartTask.word[1]);
  }else if(smartTask.type==='show'){
@@ -217,9 +217,9 @@ function smartNext(){
 function smartRecord(result){
  if(!smartTask||smartTask.type!=='typing'||didCheck)return;
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
- const {word,mode}=smartTask,correct=['correct','hard','good','easy'].includes(result);
+ const {word,mode}=smartTask,correct=result==='good';
  const phase=TOPIK_SMART.wordState(state,word[1]);
- if(phase==='LEARNING'){state.learningActiveWindow=Math.max(2,Math.min(12,scope().filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length));TOPIK_SMART.learningResult(state,word[1],mode,correct,Date.now(),result);}
+ if(phase==='LEARNING'){state.learningActiveWindow=Math.max(2,Math.min(12,scope().filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length));TOPIK_SMART.learningResult(state,word[1],mode,correct,Date.now());}
  else{
   TOPIK_SMART.review(state,word[1],mode,correct,Date.now(),result);
   if(!correct)state.lifecycle[word[1]].wordState='RELEARNING';
@@ -247,14 +247,6 @@ function smartRecord(result){
  }]).slice(-3000);
  smartResult=result;pendingRating=false;didCheck=true;resetKeyboardInteraction();persist();render();saveSmartSession();
 }
-function markUnfamiliar(){
- if(!smartTask||smartTask.type!=='typing'||!didCheck)return;
- if(TOPIK_SMART.wordState(state,smartTask.word[1])==='LEARNING'){const life=state.lifecycle[smartTask.word[1]];life.learningStreak=0;life.learningFailureCount=(Number(life.learningFailureCount)||0)+1;life.learningProof={round:0,lastSerial:0,directions:[]};}
- else TOPIK_RELEARN.enqueue(state,smartTask.word[1],'refresh',[smartTask.mode]);
- state.smartAnswerHistory.push({ko:smartTask.word[1],mode:smartTask.mode,result:'unfamiliar',at:Date.now()});
- state.smartAnswerHistory=state.smartAnswerHistory.slice(-3000);
- persist();notify('已加入重新学习：先看完整单词，再练习当前方向');smartNext();
-}
 function queueRelearn(words,kind,modes){
  const valid=words.filter(w=>hasSeen(w[1]));
  for(const w of valid)TOPIK_RELEARN.enqueue(state,w[1],kind,modes);
@@ -262,30 +254,18 @@ function queueRelearn(words,kind,modes){
 }
 function smartSubmit(){
  if(useChineseKeyboard()&&pinyinComposition){notify('请先选择拼音候选词');return}
- if(!smartTask||smartTask.type!=='typing'||didCheck||pendingRating)return;
+ if(!smartTask||smartTask.type!=='typing'||didCheck)return;
  const input=document.getElementById('spell-input');
  if(input?.dataset.composing==='1')return;
  typed=(input?.value??typed).trim();if(!typed){notify('请先输入答案，或点击「不知道」');return}
  const correct=answerCorrect(smartTask.word,typed,smartTask.mode)||(smartTask.mode==='spell'&&TOPIK_LEXICON.acceptedSpell(typed,smartTask.word,scope()));
  try{window.TOPIK_SOUND?.play(correct?(evaluateAnswer(smartTask.word,typed,smartTask.mode).level==='acceptable'?'acceptable':'correct'):'incorrect')}catch(_){}
  if(!correct)TOPIK_LEXICON.confusion(state,smartTask.word[1],typed,scope(),smartTask.mode);
- if(correct){
-  pendingRating=true;
-  if(input)input.readOnly=true;
-  const actions=document.querySelector('.smart-bottom .smart-actions');
-  if(actions){actions.innerHTML='<button type="button" class="secondary" data-smart-rate="hard">很吃力</button><button type="button" class="secondary" data-smart-rate="good">一般</button><button type="button" class="primary" data-smart-rate="easy">很熟悉</button>';
-   actions.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));}
-  resetKeyboardInteraction();render();notify('回答正确，请选择记忆感受');return;
- }
- smartRecord('wrong');
-}
-function smartRate(rating){
- if(!smartTask||!pendingRating||didCheck||!['hard','good','easy'].includes(rating))return;
- smartRecord(rating);
+ smartRecord(correct?'good':'again');
 }
 function smartDontKnow(){
- if(!smartTask||smartTask.type!=='typing'||didCheck||pendingRating)return;
- typed='';pendingRating=false;
+ if(!smartTask||smartTask.type!=='typing'||didCheck)return;
+ typed='';
  // No input required. Only this recall direction receives an Again grade.
  smartRecord('again');
 }
@@ -353,7 +333,7 @@ function updatePinyinDisplay(){
  if(isSimple&&pinyinComposition)console.debug({engine:'simple-ime',composition:pinyinComposition,candidateCount:choices.length,candidates:choices.slice(0,50)});
 }
 function applyPinyinSymbol(symbol){
- if(!useChineseKeyboard()||didCheck||pendingRating)return;
+ if(!useChineseKeyboard()||didCheck)return;
  if(pinyinComposition&&!commitChineseCandidate(0)){notify('请先选择拼音候选');return}
  if(CHINESE_IME_ENGINE==='legacy'){
   const result=TOPIK_PINYIN.update(typed,pinyinComposition,'insert:'+symbol);
@@ -362,7 +342,7 @@ function applyPinyinSymbol(symbol){
  syncChineseAnswer();updatePinyinDisplay();
 }
 function applyPinyinKey(key){
- if(!useChineseKeyboard()||didCheck||pendingRating)return;
+ if(!useChineseKeyboard()||didCheck)return;
  if(CHINESE_IME_ENGINE==='legacy'){
   if(key==='space'&&pinyinComposition){if(!commitChineseCandidate(0))notify('没有匹配候选，请修改拼音')}
   else{const result=TOPIK_PINYIN.update(typed,pinyinComposition,key);typed=result.answer;pinyinComposition=result.composition}
@@ -381,7 +361,7 @@ function applyPinyinKey(key){
  pinyinPage=0;syncChineseAnswer();updatePinyinDisplay();
 }
 function keyboardReturn(){
- if(didCheck||pendingRating)return;
+ if(didCheck)return;
  if(useChineseKeyboard()){
   if(pinyinComposition&&!commitChineseCandidate(0))notify('没有匹配候选，请修改拼音');
   // Return never submits a study answer in Chinese keyboard mode.
@@ -394,7 +374,7 @@ function bindDeleteRepeat(button,action){
  let down=false,repeated=false,suppressClick=false;
  const stop=()=>{down=false;clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null};
  const start=e=>{
-  if(e.type==='pointerdown'&&e.button!==0||didCheck||pendingRating||down)return;
+  if(e.type==='pointerdown'&&e.button!==0||didCheck||down)return;
   down=true;repeated=false;suppressClick=false;action();
   keyboardDeleteTimer=setTimeout(()=>{
    if(!down)return;
@@ -412,7 +392,7 @@ function bindDeleteRepeat(button,action){
 
 let hangulMode='letters';
 function applyHangulKey(key){
- if(!useHangulKeyboard()||didCheck||pendingRating)return;
+ if(!useHangulKeyboard()||didCheck)return;
  const input=document.getElementById('spell-input');if(!input)return;
  const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;
  const change=TOPIK_HANGUL.edit(input.value,start,end,key);
@@ -421,7 +401,7 @@ function applyHangulKey(key){
  input.setSelectionRange(change.caret,change.caret);
  if(hangulShift&&key!=='Backspace'&&key!==' '){hangulShift=false;TOPIK_HANGUL.updateShift(document.querySelector('.hangul-keyboard'),false)}
 }
-function correctRating(result){return ['correct','hard','good','easy'].includes(result)}
+function correctRating(result){return result==='good'}
 function smartScreen(){
  if(!smartTask){
    if(state.smartSessions)delete state.smartSessions[smartPool];persist();
@@ -430,7 +410,7 @@ function smartScreen(){
  }
  const {word:w,type,mode}=smartTask,ko=quote(w[1]),zh=quote(w[2]),d=ex(w);
  const isShow=type==='show'||type==='relearn-show',isMeaning=mode==='meaning';
- const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck;
+ const webKeyboard=!isShow&&useVirtualKeyboard()&&!didCheck;
  const koreanKeyboard=webKeyboard&&!isMeaning,chineseKeyboard=webKeyboard&&isMeaning;
  if(chineseKeyboard&&CHINESE_IME_ENGINE==='simple-ime'&&!simpleIme)void loadChineseIme().catch(()=>{});
  const example=d[0]?'<div class="smart-example" id="smart-example" '+(isShow?'':'hidden')+'><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
@@ -440,16 +420,14 @@ function smartScreen(){
  (!isMeaning&&TOPIK_LEXICON.hint(w,scope())?'<p class="tiny muted">'+quote(TOPIK_LEXICON.hint(w,scope()))+'</p>':'')+
  '<div class="input-wrap"><input id="spell-input" class="field" type="text" inputmode="'+(webKeyboard?'none':'text')+'" enterkeyhint="done" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(webKeyboard||didCheck?'readonly':'')+'></div>'+ 
 
- (pendingRating?'<p class="tiny muted" role="status">'+(evaluateAnswer(w,typed,mode).level==='acceptable'?'基本正确 · 可接受表达。':'回答正确。')+'请选择刚才回忆的真实感受，再安排下次复习。</p>'+meaningFeedback(w,typed,mode):'')+
  (didCheck?'<div class="smart-feedback '+(correctRating(smartResult)?'good':'bad')+'" role="status">'+
- '<strong>'+(correctRating(smartResult)?'回答正确 · 已安排后续巩固':smartResult==='again'?'已记录：不知道 · 稍后重练':'回答错误 · 稍后重练')+'</strong>'+
+ '<strong>'+(correctRating(smartResult)?'回答正确':typed?'回答错误':'不知道 · 稍后重练')+'</strong>'+
  '<div class="smart-answer"><span>韩语</span><b lang="ko">'+ko+'</b><button class="text-btn" data-speak="'+ko+'">▶ 发音</button></div>'+
  '<div class="smart-answer"><span>中文</span><b>'+zh+'</b></div>'+ (correctRating(smartResult)?meaningFeedback(w,typed,mode):'')+
  (d[2]?'<div class="smart-reading">读音：'+quote(d[2])+'</div>':'')+
  '</div>':'');
  const actions=isShow?'<button class="primary smart-action" data-smart-next="1">继续 →</button>':
- pendingRating?'<div class="smart-actions"><button type="button" class="secondary" data-smart-rate="hard">很吃力</button><button type="button" class="secondary" data-smart-rate="good">一般</button><button type="button" class="primary" data-smart-rate="easy">很熟悉</button></div>':
- didCheck?'<div class="smart-actions"><button type="button" class="secondary" data-unfamiliar="1">还不熟悉</button><button class="primary smart-action" data-smart-next="1">继续 →</button></div>':
+ didCheck?'<div class="smart-actions"><button class="primary smart-action" data-smart-next="1">继续 →</button></div>':
  '<div class="smart-actions"><button type="button" class="secondary smart-unknown" data-smart-unknown="1">不知道</button><button type="button" class="primary smart-submit" data-smart-submit="1">提交答案</button></div>';
  const sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal),stats=smartDailyStats();
  const debug=state.studyDebug?TOPIK_SMART.inspect(state,scope()):null;
@@ -571,7 +549,7 @@ function render(){
  app.innerHTML=view==='home'?home():view==='words'?wordList():view==='settings'?settings():view==='records'?recordsHome():view==='practice'?practiceHome():view==='smart'?smartScreen():view==='onboard'?onboardScreen():sessionScreen();
  const current=app.querySelector('#spell-input');
  if(keep&&current&&taskKey){
-  previous.readOnly=didCheck||pendingRating;
+  previous.readOnly=didCheck;
   previous.value=typed;
   current.replaceWith(previous);
  }else if(current&&taskKey)current.dataset.taskKey=taskKey;
@@ -582,7 +560,7 @@ function bind(){const updateButton=document.getElementById('check-app-update');i
  document.querySelectorAll('[data-hangul-shift]').forEach(b=>b.onclick=()=>{hangulShift=!hangulShift;TOPIK_HANGUL.updateShift(document.querySelector('.hangul-keyboard'),hangulShift)});
  document.querySelectorAll('[data-hangul-mode]').forEach(b=>b.onclick=()=>{hangulMode=b.dataset.hangulMode;TOPIK_HANGUL.setMode(document.querySelector('.hangul-keyboard'),hangulMode)});
  document.querySelectorAll('[data-hangul-more]').forEach(b=>b.onclick=()=>{hangulMode=b.dataset.hangulMore;TOPIK_HANGUL.setMode(document.querySelector('.hangul-keyboard'),hangulMode)});
- document.querySelectorAll('[data-hangul-symbol]').forEach(b=>b.onclick=()=>{if(!useHangulKeyboard()||didCheck||pendingRating)return;const input=document.getElementById('spell-input');if(!input)return;const value=decodeURIComponent(b.dataset.hangulSymbol);const caret=input.selectionStart??input.value.length;input.value=input.value.slice(0,caret)+value+input.value.slice(input.selectionEnd??caret);typed=input.value;if(view==='smart')saveSmartSession();input.setSelectionRange(caret+value.length,caret+value.length)});
+ document.querySelectorAll('[data-hangul-symbol]').forEach(b=>b.onclick=()=>{if(!useHangulKeyboard()||didCheck)return;const input=document.getElementById('spell-input');if(!input)return;const value=decodeURIComponent(b.dataset.hangulSymbol);const caret=input.selectionStart??input.value.length;input.value=input.value.slice(0,caret)+value+input.value.slice(input.selectionEnd??caret);typed=input.value;if(view==='smart')saveSmartSession();input.setSelectionRange(caret+value.length,caret+value.length)});
  document.querySelectorAll('[data-pinyin-key]').forEach(b=>{const action=()=>applyPinyinKey(b.dataset.pinyinKey);if(b.dataset.pinyinKey==='backspace')bindDeleteRepeat(b,action);else b.onclick=action});
  document.querySelectorAll('[data-pinyin-symbol]').forEach(b=>b.onclick=()=>applyPinyinSymbol(decodeURIComponent(b.dataset.pinyinSymbol)));
  document.querySelectorAll('[data-pinyin-mode]').forEach(b=>b.onclick=()=>{pinyinMode=b.dataset.pinyinMode;TOPIK_PINYIN.setMode(document.querySelector('.pinyin-keyboard'),pinyinMode)});
@@ -590,7 +568,7 @@ function bind(){const updateButton=document.getElementById('check-app-update');i
  document.querySelectorAll('[data-pinyin-shift]').forEach(b=>b.onclick=()=>{pinyinShift=!pinyinShift;TOPIK_PINYIN.updateShift(document.querySelector('.pinyin-keyboard'),pinyinShift)});
  const inputMethodChoice=document.getElementById('input-method');if(inputMethodChoice)inputMethodChoice.onchange=e=>{state.inputMethod=e.target.value;persist();render()};
  const soundChoice=document.getElementById('sound-mode');if(soundChoice)soundChoice.onchange=e=>{state.soundMode=e.target.value;window.TOPIK_SOUND?.setMode(state.soundMode);persist()};
- const debugChoice=document.getElementById('study-debug');if(debugChoice)debugChoice.onchange=e=>{state.studyDebug=!!e.target.checked;persist();render()};document.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));document.querySelectorAll('[data-smart-unknown]').forEach(b=>b.onclick=smartDontKnow);document.querySelectorAll('[data-unfamiliar]').forEach(b=>b.onclick=markUnfamiliar);document.querySelectorAll('[data-relearn-batch]').forEach(b=>b.onclick=()=>relearnBatch(b.dataset.relearnBatch));document.querySelectorAll('[data-relearn-selected]').forEach(b=>b.onclick=()=>queueRelearn(all().filter(w=>relearnSelection.has(w[1])),relearnKind(),relearnModes()));document.querySelectorAll('[data-smart-example]').forEach(b=>b.onclick=()=>{let el=document.getElementById('smart-example');if(el)el.hidden=!el.hidden});enhanceSpeakButtons();document.querySelectorAll('[data-flip]').forEach(b=>b.onclick=()=>{session.flipped=true;render()});document.querySelectorAll('[data-next-learn]').forEach(b=>b.onclick=()=>next(true));document.querySelectorAll('[data-practice-word]').forEach(b=>b.onclick=()=>startSpecific(b.dataset.practiceWord));document.querySelectorAll('[data-resume-practice]').forEach(b=>b.onclick=resumePractice);document.querySelectorAll('[data-mark-fuzzy]').forEach(b=>b.onclick=()=>next('fuzzy'));document.querySelectorAll('[data-grade]').forEach(b=>b.onclick=()=>next(b.dataset.grade==='fuzzy'?'fuzzy':b.dataset.grade==='1'));document.querySelectorAll('[data-grade-spell]').forEach(b=>b.onclick=()=>next(true,true));document.querySelectorAll('[data-check]').forEach(b=>b.onclick=checkSpell);let i=document.getElementById('spell-input');if(i){i.oninput=e=>{typed=e.target.value;if(view==='smart')saveSmartSession()};i.onkeydown=e=>{if(e.isComposing||e.keyCode===229||i.dataset.composing==='1')return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(view==='smart'){if(didCheck)smartNext();else if(!pendingRating)smartSubmit()}else if(view==='onboard'){if(didCheck)nextOnboardQuestion();else submitOnboardAnswer()}else if(didCheck)next(true,true);else checkSpell()}};i.addEventListener('compositionstart',()=>i.dataset.composing='1');i.addEventListener('compositionend',()=>{i.dataset.composing='0';typed=i.value;if(view==='smart')saveSmartSession()});if(!useVirtualKeyboard()&&!/iPad|iPhone|iPod/.test(navigator.userAgent))i.focus({preventScroll:true})}let search=document.getElementById('word-search');if(search)search.oninput=e=>{listQuery=e.target.value;let rows=scope().filter(w=>(w[1]+w[2]).toLowerCase().includes(listQuery.toLowerCase())).filter(w=>listFilter==='all'||(listFilter==='favorites'?state.favorites.includes(w[1]):weak(w[1])>0));document.getElementById('word-results').innerHTML=rowsHTML(rows);bindRows()};let filt=document.getElementById('word-filter');if(filt)filt.onchange=e=>{listFilter=e.target.value;render()};bindRows();let goal=document.getElementById('daily-goal');if(goal)goal.onchange=e=>{state.dailyGoal=Math.max(0,Math.min(200,Number(e.target.value)||0));persist();notify('每日新词目标已保存')};let ch=document.getElementById('theme-choice');if(ch)ch.onchange=e=>{state.theme=window.TOPIK_THEME.setMode(e.target.value)};let up=document.getElementById('csv-upload');if(up)up.onchange=importCSV;let resetBackup=document.getElementById('reset-backup');if(resetBackup)resetBackup.onclick=()=>document.getElementById('export-data')?.click();let bu=document.getElementById('backup-upload');if(bu)bu.onchange=importBackup;let ec=document.getElementById('export-csv');if(ec)ec.onclick=exportCSV;let ed=document.getElementById('export-data');if(ed)ed.onclick=()=>download('topik-lab-backup.json',JSON.stringify({version:2,state},null,2),'application/json')}
+ const debugChoice=document.getElementById('study-debug');if(debugChoice)debugChoice.onchange=e=>{state.studyDebug=!!e.target.checked;persist();render()};document.querySelectorAll('[data-smart-unknown]').forEach(b=>b.onclick=smartDontKnow);document.querySelectorAll('[data-relearn-batch]').forEach(b=>b.onclick=()=>relearnBatch(b.dataset.relearnBatch));document.querySelectorAll('[data-relearn-selected]').forEach(b=>b.onclick=()=>queueRelearn(all().filter(w=>relearnSelection.has(w[1])),relearnKind(),relearnModes()));document.querySelectorAll('[data-smart-example]').forEach(b=>b.onclick=()=>{let el=document.getElementById('smart-example');if(el)el.hidden=!el.hidden});enhanceSpeakButtons();document.querySelectorAll('[data-flip]').forEach(b=>b.onclick=()=>{session.flipped=true;render()});document.querySelectorAll('[data-next-learn]').forEach(b=>b.onclick=()=>next(true));document.querySelectorAll('[data-practice-word]').forEach(b=>b.onclick=()=>startSpecific(b.dataset.practiceWord));document.querySelectorAll('[data-resume-practice]').forEach(b=>b.onclick=resumePractice);document.querySelectorAll('[data-mark-fuzzy]').forEach(b=>b.onclick=()=>next('fuzzy'));document.querySelectorAll('[data-grade]').forEach(b=>b.onclick=()=>next(b.dataset.grade==='fuzzy'?'fuzzy':b.dataset.grade==='1'));document.querySelectorAll('[data-grade-spell]').forEach(b=>b.onclick=()=>next(true,true));document.querySelectorAll('[data-check]').forEach(b=>b.onclick=checkSpell);let i=document.getElementById('spell-input');if(i){i.oninput=e=>{typed=e.target.value;if(view==='smart')saveSmartSession()};i.onkeydown=e=>{if(e.isComposing||e.keyCode===229||i.dataset.composing==='1')return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(view==='smart'){if(didCheck)smartNext();else if(!pendingRating)smartSubmit()}else if(view==='onboard'){if(didCheck)nextOnboardQuestion();else submitOnboardAnswer()}else if(didCheck)next(true,true);else checkSpell()}};i.addEventListener('compositionstart',()=>i.dataset.composing='1');i.addEventListener('compositionend',()=>{i.dataset.composing='0';typed=i.value;if(view==='smart')saveSmartSession()});if(!useVirtualKeyboard()&&!/iPad|iPhone|iPod/.test(navigator.userAgent))i.focus({preventScroll:true})}let search=document.getElementById('word-search');if(search)search.oninput=e=>{listQuery=e.target.value;let rows=scope().filter(w=>(w[1]+w[2]).toLowerCase().includes(listQuery.toLowerCase())).filter(w=>listFilter==='all'||(listFilter==='favorites'?state.favorites.includes(w[1]):weak(w[1])>0));document.getElementById('word-results').innerHTML=rowsHTML(rows);bindRows()};let filt=document.getElementById('word-filter');if(filt)filt.onchange=e=>{listFilter=e.target.value;render()};bindRows();let goal=document.getElementById('daily-goal');if(goal)goal.onchange=e=>{state.dailyGoal=Math.max(0,Math.min(200,Number(e.target.value)||0));persist();notify('每日新词目标已保存')};let ch=document.getElementById('theme-choice');if(ch)ch.onchange=e=>{state.theme=window.TOPIK_THEME.setMode(e.target.value)};let up=document.getElementById('csv-upload');if(up)up.onchange=importCSV;let resetBackup=document.getElementById('reset-backup');if(resetBackup)resetBackup.onclick=()=>document.getElementById('export-data')?.click();let bu=document.getElementById('backup-upload');if(bu)bu.onchange=importBackup;let ec=document.getElementById('export-csv');if(ec)ec.onclick=exportCSV;let ed=document.getElementById('export-data');if(ed)ed.onclick=()=>download('topik-lab-backup.json',JSON.stringify({version:2,state},null,2),'application/json')}
 function bindRows(){document.querySelectorAll('[data-relearn-word]').forEach(b=>b.onchange=()=>{if(b.checked)relearnSelection.add(b.dataset.relearnWord);else relearnSelection.delete(b.dataset.relearnWord);const c=document.querySelector('[data-relearn-selected]');if(c)c.textContent='重新学习已选 '+relearnSelection.size+' 词'});document.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{let ko=b.dataset.favorite;state.favorites=state.favorites.includes(ko)?state.favorites.filter(x=>x!==ko):[...state.favorites,ko];persist();render()});/* all word-list voice controls are wired by enhanceSpeakButtons */}
 function download(name,data,type){let blob=new Blob(['\ufeff'+data],{type:type||'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function csvCell(s){s=String(s??'');return /[",\n\r]/.test(s)?'"'+s.replaceAll('"','""')+'"':s}
