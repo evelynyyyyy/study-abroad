@@ -4,7 +4,7 @@ const base=process.argv[2],sha=process.argv[3];
 if(!base||!(/^[a-f0-9]{40}$/.test(sha||'')))throw Error('Expected site URL and commit SHA');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function get(url){
- const response=await fetch(url,{cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
+ const response=await fetch(url,{signal:AbortSignal.timeout(12000),cache:'no-store',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}});
  if(!response.ok)throw Error(response.status+' '+url);
  return response;
 }
