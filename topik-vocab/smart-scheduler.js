@@ -23,7 +23,7 @@ window.TOPIK_SMART={
    lastResult:old.lastResult??null
   };
  },
- review(state,ko,mode,success,now=Date.now()){
+ review(state,ko,mode,success,now=Date.now(),result=success?'correct':'wrong'){
   const entry=state.progress[ko]||{},old=entry[mode]||{};
   const m=this.normalize(state,ko,mode,now);
   const streak=success?m.streak+1:0;
@@ -40,7 +40,7 @@ window.TOPIK_SMART={
    ease,streak,stability,difficulty:Math.max(1,Math.min(10,m.difficulty+(success?-.15:.7))),
    retrievability:1,interval,lastReview:now,nextReview,
    correct:m.correct+(success?1:0),incorrect:m.incorrect+(success?0:1),
-   reps:m.reps+1,lastResult:success?'correct':'wrong'
+   reps:m.reps+1,lastResult:result
   };
   entry[mode]={...old,memory,due:nextReview,last:now,
    wrong:(old.wrong||0)+(success?0:1),correct:(old.correct||0)+(success?1:0),
@@ -66,6 +66,7 @@ window.TOPIK_SMART={
     const q=p[mode],first=!!state.lifecycle?.[ko]?.first?.[mode]||!!q?.last;
     const seenAt=state.lifecycle?.[ko]?.seenAt||p.read?.last||0;
     if(!this.due(state,ko,mode,now))continue;
+    // A lapse must wait for its scheduled minute, even when history is short.
     // Require intervening items; a very short cooldown also avoids answer leakage.
     if(!first&&seenAt&&now-seenAt<3000)continue;
     const m=this.normalize(state,ko,mode,now);
