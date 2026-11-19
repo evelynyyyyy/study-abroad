@@ -97,6 +97,7 @@ for(const w of mixedPool){
  F.recall(mixed,w[1],'meaning');mixed.lifecycle[w[1]].wordState='REVIEW';
 }
 function run50(inputMethod){
+ let seed=97531864;S.random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
  const st=JSON.parse(JSON.stringify(mixed));st.inputMethod=inputMethod;
  const modes=[];
  for(let i=0;i<50;i++){
