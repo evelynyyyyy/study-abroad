@@ -167,7 +167,14 @@ function smartSubmit(){
  typed=(input?.value??typed).trim();if(!typed){notify('请先输入答案，或点击「不知道」');return}
  const correct=answerCorrect(smartTask.word,typed,smartTask.mode)||(smartTask.mode==='spell'&&TOPIK_LEXICON.acceptedSpell(typed,smartTask.word,scope()));
  if(!correct)TOPIK_LEXICON.confusion(state,smartTask.word[1],typed,scope(),smartTask.mode);
- if(correct){pendingRating=true;render();return}
+ if(correct){
+  pendingRating=true;
+  if(input)input.readOnly=true;
+  const actions=document.querySelector('.smart-bottom .smart-actions');
+  if(actions){actions.innerHTML='<button type="button" class="secondary" data-smart-rate="hard">很吃力</button><button type="button" class="secondary" data-smart-rate="good">一般</button><button type="button" class="primary" data-smart-rate="easy">很熟悉</button>';
+   actions.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));}
+  notify('回答正确，请选择记忆感受');return;
+ }
  smartRecord('wrong');
 }
 function smartRate(rating){
