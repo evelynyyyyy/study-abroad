@@ -405,3 +405,17 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
  color:var(--ios-special-active-text)!important;
 }
 .smart-study:has(.ios-keyboard) .smart-bottom{padding-bottom:0!important}
+
+/* v3.5.5 Chinese IME: numeric/symbol layers and expandable candidate strip. */
+.ios-keyboard [hidden]{display:none!important}
+.pinyin-keyboard .ios-candidate-strip{display:flex;align-items:center;min-width:0}
+.pinyin-keyboard .pinyin-candidates{flex:1;min-width:0;overflow-x:auto;overscroll-behavior-x:contain}
+.pinyin-keyboard .pinyin-candidates.expanded{flex-wrap:wrap;overflow-y:auto;overflow-x:hidden;max-height:185px;align-content:flex-start}
+.pinyin-keyboard .pinyin-expand{flex:0 0 35px;align-self:stretch;border:0;background:transparent;color:var(--ios-candidate-text);font-size:23px;border-left:1px solid var(--ios-keyboard-divider,rgba(255,255,255,.12))}
+.pinyin-keyboard .pinyin-expand[aria-expanded="true"]{transform:rotate(180deg)}
+.pinyin-keyboard .ios-row-bottom .ios-mode,.pinyin-keyboard .ios-row-bottom .ios-more{flex:1.25 1 0;min-width:45px}
+.pinyin-keyboard .ios-row-bottom .ios-space{flex:4.5 1 0}
+.pinyin-keyboard .ios-row-bottom .ios-return{flex:1.5 1 0}
+.pinyin-keyboard .pinyin-symbols .pinyin-key{min-width:0;flex:1 1 0;font-size:clamp(15px,4vw,21px);padding:0}
+.pinyin-keyboard .pinyin-symbols .ios-row-second{padding-inline:0}
+.pinyin-keyboard .pinyin-symbols .ios-row-third{gap:3px}
