@@ -213,14 +213,3 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--text-primary
  .smart-study:has(.pinyin-keyboard) .smart-bottom,.smart-study:has(.hangul-keyboard) .smart-bottom{padding-bottom:max(14px,env(safe-area-inset-bottom))}
 }
 
-/* Unified appearance menu, shared with settings and iOS system theme. */
-.top-right{color:var(--text-secondary)}
-#top-status{color:var(--text-secondary)}
-.theme-control{position:relative;flex-shrink:0}
-.theme-trigger{background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);border-radius:10px;min-height:40px;padding:8px 12px;white-space:nowrap}
-.theme-trigger:hover,.theme-trigger[aria-expanded="true"]{background:var(--bg-secondary);color:var(--text-primary)}
-.theme-menu{position:absolute;z-index:100;right:0;top:calc(100% + 6px);width:164px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:5px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
-.theme-menu[hidden]{display:none}
-.theme-menu button{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:transparent;color:var(--text-primary);padding:10px 11px}
-.theme-menu button:hover,.theme-menu button.selected{background:var(--bg-secondary)}
-.theme-menu button.selected{font-weight:650}
