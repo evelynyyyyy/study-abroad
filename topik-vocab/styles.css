@@ -116,3 +116,11 @@
 .relearn-check{display:inline-flex;align-items:center;min-height:40px;flex-shrink:0}
 .relearn-check input{width:19px;height:19px;accent-color:var(--ink)}
 @media(max-width:760px){.relearn-tools .line-btn{flex:1 1 auto;min-height:42px}.relearn-panel>.primary{width:100%}}
+
+/* Reset controls: deliberately confined to Settings. */
+.reset-panel{display:grid;gap:12px;margin-top:20px}
+.reset-panel h3,.reset-panel p{margin:0}
+.reset-actions{display:flex;flex-wrap:wrap;gap:10px}
+.reset-actions button{flex:1 1 180px;min-height:44px}
+.reset-danger{border:1px solid #a54b4b!important;color:#eaa0a0!important}
+.reset-danger:hover{background:rgba(165,75,75,.12)!important}
