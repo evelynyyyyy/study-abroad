@@ -18,5 +18,5 @@ assert.equal(L.confusion(state,'사람','학교',[[1,'사람','人'],[1,'사랑'
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 assert.ok(app.includes('TOPIK_LEXICON.acceptedSpell'));
 assert.ok(app.includes('TOPIK_LEXICON.confusion'));
-assert.ok(html.includes('lexicon-quality.js?v=2.1.1'));
+assert.ok(html.includes('lexicon-quality.js?v=3.0.0'));
 console.log('Sense IDs, unverified statuses, inflection, alternative answers and confusion regression passed.');
