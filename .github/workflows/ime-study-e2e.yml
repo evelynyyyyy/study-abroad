@@ -16,6 +16,7 @@ permissions:
 jobs:
   study-page:
     runs-on: ubuntu-24.04
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +26,6 @@ jobs:
       - name: Install browser test dependencies
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium webkit
+          node -e "console.log('Using preinstalled Chromium and WebKit from Playwright image')"
       - name: Test live study page with virtual keyboard
         run: node topik-vocab/ime-experiment/production-smoke.cjs
