@@ -46,6 +46,7 @@ jobs:
           node topik-vocab/tests/session-cooldown.test.cjs
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
+          node topik-vocab/tests/smart-progress.test.cjs
           node topik-vocab/tests/learning-fairness.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
           node topik-vocab/tests/relearn.test.cjs
