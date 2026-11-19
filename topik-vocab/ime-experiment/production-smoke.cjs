@@ -1,6 +1,6 @@
 const {webkit,chromium}=require('playwright');
 const assert=require('node:assert/strict');
-const url='https://evelynyyyyy.github.io/study-abroad/topik-vocab/';
+const url=process.env.STUDY_E2E_URL||'https://evelynyyyyy.github.io/study-abroad/topik-vocab/';
 const words={jian:'间',cheng:'成',chengwei:'成为',shijian:'时间',fangjian:'房间',zhongjian:'中间',xuesheng:'学生',xuexi:'学习',gongzuo:'工作',pengyou:'朋友',keyi:'可以',ranhou:'然后'};
 async function setTask(page,mode,word='되다'){await page.evaluate(({mode,word})=>{view='smart';smartTask={word:[1,word,mode==='meaning'?'成为':'学习'],type:'typing',mode};state.inputMethod='virtual';didCheck=false;pendingRating=false;typed='';pinyinComposition='';pinyinExpanded=false;hangulShift=false;hangulMode='letters';if(simpleIme)simpleIme.reset();render()},{mode,word})}
 async function typeChinese(page,py){for(const k of py)await page.locator('.pinyin-keyboard [data-pinyin-key="'+k+'"]').click()}
