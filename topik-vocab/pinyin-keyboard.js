@@ -61,7 +61,7 @@ function render(){
 function setMode(container,mode){
  if(!container)return;
  for(const panel of container.querySelectorAll('[data-pinyin-panel]'))panel.hidden=panel.dataset.pinyinPanel!==mode;
- const numbers=container.querySelector('[data-pinyin-mode="numbers"]'),extra=container.querySelector('[data-pinyin-mode="extra"]');
+ const numbers=container.querySelector('.ios-mode'),extra=container.querySelector('.ios-more');
  if(numbers){numbers.textContent=mode==='letters'?'123':'ABC';numbers.dataset.pinyinMode=mode==='letters'?'numbers':'letters'}
  if(extra)extra.hidden=mode!=='numbers'&&mode!=='extra';
  if(extra)extra.textContent=mode==='extra'?'123':'#+=';
