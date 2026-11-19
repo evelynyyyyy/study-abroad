@@ -8,8 +8,8 @@ const keys=[
  [['ㅋ'],['ㅌ'],['ㅊ'],['ㅍ'],['ㅠ'],['ㅜ'],['ㅡ']]
 ];
 function edit(text,start,end,key,shift=false){
- const mapped=key==='Backspace'||key===' '?key:TOPIK_KOREAN_ENGINE.keyForJamo(shift?({'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ','ㅐ':'ㅒ','ㅔ':'ㅖ'}[key]||key):key);
- return TOPIK_KOREAN_IME.edit(text,start,end,mapped||key);
+ const mapped=key==='Backspace'||key===' '?key:root.TOPIK_KOREAN_ENGINE.keyForJamo(shift?({'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ','ㅐ':'ㅒ','ㅔ':'ㅖ'}[key]||key):key);
+ return root.TOPIK_KOREAN_IME.edit(text,start,end,mapped||key);
 }
 function append(text,key){return edit(text,String(text).length,String(text).length,key).text}
 function backspace(text){return edit(text,String(text).length,String(text).length,'Backspace').text}
