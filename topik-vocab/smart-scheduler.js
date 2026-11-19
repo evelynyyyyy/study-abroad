@@ -145,7 +145,7 @@ window.TOPIK_SMART={
   const same=preferredMode&&!sameRun&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-5):null;
   const due=(sameRun&&comparable?other:null)||same||best,backlog=candidates.length;
   const freshAllowed=introduced.size<goal&&
-   (backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
+   (!eligible.length||backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
   const recentSpellings=history.slice(-3);
   const distinct=fresh.filter(c=>!recentSpellings.some(prev=>window.TOPIK_LEXICON?.similar(c.word[1],prev)));
   const nextFresh=(distinct.length?distinct:fresh).find(c=>this.sessionEligible(c))||
