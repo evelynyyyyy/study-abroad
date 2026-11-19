@@ -43,6 +43,7 @@ jobs:
           node topik-vocab/tests/hangul-keyboard.test.cjs
           node topik-vocab/tests/korean-ime.test.cjs
           node topik-vocab/tests/answer-evaluator.test.cjs
+          node topik-vocab/tests/session-cooldown.test.cjs
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
