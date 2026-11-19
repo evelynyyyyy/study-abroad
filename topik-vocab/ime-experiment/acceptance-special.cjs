@@ -68,7 +68,7 @@ async function lazyAndFailure(browser,name){
  await page.goto(base,{waitUntil:'load'});
  assert.equal(await page.locator('script[src*="simple-ime-core"]').count(),0);
  const coldStart=Date.now();await task(page);await page.waitForFunction(()=>!!simpleIme);
- const cold=Date.now()-coldStart;const first=await page.evaluate(()=>simpleIme);
+ const cold=Date.now()-coldStart;const first=await page.evaluate(()=>!!simpleIme);assert.equal(first,true);
  await task(page,'spell');await task(page,'meaning');
  assert.equal(await page.locator('script[src*="simple-ime-core"]').count(),1);
  assert.equal(await page.evaluate(()=>simpleIme===window.__not_an_ime),false);
