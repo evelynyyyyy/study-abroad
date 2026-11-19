@@ -24,7 +24,7 @@ for(const m of ['input-method','TOPIK_HANGUL.edit','inputmode=','compositionstar
 assert.ok(html.includes('hangul-keyboard.js?v=3.8.3'));
 assert.ok(html.includes('name="topik-app-version" content="3.8.3"'));
 assert.ok(html.includes('app.js?v=3.8.3'));
-assert.ok(app.includes('版本 v3.8.3 · 中韩双语网页键盘'));
+assert.ok(app.includes('window.TOPIK_APP_VERSION'));
 assert.ok(app.includes('<h3>学习安排</h3>')&&app.includes('<h3>输入方式</h3>')&&app.includes('<h3>显示偏好</h3>'));
 assert.ok(app.indexOf('<h3>学习安排</h3>')<app.indexOf('<h3>输入方式</h3>')&&app.indexOf('<h3>输入方式</h3>')<app.indexOf('<h3>显示偏好</h3>'));
 for(const mode of ['system','bilingual'])assert.ok(app.includes('<option value="'+mode+'"'));
