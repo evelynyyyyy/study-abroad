@@ -105,14 +105,14 @@ function smartDailyStats(){
 function home(){
  const n=counts(),sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal),stats=smartDailyStats();
  return '<div class="smart-home"><div class="eyebrow">今日学习 · '+today()+'</div><h1>TOPIK单词</h1>'+levelBar()+
- '<div class="smart-stats"><div><strong>'+sum.newCount+' <small>/ '+sum.goal+'</small></strong><span>今日新词</span></div><div><strong>'+sum.due+'</strong><span>今日待复习</span></div><div><strong>'+sum.consolidating+'</strong><span>学习中</span></div></div>'+
- '<div class="smart-start-stack"><button class="primary smart-start" data-smart-start="learn">开始学习 · '+stats.introduced+'/'+stats.goal+' <span>→</span></button><button class="primary smart-start" data-smart-start="review">开始复习 · '+stats.reviewDone+'/'+stats.reviewGoal+' <span>→</span></button></div>'+ (stats.reviewDue===0?'<p class="tiny muted">今日复习已完成</p>':'')+
+ '<div class="smart-stats"><div><strong>'+stats.graduated+' <small>/ '+sum.goal+'</small></strong><span>今日已学会</span></div><div><strong>'+stats.introduced+'</strong><span>今日接触新词</span></div><div><strong>'+sum.consolidating+'</strong><span>学习中</span></div><div><strong>'+sum.due+'</strong><span>今日待复习</span></div></div>'+
+ '<div class="smart-start-stack"><button class="primary smart-start" data-smart-start="learn">开始学习 · '+stats.graduated+'/'+stats.goal+' <span>→</span></button><button class="primary smart-start" data-smart-start="review">开始复习 · '+stats.reviewDone+'/'+stats.reviewGoal+' <span>→</span></button></div>'+ (stats.reviewDue===0?'<p class="tiny muted">今日复习已完成</p>':'')+
  '<p class="tiny muted smart-home-note">新词学习与到期复习分池安排 · 学习毕业后交给 FSRS。</p></div>';
 }
 function recordsHome(){
  const d=levelDayInfo(),w=scope(),sum=TOPIK_SMART.summary(state,w,d,state.dailyGoal);
  return '<div class="eyebrow">学习记录</div><h1>学习进度</h1><div class="smart-stats">'+
- '<div><strong>'+sum.newCount+'</strong><span>今日首次认识</span></div>'+
+ '<div><strong>'+smartDailyStats().graduated+'</strong><span>今日已学会（毕业）</span></div><div><strong>'+sum.newCount+'</strong><span>今日接触新词</span></div>'+
  '<div><strong>'+sum.firstRecall+'</strong><span>今日完成双向初次回忆（含历史复习）</span></div>'+
  '<div><strong>'+sum.consolidating+'</strong><span>学习中单词</span></div>'+
  '<div><strong>'+sum.due+'</strong><span>今日待复习</span></div>'+
@@ -219,14 +219,14 @@ function smartRecord(result){
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
  const {word,mode}=smartTask,correct=['correct','hard','good','easy'].includes(result);
  const phase=TOPIK_SMART.wordState(state,word[1]);
- if(phase==='LEARNING')TOPIK_SMART.learningResult(state,word[1],mode,correct,Date.now(),result);
+ if(phase==='LEARNING'){state.learningActiveWindow=Math.max(2,Math.min(12,scope().filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length));TOPIK_SMART.learningResult(state,word[1],mode,correct,Date.now(),result);}
  else{
   TOPIK_SMART.review(state,word[1],mode,correct,Date.now(),result);
   if(!correct)state.lifecycle[word[1]].wordState='RELEARNING';
   else if(phase==='RELEARNING'&&['meaning','spell'].every(m=>state.progress?.[word[1]]?.[m]?.memory?.phase==='review'))state.lifecycle[word[1]].wordState='REVIEW';
   TOPIK_RELEARN.afterAnswer(state,word[1],mode,correct);
  }
- markRecall(word[1],mode);
+ if(correct)markRecall(word[1],mode);
  const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;
  if(smartPool==='review'&&(phase==='REVIEW'||phase==='RELEARNING')){
   const completed=new Set(d.smartReviewCompleted||[]);
@@ -426,7 +426,7 @@ function smartScreen(){
  if(!smartTask){
    if(state.smartSessions)delete state.smartSessions[smartPool];persist();
    const sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal);
-   return '<div class="smart-done"><div class="eyebrow">今日学习</div><h1>当前任务已完成</h1><p class="muted">今日认识 '+sum.newCount+' 个新词，当前没有可安排的到期题目。</p><button class="primary" data-view="home">返回首页</button></div>';
+   return '<div class="smart-done"><div class="eyebrow">今日学习</div><h1>当前任务已完成</h1><p class="muted">今日已学会 '+smartDailyStats().graduated+' 个新词，当前没有可安排的到期题目。</p><button class="primary" data-view="home">返回首页</button></div>';
  }
  const {word:w,type,mode}=smartTask,ko=quote(w[1]),zh=quote(w[2]),d=ex(w);
  const isShow=type==='show'||type==='relearn-show',isMeaning=mode==='meaning';
