@@ -149,13 +149,13 @@ window.TOPIK_SMART={
   return !Number.isFinite(Number(p.due))||Number(p.due)<=now;
  },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
- select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null){
+ select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null,pool='learn'){
   const recent=history.slice(-3),introduced=new Set(day.learned||[]);
   const learning=[],review=[],fresh=[];
   for(const word of words){
    const ko=word[1],phase=this.wordState(state,ko);
-   if(phase==='NEW'){if(introduced.size<goal)fresh.push({word,type:'show',mode:null,reason:'new-introduction'});continue}
-   if(phase==='LEARNING'){
+   if(phase==='NEW'){if(pool==='learn'&&introduced.size<goal)fresh.push({word,type:'show',mode:null,reason:'new-introduction'});continue}
+   if(phase==='LEARNING'&&pool==='learn'){
     const r=state.lifecycle[ko],counts=r.learningByMode||{};
     const mode=(counts.meaning||0)<=(counts.spell||0)?'meaning':'spell';
     const alternate=mode==='meaning'?'spell':'meaning';
@@ -165,7 +165,7 @@ window.TOPIK_SMART={
     }
     continue;
    }
-   if(phase==='REVIEW'||phase==='RELEARNING'){
+   if((phase==='REVIEW'||phase==='RELEARNING')&&pool==='review'){
     for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
      const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
      if(this.sessionEligible(candidate))review.push(candidate);
@@ -177,10 +177,9 @@ window.TOPIK_SMART={
   const nextLearning=learning.sort((a,b)=>(state.lifecycle[a.word[1]]?.lastLearningSeenAt||0)-(state.lifecycle[b.word[1]]?.lastLearningSeenAt||0))[0];
   const nextFresh=fresh.find(c=>!recent.includes(c.word[1])&&this.sessionEligible(c));
   // Separate pools; interleave tasks, never put new words into FSRS before graduation.
-  if(nextReview&&this.session.index%3===0)return nextReview;
+  if(pool==='review')return nextReview||null;
   if(nextLearning)return nextLearning;
-  if(nextFresh)return nextFresh;
-  return nextReview||null;
+  return nextFresh||null;
  },
  // Lightweight on-demand diagnostics; no persistent pre-generated direction queue.
  inspect(state,words,now=Date.now()){
