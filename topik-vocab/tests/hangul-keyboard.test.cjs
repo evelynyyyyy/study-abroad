@@ -39,7 +39,7 @@ assert.ok(app.includes("webKeyboard||didCheck?'readonly'"));
 assert.ok(app.includes('TOPIK_PINYIN.render()'));
 assert.ok(app.includes('TOPIK_HANGUL.render(hangulShift)'));
 assert.ok(!app.includes('data-temporary-system'));
-assert.ok(html.includes('pinyin-keyboard.js?v=3.7.2'));
+assert.ok(html.includes('pinyin-keyboard.js?v=3.7.0'));
 console.log('Virtual keyboard is readonly and direction-derived.');
 
 for(const [plain,shifted] of Object.entries({'ㅂ':'ㅃ','ㅈ':'ㅉ','ㄷ':'ㄸ','ㄱ':'ㄲ','ㅅ':'ㅆ','ㅐ':'ㅒ','ㅔ':'ㅖ'})){assert.ok(K.render(false).includes('>'+plain+'</button>'));assert.ok(K.render(true).includes('>'+shifted+'</button>'))}
