@@ -21,7 +21,7 @@ t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深�
 t.ctrl.setMode('system');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
-assert.ok(html.indexOf('theme.js?v=3.5.0')<html.indexOf('styles.css?v=3.5.0'),'theme must initialize before CSS');
+assert.ok(html.indexOf('theme.js?v=3.5.1')<html.indexOf('styles.css?v=3.5.1'),'theme must initialize before CSS');
 assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
@@ -38,3 +38,9 @@ assert.ok(css.includes('.level-switch button.active')&&css.includes('var(--butto
 assert.ok(css.includes('.toast{background:var(--surface-secondary)'));
 assert.ok(html.includes('id="theme-toggle"')&&!html.includes('id="theme-menu"'));
 console.log('System theme startup, live changes, overrides, restore, metadata and learning isolation passed.');
+
+assert.ok(!html.includes('class="footnote"'),'No persistent disclaimer in main layout');
+assert.ok(app.includes('<h3>关于词库</h3>'),'Settings contains lexicon provenance');
+assert.ok(app.includes('<h3>学习数据</h3>'),'Settings contains local learning data information');
+assert.ok(app.includes('DATA-LICENSE.md')&&app.includes('VOCAB-SOURCES.md'),'Source links retained in Settings');
+assert.ok(app.includes('新词认识、双向输入与复习自动穿插 · 完成目标后可继续复习。'));
