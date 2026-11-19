@@ -312,17 +312,26 @@ function keyboardReturn(){
  return;
 }
 function bindDeleteRepeat(button,action){
- let repeated=false;
- const stop=()=>{clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null};
- button.addEventListener('pointerdown',e=>{
-  if(e.button!==0||didCheck||pendingRating)return;
-  stop();repeated=false;
-  keyboardDeleteTimer=setTimeout(()=>{repeated=true;action();keyboardDeleteInterval=setInterval(action,72)},420);
- });
- for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,stop);
- button.addEventListener('click',e=>{if(repeated){e.preventDefault();repeated=false;return}action()});
-
+ let down=false,repeated=false,suppressClick=false;
+ const stop=()=>{down=false;clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null};
+ const start=e=>{
+  if(e.type==='pointerdown'&&e.button!==0||didCheck||pendingRating||down)return;
+  down=true;repeated=false;suppressClick=false;action();
+  keyboardDeleteTimer=setTimeout(()=>{
+   if(!down)return;
+   repeated=true;keyboardDeleteInterval=setInterval(()=>{if(down)action()},72);
+  },420);
+ };
+ button.addEventListener('pointerdown',start);
+ button.addEventListener('touchstart',e=>{if(typeof PointerEvent==='undefined')start(e)},{passive:true});
+ for(const event of ['pointerup','pointercancel','lostpointercapture','touchend','touchcancel']){
+  button.addEventListener(event,()=>{if(down){suppressClick=true;stop()}});
+ }
+ button.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();return}if(!down)action()});
+ window.addEventListener('blur',stop);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
 }
+
 let hangulMode='letters';
 function applyHangulKey(key){
  if(!useHangulKeyboard()||didCheck||pendingRating)return;
