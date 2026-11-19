@@ -4,7 +4,7 @@
  */
 'use strict';
 window.TOPIK_SMART={
- DAY:86400000, MIN_GAP:2, VERSION:'3.8.2',
+ DAY:86400000, MIN_GAP:2, VERSION:'3.8.3',
  // Explicit lifecycle: short-term learning never invokes FSRS; graduated words enter dated review.
  wordState(state,ko){
   state.lifecycle=state.lifecycle||{};
@@ -150,43 +150,55 @@ window.TOPIK_SMART={
  },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
  select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null,pool='learn'){
-  const recent=history.slice(-6),introduced=new Set(day.learned||[]);
+  const session=this.session||(this.resetSession(),this.session);
+  const recent=history.slice(-8),introduced=new Set(day.learned||[]);
   const learning=[],review=[],fresh=[];
+  const random=()=>Math.max(0,Math.min(.999999999,Number(this.random?.()??Math.random())));
+  const pick=items=>{
+   if(!items.length)return null;
+   const total=items.reduce((n,c)=>n+c.weight,0);
+   let threshold=random()*total;
+   for(const c of items){threshold-=c.weight;if(threshold<0)return c.task}
+   return items[items.length-1].task;
+  };
   for(const word of words){
    const ko=word[1],phase=this.wordState(state,ko);
-   if(phase==='NEW'){if(pool==='learn'&&introduced.size<goal)fresh.push({word,type:'show',mode:null,reason:'new-introduction'});continue}
+   if(phase==='NEW'){
+    const candidate={word,type:'show',mode:null,reason:'new-introduction'};
+    if(pool==='learn'&&introduced.size<goal&&this.sessionEligible(candidate)&&!recent.includes(ko))
+     fresh.push({task:candidate,weight:1});
+    continue;
+   }
    if(phase==='LEARNING'&&pool==='learn'){
-    const r=state.lifecycle[ko],counts=r.learningByMode||{};
-    const mode=(counts.meaning||0)<=(counts.spell||0)?'meaning':'spell';
-    const alternate=mode==='meaning'?'spell':'meaning';
-    for(const m of [mode,alternate]){
-     const candidate={word,type:'typing',mode:m,reason:'learning-recall'};
-     if(this.sessionEligible(candidate)&&!recent.includes(ko)){learning.push(candidate);break}
+    const r=state.lifecycle[ko],counts=r.learningByMode||{},entry=this.sessionEntry(ko);
+    if(recent.includes(ko))continue;
+    for(const mode of ['meaning','spell']){
+     const candidate={word,type:'typing',mode,reason:'learning-recall'};
+     if(!this.sessionEligible(candidate))continue;
+     const attempts=Number(counts[mode]||0);
+     const gap=this.session.index-entry.byMode[mode].last-1;
+     const needsDirection=attempts===0?2.5:1;
+     const recency=Math.min(2,Math.max(.5,gap/8));
+     learning.push({task:candidate,weight:needsDirection*recency/(1+attempts*.6)});
     }
     continue;
    }
    if((phase==='REVIEW'||phase==='RELEARNING')&&pool==='review'){
     for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
      const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
-     if(this.sessionEligible(candidate))review.push(candidate);
+     if(this.sessionEligible(candidate)&&!recent.includes(ko))
+      review.push({task:candidate,weight:1+Math.min(3,Math.max(0,now-Number(state.progress?.[ko]?.[mode]?.due||now))/this.DAY)});
     }
    }
   }
-  
-  const nextReview=review.sort((a,b)=>(state.progress?.[a.word[1]]?.[a.mode]?.due||0)-(state.progress?.[b.word[1]]?.[b.mode]?.due||0))[0];
-  const nextLearning=learning.sort((a,b)=>(state.lifecycle[a.word[1]]?.lastLearningSeenAt||0)-(state.lifecycle[b.word[1]]?.lastLearningSeenAt||0))[0];
-  const nextFresh=fresh.find(c=>!recent.includes(c.word[1])&&this.sessionEligible(c));
-  // Reserve a new-word slot while limiting the active learning window.
-  if(pool==='review')return nextReview||null;
+  if(pool==='review')return pick(review);
   const active=words.reduce((n,w)=>n+(this.wordState(state,w[1])==='LEARNING'?1:0),0);
   const capacity=Math.max(8,Math.min(12,10-Math.floor(active/8)));
-  const session=this.session||(this.resetSession(),this.session);
-  const freshOpportunity=!!nextFresh&&active<capacity;
-  // At least every other scheduled learning task introduces a new word while capacity permits.
-  if(freshOpportunity&&(!nextLearning||session.index%2===0||session.freshIntroduced===0)){
-   session.freshIntroduced++;return nextFresh;
+  const canIntroduce=fresh.length>0&&active<capacity;
+  if(canIntroduce&&(!learning.length||session.freshIntroduced===0||session.index%2===0)){
+   session.freshIntroduced++;return pick(fresh);
   }
-  return nextLearning||(freshOpportunity?(session.freshIntroduced++,nextFresh):null);
+  return pick(learning)||(canIntroduce?(session.freshIntroduced++,pick(fresh)):null);
  },
  // Lightweight on-demand diagnostics; no persistent pre-generated direction queue.
  inspect(state,words,now=Date.now()){
