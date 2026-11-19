@@ -372,7 +372,7 @@ function smartScreen(){
  const example=d[0]?'<div class="smart-example" id="smart-example" '+(isShow?'':'hidden')+'><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
  const main=isShow?
  '<div class="smart-word" lang="ko">'+ko+'</div><div class="smart-translation">'+zh+'</div><div class="smart-reading">'+quote(romanizeHangul(w[1]))+'</div><button class="smart-speak" data-speak="'+ko+'">▶ 听发音</button>':
- '<div class="smart-word '+(isMeaning?'':'smart-chinese')+'" '+(isMeaning?'lang="ko"':'')+'>'+(isMeaning?ko:zh)+'</div>'+
+ '<div class="smart-word '+(isMeaning?'':'smart-chinese')+'" '+(isMeaning?'lang="ko"':'')+'>'+(isMeaning?ko:zh)+'</div>'+(isMeaning?'<button class="smart-speak" data-speak="'+ko+'">▶ 听发音</button>':'')+
  (!isMeaning&&TOPIK_LEXICON.hint(w,scope())?'<p class="tiny muted">'+quote(TOPIK_LEXICON.hint(w,scope()))+'</p>':'')+
  '<div class="input-wrap"><input id="spell-input" class="field" type="text" inputmode="'+(webKeyboard?'none':'text')+'" enterkeyhint="done" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(webKeyboard||didCheck?'readonly':'')+'></div>'+ 
 
@@ -394,7 +394,7 @@ function smartScreen(){
  debugHtml+'<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
  '<section class="smart-focus"><div class="smart-kind">'+(type==='relearn-show'?'重新认识':isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
  (d[0]&&isShow?example:'')+
- (didCheck&&d[0]?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+'</section>'+
+ (didCheck&&d[0]?example:'')+'</section>'+
  '<footer class="smart-bottom'+(webKeyboard?' has-keyboard':'')+'">'+actions+(webKeyboard?'<div class="study-keyboard-dock">'+(koreanKeyboard?TOPIK_HANGUL.render(hangulShift):TOPIK_PINYIN.render())+'</div>':'')+'</footer></div>';
 }
 
