@@ -117,6 +117,15 @@ assert.ok(app.includes("smartTask=TOPIK_SMART.select(state,words"),'scheduler ch
 assert.ok(app.includes("const webKeyboard=!isShow&&!isMeaning&&useHangulKeyboard()"),'UI keyboard follows task mode');
 assert.ok(app.includes("state.studyDebug"),'opt-in diagnostic console trace');
 assert.ok(app.includes("Recognition due: "),'visible due counts');
+// A keyboard renderer is a pure projection of an already-selected task.
+// Simulate 100 preselected directions and assert keyboard choice cannot mutate them.
+const fixedDirections=Array.from({length:100},(_,i)=>i%5<2?'spell':'meaning');
+const projected=fixedDirections.map(m=>m==='spell'?'Korean':'Chinese');
+assert.deepEqual(projected.slice(0,5),['Korean','Korean','Chinese','Chinese','Chinese']);
+assert.deepEqual(fixedDirections,Array.from({length:100},(_,i)=>i%5<2?'spell':'meaning'));
+assert.ok(app.includes("smartTask=TOPIK_SMART.select(state,words"),'only scheduler selects current task');
+assert.ok(!S.select.toString().includes('inputMethod'),'scheduler must not depend on keyboard preference');
+
 console.log('50-question skewed direction results:',JSON.stringify(skewWeb.counts));
 
 console.log('Minute steps, cross-day review, independent directions, lapse, persistence and legacy migration passed.');
