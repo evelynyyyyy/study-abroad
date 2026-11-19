@@ -17,7 +17,7 @@ if(!state.legacyMigrated){Object.entries(legacy).forEach(([ko,r])=>{if(!state.pr
 let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false,pinyinMode='letters',pinyinExpanded=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
 // First visit creates an empty browser-local profile; existing profiles are never reset by opening or sharing the URL.
-if(localStorage.getItem(STORAGE)===null)persist();
+try{if(localStorage.getItem(STORAGE)===null)persist()}catch(_){}
 function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],window.TOPIK_VERIFIED_ADDITIONS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 const TOPIK_TOPICS={
  conversation:['안녕','안녕하세요','감사합니다','죄송합니다','네','아니요','이름','친구','만나다','말하다','질문','대답','약속','인사하다'],
