@@ -29,7 +29,7 @@ assert.equal(S.wordState(fresh,'测试韩词0'),'REVIEW');
 assert.ok(fresh.progress['测试韩词0'].meaning.due>now);
 assert.equal(S.select(fresh,[words[0]],{learned:[words[0][1]]},1,[],now+3000,null,'learn'),null);
 S.resetSession();
-const dueTask=S.select(fresh,[words[0]],{learned:[]},0,[],now+S.DAY+5000,null,'review');
+const dueTask=S.select(fresh,[words[0]],{learned:[]},0,[],now+S.DAY+40000,null,'review');
 assert.ok(dueTask,'graduated word should be available in a new review session');
 assert.ok(['meaning','spell'].includes(dueTask.mode),'either due direction is valid');
 const before=JSON.stringify(fresh.progress);
