@@ -2,7 +2,7 @@
   "engine": "simple-ime",
   "upstream": "nieyuyao/simple-ime",
   "upstreamCommit": "d503bee97392f3b99e1fb9d6f23cecc86ced6f26",
-  "generatedAt": "2026-11-19T13:02:18.580Z",
+  "generatedAt": "2026-11-19T13:03:55.802Z",
   "total": 12,
   "passed": 12,
   "failed": 0,
@@ -64,7 +64,7 @@
         "硷",
         "饯"
       ],
-      "durationMs": 0.8958930000000009
+      "durationMs": 1.2955959999999322
     },
     {
       "pinyin": "cheng",
@@ -102,7 +102,7 @@
         "酲",
         "铛"
       ],
-      "durationMs": 0.10212100000001101
+      "durationMs": 0.16119900000001053
     },
     {
       "pinyin": "chengwei",
@@ -143,7 +143,7 @@
         "酲",
         "铛"
       ],
-      "durationMs": 0.23923200000001543
+      "durationMs": 0.2923210000000154
     },
     {
       "pinyin": "shijian",
@@ -202,7 +202,7 @@
         "什",
         "拭"
       ],
-      "durationMs": 0.1857519999999795
+      "durationMs": 0.24855299999990166
     },
     {
       "pinyin": "fangjian",
@@ -230,7 +230,7 @@
         "钫",
         "邡"
       ],
-      "durationMs": 0.08169899999995778
+      "durationMs": 0.11198300000000927
     },
     {
       "pinyin": "zhongjian",
@@ -261,7 +261,7 @@
         "舯",
         "忪"
       ],
-      "durationMs": 0.07670300000006591
+      "durationMs": 0.10260799999991832
     },
     {
       "pinyin": "xuesheng",
@@ -274,7 +274,7 @@
         "☃️",
         "👨‍🎓"
       ],
-      "durationMs": 0.06175299999995332
+      "durationMs": 0.07833099999993465
     },
     {
       "pinyin": "xuexi",
@@ -285,7 +285,7 @@
         "学习",
         "☃️"
       ],
-      "durationMs": 0.04360799999994924
+      "durationMs": 0.05930100000000493
     },
     {
       "pinyin": "gongzuo",
@@ -315,7 +315,7 @@
         "蚣",
         "红"
       ],
-      "durationMs": 0.1501739999999927
+      "durationMs": 0.2310459999999921
     },
     {
       "pinyin": "pengyou",
@@ -345,7 +345,7 @@
         "抨",
         "蟛"
       ],
-      "durationMs": 0.09476700000004712
+      "durationMs": 0.1348169999999982
     },
     {
       "pinyin": "keyi",
@@ -399,7 +399,7 @@
         "蚵",
         "锞"
       ],
-      "durationMs": 0.08320000000003347
+      "durationMs": 0.14815899999996418
     },
     {
       "pinyin": "ranhou",
@@ -416,7 +416,7 @@
         "苒",
         "蚺"
       ],
-      "durationMs": 0.04282599999999093
+      "durationMs": 0.05952100000001792
     }
   ]
 }
