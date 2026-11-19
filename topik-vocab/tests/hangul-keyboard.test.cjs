@@ -22,7 +22,7 @@ assert.ok(K.render().includes('data-hangul="Backspace"'));
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const m of ['input-method','TOPIK_HANGUL.edit','inputmode=','compositionstart','compositionend'])assert.ok(app.includes(m),m);
 assert.ok(html.includes('hangul-keyboard.js?v=3.5.5'));
-assert.ok(/name="topik-app-version" content="3\\.6\\.0"/.test(html));
+assert.ok(html.includes('name="topik-app-version" content="3.6.0"'));
 assert.ok(html.includes('app.js?v=3.5.5'));
 assert.ok(app.includes('版本 v3.5.5 · 首页信息精简'));
 assert.ok(app.includes('<h3>学习安排</h3>')&&app.includes('<h3>输入方式</h3>')&&app.includes('<h3>显示偏好</h3>'));
