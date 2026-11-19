@@ -45,7 +45,7 @@ assert.equal(F.stage(old,'집'),'consolidating');
 assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for consolidation');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const marker of ['data-smart-start="learn"','data-smart-start="review"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
-assert.ok(html.includes('smart-scheduler.js?v=3.8.3'));
+assert.ok(html.includes('smart-scheduler.js?v=3.8.4'));
 assert.ok(app.includes('window.TOPIK_APP_VERSION'));
 
 // 30-task keyboard-mode independence: both due directions must appear.
@@ -60,6 +60,7 @@ for(const w of pool){
 function simulate(inputMethod){
  const state=JSON.parse(JSON.stringify(dual)),modes=[];
  state.inputMethod=inputMethod;
+ let seed=24681357;S.random=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296};
  for(let i=0;i<30;i++){
   const t=S.select(state,pool,{learned:[]},0,state.smartHistory,now+i*1000,state.smartInputDirection||null,'review');
   assert.ok(t&&t.type==='typing','30 due typing tasks must be available');
