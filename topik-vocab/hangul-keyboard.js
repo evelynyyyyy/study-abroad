@@ -74,6 +74,6 @@ function render(shift=false){
  '<button type="button" class="hangul-key hangul-control ios-special ios-delete" data-hangul="Backspace" aria-label="删除">⌫</button></div>'+
  '<div class="hangul-row ios-row-bottom"><button type="button" class="hangul-key hangul-space ios-space" data-hangul=" " aria-label="空格">한국어</button><button type="button" class="hangul-key ios-return" data-smart-submit="1" aria-label="提交答案">↵</button></div></div>';
 }
-function updateShift(container,shift){if(!container)return;container.querySelectorAll('[data-hangul]').forEach(b=>{if(b.dataset.shift)b.textContent=shift?b.dataset.shift:b.dataset.hangul});const b=container.querySelector('[data-hangul-shift]');if(b)b.setAttribute('aria-pressed',String(shift));}
+function updateShift(container,shift){if(!container)return;container.querySelectorAll('[data-hangul]').forEach(b=>{if(b.dataset.shift)b.textContent=shift?b.dataset.shift:b.dataset.hangul});const b=container.querySelector('[data-hangul-shift]');if(b){b.setAttribute('aria-pressed',String(shift));const glyph=b.querySelector('span');if(glyph)glyph.textContent=shift?'⬆':'⇧';}}
 return root.TOPIK_HANGUL={append,backspace,edit,render,updateShift,keys,L,V,T};
 })(typeof window!=='undefined'?window:globalThis);
