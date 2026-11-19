@@ -21,6 +21,7 @@ jobs:
           node-version: '22'
       - name: Verify JavaScript syntax
         run: |
+          node --check topik-vocab/hangul-keyboard.js
           node --check topik-vocab/app.js
           node --check topik-vocab/vocabulary.js
           node --check topik-vocab/study-context.js
@@ -32,6 +33,7 @@ jobs:
           node --check topik-vocab/lexicon-quality.js
       - name: Test first learning lifecycle and independent recall
         run: |
+          node topik-vocab/tests/hangul-keyboard.test.cjs
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
@@ -53,6 +55,7 @@ jobs:
       - name: Check site structure and title
         run: |
           node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./smart-scheduler.js','./pronunciation.js','./relearn.js','./reset-progress.js','./lexicon-quality.js','./styles.css'])if(!h.includes(x))process.exit(1)"
+          test -f topik-vocab/hangul-keyboard.js
           test -f topik-vocab/styles.css
           test -f topik-vocab/vocabulary.js
           test -f topik-vocab/study-context.js
