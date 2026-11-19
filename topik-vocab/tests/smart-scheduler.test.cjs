@@ -45,7 +45,7 @@ assert.equal(S.mastered(old,'집'),false);
 assert.equal(F.stage(old,'집'),'consolidating');
 assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for consolidation');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
-for(const marker of ['data-smart-start="learn"','data-smart-start="review"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
+for(const marker of ['data-smart-start="learn"','data-smart-start="review"',"smartRecord(correct?'good':'again')",'data-smart-unknown="1"','didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
 assert.ok(html.includes('smart-scheduler.js?v='+releaseVersion+''));
 assert.ok(app.includes('window.TOPIK_APP_VERSION'));
 
