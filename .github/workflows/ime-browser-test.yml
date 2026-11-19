@@ -1,0 +1,30 @@
+name: Browser smoke test live simple-ime
+on:
+  workflow_dispatch:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/ime-browser-test.yml'
+      - 'topik-vocab/ime-experiment/browser-smoke.cjs'
+permissions:
+  contents: read
+jobs:
+  webkit-and-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright browsers
+        run: |
+          mkdir -p /tmp/ime-browser-test
+          cd /tmp/ime-browser-test
+          npm init -y
+          npm install --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Test LIVE GitHub Pages engine in WebKit and Chromium
+        env:
+          NODE_PATH: /tmp/ime-browser-test/node_modules
+        run: node topik-vocab/ime-experiment/browser-smoke.cjs
