@@ -80,7 +80,7 @@ window.TOPIK_SMART={
     const factor=grade==='hard'?.75:grade==='easy'?1.3:1;
     // Only a delayed successful review grows stability meaningfully.
     stability=Math.min(this.CONFIG.maxIntervalDays,Math.max(stability+.05,stability*gain*factor+(elapsed>=.75?.35:0)));
-    const desired=stability*Math.log(this.CONFIG.targetRetention)/Math.log(this.CONFIG.targetRetention);
+    const desired=stability;
     intervalMinutes=Math.max(60,Math.min(this.CONFIG.maxIntervalDays*1440,desired*1440*(grade==='hard'?.65:grade==='easy'?1.2:1)));
    }
   }
@@ -150,9 +150,8 @@ window.TOPIK_SMART={
    if(stage==='unseen')continue;
    if(stage==='mastered')mastered++;
    if(['learning','consolidating'].includes(stage))consolidating++;
-   const first=state.lifecycle?.[ko]?.first;
-   if(first?.meaning&&first?.spell&&
-     (state.smartAnswerHistory||[]).some(h=>h.ko===ko&&this.dayKey(h.at)===today))firstRecall++;
+   const firstAt=Number(state.lifecycle?.[ko]?.firstBothAt||0);
+   if(firstAt&&this.dayKey(firstAt)===today)firstRecall++;
    for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now))due++;
   }
   return {due,newCount:(day.learned||[]).length,firstRecall,consolidating,mastered,goal,
