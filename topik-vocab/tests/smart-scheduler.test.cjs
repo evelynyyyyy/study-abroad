@@ -22,7 +22,7 @@ for(let i=1;i<=3;i++){
  S.review(state,'집','spell',true,now+i*20*60000,'easy');
 }
 assert.equal(S.mastered(state,'집',now+3*20*60000),false,'same-day successes cannot prove mastery');
-const due=S.select(state,words,day,2,['학교','물'],now+S.DAY*2);
+const due=S.select(state,words,day,2,['학교','물'],now+S.DAY*2,null,'review');
 assert.equal(due.type,'typing','next-day due reviews take priority');
 const weakState={progress:{},lifecycle:{}};
 F.shown(weakState,'물');
@@ -43,9 +43,9 @@ assert.equal(S.mastered(old,'집'),false);
 assert.equal(F.stage(old,'집'),'consolidating');
 assert.equal(S.due(old,'집','spell',now),true,'legacy long-due card returns for consolidation');
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
-for(const marker of ['data-smart-start="1"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
-assert.ok(html.includes('smart-scheduler.js?v=3.5.1'));
-assert.ok(app.includes('版本 v3.7.5'));
+for(const marker of ['data-smart-start="learn"','data-smart-start="review"','function smartRate(','data-smart-rate="hard"','data-smart-rate="good"','data-smart-rate="easy"',"smartRecord('again')",'didCheck=true;resetKeyboardInteraction();persist();render()'])assert.ok(app.includes(marker),marker);
+assert.ok(html.includes('smart-scheduler.js?v=3.8.1'));
+assert.ok(app.includes('window.TOPIK_APP_VERSION'));
 
 // 30-task keyboard-mode independence: both due directions must appear.
 const pool=Array.from({length:18},(_,i)=>[1,'测试词'+i,'词义'+i]);
@@ -60,7 +60,7 @@ function simulate(inputMethod){
  const state=JSON.parse(JSON.stringify(dual)),modes=[];
  state.inputMethod=inputMethod;
  for(let i=0;i<30;i++){
-  const t=S.select(state,pool,{learned:[]},0,state.smartHistory,now+i*1000,state.smartInputDirection||null);
+  const t=S.select(state,pool,{learned:[]},0,state.smartHistory,now+i*1000,state.smartInputDirection||null,'review');
   assert.ok(t&&t.type==='typing','30 due typing tasks must be available');
   modes.push(t.mode);
   S.review(state,t.word[1],t.mode,true,now+i*1000,'good');
@@ -96,7 +96,7 @@ function run50(inputMethod){
  const st=JSON.parse(JSON.stringify(mixed));st.inputMethod=inputMethod;
  const modes=[];
  for(let i=0;i<50;i++){
-  const task=S.select(st,mixedPool,{learned:[]},0,st.smartHistory,now+i*1000,st.smartInputDirection||null);
+  const task=S.select(st,mixedPool,{learned:[]},0,st.smartHistory,now+i*1000,st.smartInputDirection||null,'review');
   assert.ok(task&&task.type==='typing','must provide due task '+i);
   modes.push(task.mode);
   S.review(st,task.word[1],task.mode,true,now+i*1000,'good');
@@ -129,3 +129,16 @@ assert.ok(!S.select.toString().includes('inputMethod'),'scheduler must not depen
 console.log('50-question skewed direction results:',JSON.stringify(skewWeb.counts));
 
 console.log('Minute steps, cross-day review, independent directions, lapse, persistence and legacy migration passed.');
+
+// New architecture regression: independent home actions, no cross-pool task leakage.
+assert.ok(app.includes('data-smart-start="learn"')&&app.includes('data-smart-start="review"'));
+assert.ok(app.includes('startSmart(b.dataset.smartStart)'));
+const isolated={progress:{},lifecycle:{},smartHistory:[]};
+F.shown(isolated,'집');
+assert.equal(S.select(isolated,words,{learned:['집']},2,[],now,null,'review'),null);
+assert.ok(S.select(isolated,words,{learned:['집']},2,[],now,null,'learn'));
+const preserved=JSON.stringify(isolated.progress);
+S.select(isolated,words,{learned:['집']},2,[],now,null,'review');
+assert.equal(JSON.stringify(isolated.progress),preserved,'switching pools must not mutate FSRS progress');
+const completed={progress:{},lifecycle:{},smartHistory:[]};
+assert.equal(S.select(completed,words,{learned:[]},0,[],now,null,'review'),null);
