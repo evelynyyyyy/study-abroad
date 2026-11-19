@@ -36,6 +36,7 @@ jobs:
           node topik-vocab/tests/pronunciation.test.cjs
           node topik-vocab/tests/relearn.test.cjs
           node topik-vocab/tests/reset-progress.test.cjs
+          node topik-vocab/tests/vocabulary-expansion.test.cjs
       - name: Verify permanent URL and portable learning backups
         run: |
           node - <<'NODE'
@@ -58,4 +59,5 @@ jobs:
           test -f topik-vocab/pronunciation.js
           test -f topik-vocab/relearn.js
           test -f topik-vocab/reset-progress.js
+          test -f topik-vocab/data/verified-expansion.js
           test -f topik-vocab/SKILL.md
