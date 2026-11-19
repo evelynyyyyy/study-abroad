@@ -35,11 +35,11 @@ async function typeKorean(page,keys){for(const k of keys)await page.locator('.ha
  await page.locator('[data-pinyin-mode="numbers"]').click();
  await page.locator('[data-pinyin-symbol="'+encodeURIComponent('）')+'"]').click();
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间）');
- await page.locator('[data-pinyin-key="backspace"]').last().click();
+ await page.locator('[data-pinyin-key="backspace"]:visible').click();
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间');
  await page.locator('[data-pinyin-mode="letters"]').click();
  await typeChinese(page,'chengwei');
- await page.locator('[data-pinyin-key="backspace"]').click();
+ await page.locator('[data-pinyin-key="backspace"]:visible').click();
  assert.equal(await page.locator('#pinyin-composition').textContent(),'chengwe');
  assert.equal(await page.locator('#spell-input').inputValue(),'到（时间');
  await page.locator('.pinyin-keyboard [data-smart-submit]').click();
