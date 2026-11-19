@@ -3,7 +3,7 @@
 ## Baseline before expansion
 Actual unique Korean surface forms used by the application: **4,411** (built-in 90? + 603 supplemental records + 4,445 Yonsei records, deduplicated by Hangul surface form). The Yonsei and supplemental files alone have 5,048 rows, 4,375 distinct forms, 673 repeated forms, and 284 forms with multiple distinct Chinese translations. The latter are **not** automatically separate dictionary senses. The app currently collapses homographs into one card; migration to sense-aware cards is still outstanding.
 
-The original 4,411 surface forms remain unchanged. User progress keys continue to be the Korean surface form in localStorage `topik_lab_v2`; no automatic destructive migration.
+After adding 160 sourced Chinese-translated forms, the deployed vocabulary contains **4,571 distinct Korean surface forms**. Counts by the app's first-match teaching group: level 1 **988**, level 2 **914**, level 3 **732**, level 4 **568**, level 5 **833**, level 6 **536**. These are not official TOPIK levels. The 160 new forms are provisionally assigned to levels 1 (36), 2 (47), and 3 (77). All 160 have nonempty Chinese text, but many definitions still need manual checking. The original 4,411 surface forms remain unchanged. User progress keys continue to be the Korean surface form in localStorage `topik_lab_v2`; no automatic destructive migration.
 
 ## Reviewed sources
 
