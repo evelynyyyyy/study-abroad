@@ -28,12 +28,14 @@ jobs:
           node --check topik-vocab/smart-scheduler.js
           node --check topik-vocab/pronunciation.js
           node --check topik-vocab/relearn.js
+          node --check topik-vocab/reset-progress.js
       - name: Test first learning lifecycle and independent recall
         run: |
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
           node topik-vocab/tests/relearn.test.cjs
+          node topik-vocab/tests/reset-progress.test.cjs
       - name: Verify permanent URL and portable learning backups
         run: |
           node - <<'NODE'
@@ -47,7 +49,7 @@ jobs:
           NODE
       - name: Check site structure and title
         run: |
-          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./smart-scheduler.js','./pronunciation.js','./relearn.js','./styles.css'])if(!h.includes(x))process.exit(1)"
+          node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['TOPIK单词','./app.js','./study-context.js','./first-learning.js','./smart-scheduler.js','./pronunciation.js','./relearn.js','./reset-progress.js','./styles.css'])if(!h.includes(x))process.exit(1)"
           test -f topik-vocab/styles.css
           test -f topik-vocab/vocabulary.js
           test -f topik-vocab/study-context.js
@@ -55,4 +57,5 @@ jobs:
           test -f topik-vocab/smart-scheduler.js
           test -f topik-vocab/pronunciation.js
           test -f topik-vocab/relearn.js
+          test -f topik-vocab/reset-progress.js
           test -f topik-vocab/SKILL.md
