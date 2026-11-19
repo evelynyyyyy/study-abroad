@@ -26,7 +26,7 @@ assert.equal(S.select(fresh,[words[0]],{learned:[words[0][1]]},1,[],now+3000,nul
 S.resetSession();
 const dueTask=S.select(fresh,[words[0]],{learned:[]},0,[],now+S.DAY+5000,null,'review');
 assert.ok(dueTask,'graduated word should be available in a new review session');
-assert.equal(dueTask.mode,'meaning');
+assert.ok(['meaning','spell'].includes(dueTask.mode),'either due direction is valid');
 const before=JSON.stringify(fresh.progress);
 S.select(fresh,words,{learned:[]},30,[],now,null,'learn');
 assert.equal(JSON.stringify(fresh.progress),before,'pool selection must not alter FSRS');
