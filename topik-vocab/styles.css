@@ -281,17 +281,112 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 /* v3.5.1: restrained home helper copy; preserve intentional open space. */
 .smart-home-note{font-size:12px;line-height:1.65;color:var(--foreground-secondary);font-weight:400;margin:26px 0 0;text-align:center}
 
-/* v3.5.2 — shared iOS-inspired bilingual virtual keyboard, original CSS. */
-:root,[data-theme="light"]{--keyboard-background:#d1d3d9;--keyboard-key:#fff;--keyboard-key-special:#aeb3bc;--keyboard-text:#000;--keyboard-border:rgba(0,0,0,.04);--keyboard-active:#fff}
-[data-theme="dark"]{--keyboard-background:#000;--keyboard-key:#2c2c2e;--keyboard-key-special:#1c1c1e;--keyboard-text:#fff;--keyboard-border:rgba(255,255,255,.08);--keyboard-active:#e5e5ea}
-.hangul-keyboard,.pinyin-keyboard{box-sizing:border-box;width:100%;max-width:560px;margin:7px auto 0;padding:7px max(5px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));background:var(--keyboard-background);border:0;border-radius:11px;display:flex;flex-direction:column;gap:6px;touch-action:manipulation}
-.hangul-row,.pinyin-row{display:flex;justify-content:center;gap:4px;min-width:0;width:100%}
-.hangul-row:nth-child(2){padding-inline:4%;box-sizing:border-box}.hangul-row:nth-child(3){padding-inline:10%;box-sizing:border-box}
-.hangul-key,.pinyin-key{box-sizing:border-box;flex:1 1 0;min-width:0;height:44px;min-height:44px;padding:0 1px;border:0!important;border-radius:5px!important;background:var(--keyboard-key)!important;color:var(--keyboard-text)!important;font-size:19px;font-weight:400;box-shadow:0 1px 0 var(--keyboard-border);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform 70ms ease,filter 70ms ease}
-.hangul-key:active,.pinyin-key:active{transform:scale(.97);filter:brightness(.82)}
-.hangul-row:last-child,.pinyin-row:last-child{margin-top:1px}.hangul-row:last-child .hangul-control,.pinyin-row:last-child .pinyin-action{flex:1.15 1 0;background:var(--keyboard-key-special)!important;font-size:18px}.hangul-row:last-child .hangul-space,.pinyin-row:last-child .pinyin-space{flex:4 1 0;font-size:14px}
-.hangul-key[data-hangul-shift][aria-pressed="true"]{background:var(--keyboard-active)!important;color:#171717!important;box-shadow:inset 0 0 0 1px var(--keyboard-border)}
-.pinyin-composition{font-size:13px;min-height:18px;color:var(--keyboard-text)}.pinyin-candidates{min-height:32px;gap:4px;background:transparent}.pinyin-candidates button{background:var(--keyboard-key)!important;color:var(--keyboard-text)!important;border:0!important;border-radius:6px!important;min-height:30px;padding:4px 9px}
-.smart-study:has(.hangul-keyboard) .smart-focus,.smart-study:has(.pinyin-keyboard) .smart-focus{min-height:0;padding-top:6px;padding-bottom:2px}
-@media(max-width:380px){.hangul-keyboard,.pinyin-keyboard{gap:5px;padding-inline:3px}.hangul-row,.pinyin-row{gap:3px}.hangul-key,.pinyin-key{height:40px;min-height:40px;font-size:17px}.hangul-row:nth-child(2){padding-inline:2%}.hangul-row:nth-child(3){padding-inline:7%}}
-@media(prefers-reduced-motion:reduce){.hangul-key,.pinyin-key{transition:none}}
+/* v3.5.3 — iOS-inspired web keyboard; original CSS, no Apple assets. */
+:root,[data-theme="light"]{
+ --ios-keyboard-bg:#d1d3d9;--ios-key-bg:#fff;--ios-key-bg-pressed:#e6e7eb;
+ --ios-special-key-bg:#aeb3bc;--ios-special-key-active:#fff;
+ --ios-key-text:#111;--ios-special-active-text:#111;
+ --ios-candidate-text:#383940;--ios-divider:rgba(0,0,0,.12);
+ --ios-key-shadow:rgba(0,0,0,.23);--ios-return-bg:#aeb3bc;
+}
+:root[data-theme="dark"]{
+ --ios-keyboard-bg:#1c1c1e;--ios-key-bg:#4a4a4c;--ios-key-bg-pressed:#626266;
+ --ios-special-key-bg:#3a3a3c;--ios-special-key-active:#f2f2f7;
+ --ios-key-text:#fff;--ios-special-active-text:#111;
+ --ios-candidate-text:#d1d1d6;--ios-divider:rgba(255,255,255,.14);
+ --ios-key-shadow:rgba(0,0,0,.55);--ios-return-bg:#3a3a3c;
+}
+.ios-keyboard{
+ box-sizing:border-box;display:flex;flex-direction:column;gap:8px;
+ width:100%;max-width:560px;margin:7px auto 0;
+ padding:9px max(5px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));
+ border:0;border-radius:10px 10px 0 0;
+ background:var(--ios-keyboard-bg);color:var(--ios-key-text);
+ font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;
+ user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+.ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{
+ display:flex;align-items:stretch;justify-content:center;gap:4px;width:100%;min-width:0;padding:0;box-sizing:border-box;
+}
+.ios-keyboard .ios-row-second{padding-inline:4.5%}
+.ios-keyboard .ios-row-third{padding-inline:0}
+.ios-keyboard .hangul-key,.ios-keyboard .pinyin-key{
+ box-sizing:border-box;appearance:none;-webkit-appearance:none;
+ display:flex;align-items:center;justify-content:center;
+ flex:1 1 0;min-width:0;width:0;height:49px;min-height:49px;
+ margin:0;padding:0 1px;border:0!important;border-radius:5px!important;
+ background:var(--ios-key-bg)!important;color:var(--ios-key-text)!important;
+ font:400 23px/1 -apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;
+ box-shadow:0 1px 0 var(--ios-key-shadow)!important;
+ cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+ transition:transform 65ms ease,background-color 65ms ease;
+}
+.ios-keyboard .hangul-key:active,.ios-keyboard .pinyin-key:active{
+ transform:translateY(1px);background:var(--ios-key-bg-pressed)!important;
+}
+.ios-keyboard .ios-special{
+ flex:1.35 1 0!important;
+ background:var(--ios-special-key-bg)!important;
+ font-size:22px!important;font-weight:500;
+}
+.ios-keyboard .ios-shift[aria-pressed="true"]{
+ background:var(--ios-special-key-active)!important;
+ color:var(--ios-special-active-text)!important;
+}
+.ios-keyboard .ios-shift[aria-pressed="true"] span{font-size:21px}
+.ios-keyboard .ios-row-bottom{margin-top:1px}
+.ios-keyboard .ios-row-bottom .ios-space{
+ flex:5 1 0!important;width:0;border-radius:7px!important;
+ font-size:13px!important;font-weight:400;letter-spacing:.015em;
+}
+.ios-keyboard .ios-row-bottom .ios-return{
+ flex:1.6 1 0!important;width:0;border-radius:7px!important;
+ background:var(--ios-return-bg)!important;font-size:26px!important;
+}
+.ios-keyboard .ios-clear{font-size:12px!important}
+.ios-keyboard .ios-candidate-strip{
+ display:flex;flex-direction:column;gap:0;min-height:40px;min-width:0;
+}
+.ios-keyboard .pinyin-composition{
+ min-height:15px;height:15px;padding:0 7px;overflow:hidden;
+ font-size:11px;font-weight:400;line-height:15px;letter-spacing:0;
+ color:var(--ios-candidate-text);
+ white-space:nowrap;text-overflow:ellipsis;
+}
+.ios-keyboard .pinyin-candidates{
+ display:flex;align-items:stretch;gap:0;min-height:31px;height:31px;
+ width:100%;overflow-x:auto;overflow-y:hidden;
+ background:transparent;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.ios-keyboard .pinyin-candidates::-webkit-scrollbar{display:none}
+.ios-keyboard .pinyin-candidates button{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ flex:0 0 33.333%;min-width:0;height:31px;min-height:31px;
+ margin:0;padding:0 8px;border:0!important;border-radius:0!important;
+ background:transparent!important;color:var(--ios-candidate-text)!important;
+ box-shadow:none!important;font:400 16px/1.2 -apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;
+ white-space:nowrap;
+}
+.ios-keyboard .pinyin-candidates button+button:before{
+ content:"";position:absolute;left:0;top:7px;bottom:7px;width:1px;background:var(--ios-divider);
+}
+.ios-keyboard button:focus-visible{outline:2px solid var(--ios-key-text);outline-offset:-3px}
+.smart-study:has(.ios-keyboard) .smart-focus{min-height:0;padding-top:6px;padding-bottom:3px}
+.smart-study:has(.ios-keyboard) .smart-bottom{
+ position:sticky;bottom:0;z-index:4;background:var(--bg);
+ padding-bottom:0!important;
+}
+@media(max-width:390px){
+ .ios-keyboard{gap:6px;padding-inline:4px}
+ .ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{gap:3px}
+ .ios-keyboard .hangul-key,.ios-keyboard .pinyin-key{height:46px;min-height:46px;font-size:21px}
+ .ios-keyboard .ios-special{flex:1.25 1 0!important}
+ .ios-keyboard .ios-row-second{padding-inline:3.5%}
+}
+@media(max-width:340px){
+ .ios-keyboard .hangul-key,.ios-keyboard .pinyin-key{height:44px;min-height:44px;font-size:19px}
+ .ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{gap:2px}
+}
+@media(prefers-reduced-motion:reduce){
+ .ios-keyboard .hangul-key,.ios-keyboard .pinyin-key{transition:none}
+}
