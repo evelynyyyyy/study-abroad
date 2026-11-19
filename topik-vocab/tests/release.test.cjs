@@ -3,6 +3,11 @@ const app=fs.readFileSync('topik-vocab/app.js','utf8'),client=fs.readFileSync('t
 const workflow=fs.readFileSync('.github/workflows/topik-release.yml','utf8'),build=fs.readFileSync('topik-vocab/scripts/build-release.cjs','utf8');
 const source=JSON.parse(fs.readFileSync('topik-vocab/release-source.json','utf8'));
 assert.match(source.version,/^\d+\.\d+\.\d+$/);
+const html=fs.readFileSync('topik-vocab/index.html','utf8');
+const declared=[...html.matchAll(/(?:content="|v=|TOPIK单词 · v)(\d+\.\d+\.\d+)/g)].map(m=>m[1]);
+assert.ok(declared.length>20,'version and asset references must be present');
+assert.ok(declared.every(version=>version===source.version),'all page versions and static asset cache keys match release source');
+
 assert.ok(app.includes("const STORAGE='topik_lab_v2'"));
 assert.ok(app.includes('window.TOPIK_SAVE_SESSION=saveSmartSession'));
 assert.ok(app.includes("sessionStorage.getItem('topik:resume-after-update')"));
