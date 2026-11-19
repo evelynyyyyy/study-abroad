@@ -29,7 +29,7 @@ assert.ok(app.includes('data-smart-start="1"'));
 assert.ok(app.includes('function startSmart(){'));
 assert.ok(app.includes("view==='smart'?smartScreen()"));
 assert.ok(app.includes('TOPIK_SMART.select('));
-assert.ok(html.includes('smart-scheduler.js?v=2.0.3'));
+assert.ok(html.includes('smart-scheduler.js?v=2.1.1'));
 assert.ok(app.includes('版本 v2.1.1'));
 const homeSource=app.slice(app.indexOf('function home(){'),app.indexOf('function recordsHome(){'));
 assert.ok(!homeSource.includes('每轮最多 10 词'));
