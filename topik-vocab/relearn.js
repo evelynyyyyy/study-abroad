@@ -17,7 +17,8 @@ function enqueue(state,ko,kind='refresh',modes=MODES,now=Date.now()){
    const m=p.memory||{};
    const stability=Math.max(.04,Number(m.stability||1)*(kind==='restart'?.35:.7));
    p.memory={...m,stability,streak:kind==='restart'?0:Number(m.streak||0),
-    lastResult:'relearn-requested',nextReview:now};
+    phase:'relearning',learningStep:0,successes:0,crossDaySuccess:0,
+    lastFailure:now,lastResult:'relearn-requested',nextReview:now};
    p.due=now;
   }
  }
