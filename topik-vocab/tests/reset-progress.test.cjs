@@ -24,5 +24,5 @@ assert.throws(()=>R.validateBackup({version:2,state:{progress:[],extra:[]}}));
 assert.throws(()=>R.validateBackup({version:2,state:{progress:{},extra:'bad'}}));
 const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
 for(const marker of ['学习数据管理','data-reset-scope','TOPIK_RESET.reset','TOPIK_RESET.validateBackup','legacyMigrated','levelDayInfo'])assert.ok(app.includes(marker),marker);
-assert.ok(html.includes('./reset-progress.js?v=2.0.4'));
+assert.ok(html.includes('./reset-progress.js?v='+JSON.parse(fs.readFileSync('topik-vocab/release-source.json','utf8')).version));
 console.log('Scoped/full reset, shared-word preservation, backup validation and reload tests passed.');
