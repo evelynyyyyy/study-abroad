@@ -198,6 +198,8 @@ window.TOPIK_SMART={
     const r=state.lifecycle[ko],counts=r.learningByMode||{},entry=this.sessionEntry(ko);
     if(recent.includes(ko))continue;
     for(const mode of ['meaning','spell']){
+     const round=Number(r.learningProof?.round)||0;
+     if((round===0&&mode!=='meaning')||(round===1&&mode!=='spell'))continue;
      const candidate={word,type:'typing',mode,reason:'learning-recall'};
      if(!this.sessionEligible(candidate))continue;
      const attempts=Number(counts[mode]||0);
