@@ -114,7 +114,7 @@ assert.ok(skewWeb.counts.koToZhCount>=5,'recognition due tasks must remain avail
 assert.equal(S.inspect(skewWeb.state,mixedPool,now+60000).preGenerated,false);
 assert.equal(skewWeb.state.inputMethod,'web');
 assert.ok(app.includes("smartTask=TOPIK_SMART.select(state,words"),'scheduler chooses task without input method');
-assert.ok(app.includes("const webKeyboard=!isShow&&!isMeaning&&useHangulKeyboard()"),'UI keyboard follows task mode');
+assert.ok(app.includes("const koreanKeyboard=webKeyboard&&!isMeaning,chineseKeyboard=webKeyboard&&isMeaning"),'UI keyboard follows task mode');
 assert.ok(app.includes("state.studyDebug"),'opt-in diagnostic console trace');
 assert.ok(app.includes("Recognition due: "),'visible due counts');
 // A keyboard renderer is a pure projection of an already-selected task.
