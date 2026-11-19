@@ -1,0 +1,40 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm');
+const context={window:{},Date,console};vm.createContext(context);
+vm.runInContext(fs.readFileSync('topik-vocab/relearn.js','utf8'),context);
+const R=context.window.TOPIK_RELEARN;
+const now=Date.now(),word=['1','학생','学生'];
+const state={progress:{학생:{
+ meaning:{correct:8,wrong:1,step:5,due:now+86400000,memory:{stability:20,correct:8,incorrect:1,reps:9}},
+ spell:{correct:3,wrong:5,step:2,due:now+86400000,memory:{stability:4,correct:3,incorrect:5,reps:8}}
+}},daily:{'2026-11-19':{learned:['학생']}},smartAnswerHistory:[{ko:'학생',mode:'spell',result:'correct',at:now}]};
+const history=JSON.stringify({daily:state.daily,answers:state.smartAnswerHistory,meaning:state.progress.학생.meaning});
+assert.equal(R.enqueue(state,'학생','refresh',['spell'],now),true);
+assert.equal(R.count(state),1);
+assert.equal(state.progress.학생.spell.correct,3);
+assert.equal(state.progress.학생.spell.wrong,5);
+assert.equal(state.progress.학생.spell.memory.reps,8);
+assert.equal(JSON.stringify(state.progress.학생.meaning),JSON.parse(history).meaning&&JSON.stringify(JSON.parse(history).meaning));
+assert.equal(R.select(state,[word],[],now).type,'relearn-show');
+R.afterShow(state,'학생',now);
+assert.equal(R.select(state,[word],[],now),null,'never test immediately after reveal');
+assert.equal(R.select(state,[word],[],now+R.DELAY).mode,'spell');
+R.afterAnswer(state,'학생','spell',false,now+R.DELAY);
+assert.equal(R.select(state,[word],[],now+R.DELAY+1),null,'wrong answer waits before retry');
+assert.equal(R.select(state,[word],[],now+2*R.DELAY).mode,'spell');
+R.afterAnswer(state,'학생','spell',true,now+2*R.DELAY);
+assert.equal(R.count(state),0);
+assert.equal(JSON.stringify(state.daily),JSON.stringify(JSON.parse(history).daily));
+assert.equal(JSON.stringify(state.smartAnswerHistory),JSON.stringify(JSON.parse(history).answers));
+R.enqueue(state,'학생','restart',['meaning','spell'],now);
+assert.equal(state.progress.학생.meaning.correct,8,'restart preserves historical successes');
+assert.equal(state.progress.학생.meaning.wrong,1,'restart preserves historical errors');
+assert.equal(state.progress.학생.meaning.memory.stability<20,true);
+assert.equal(state.progress.학생.spell.memory.stability<4,true);
+const restored=JSON.parse(JSON.stringify(state));
+assert.equal(R.count(restored),1,'queued relearning survives localStorage JSON roundtrip');
+const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
+for(const marker of ['data-relearn-selected','data-relearn-batch','data-unfamiliar','TOPIK_RELEARN.afterShow','TOPIK_RELEARN.afterAnswer',"'relearn']"])assert.ok(app.includes(marker),marker);
+assert.ok(html.includes('./relearn.js'));
+console.log('Relearning tests passed: directional preservation, full reveal, delay, retry, completion, backup, reload.');
