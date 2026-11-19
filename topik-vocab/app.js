@@ -96,17 +96,17 @@ function levelBar(){return '<div class="level-switch" role="group" aria-label="�
 function home(){
  const n=counts(),sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal);
  return '<div class="smart-home"><div class="eyebrow">今日学习 · '+today()+'</div><h1>TOPIK单词</h1>'+levelBar()+
- '<div class="smart-stats"><div><strong>'+sum.newCount+' <small>/ '+sum.goal+'</small></strong><span>今日初次认识</span></div><div><strong>'+sum.due+'</strong><span>到期复习方向</span></div><div><strong>'+sum.consolidating+'</strong><span>巩固中词数</span></div></div>'+
+ '<div class="smart-stats"><div><strong>'+sum.newCount+' <small>/ '+sum.goal+'</small></strong><span>今日新词</span></div><div><strong>'+sum.due+'</strong><span>今日待复习</span></div><div><strong>'+sum.consolidating+'</strong><span>学习中</span></div></div>'+
  '<button class="primary smart-start" data-smart-start="1">开始学习 <span>→</span></button>'+
- '<p class="tiny muted smart-home-note">新词认识、双向输入与复习自动穿插 · 完成目标后可继续复习。</p></div>';
+ '<p class="tiny muted smart-home-note">新词学习与到期复习分池安排 · 学习毕业后交给 FSRS。</p></div>';
 }
 function recordsHome(){
  const d=levelDayInfo(),w=scope(),sum=TOPIK_SMART.summary(state,w,d,state.dailyGoal);
  return '<div class="eyebrow">学习记录</div><h1>学习进度</h1><div class="smart-stats">'+
  '<div><strong>'+sum.newCount+'</strong><span>今日首次认识</span></div>'+
  '<div><strong>'+sum.firstRecall+'</strong><span>今日完成双向初次回忆（含历史复习）</span></div>'+
- '<div><strong>'+sum.consolidating+'</strong><span>巩固中单词</span></div>'+
- '<div><strong>'+sum.due+'</strong><span>到期复习方向</span></div>'+
+ '<div><strong>'+sum.consolidating+'</strong><span>学习中单词</span></div>'+
+ '<div><strong>'+sum.due+'</strong><span>今日待复习</span></div>'+
  '<div><strong>'+sum.mastered+'</strong><span>熟练掌握单词</span></div></div>'+
  '<p class="muted">今日已进行 '+(d.spell||0)+' 次输入练习。熟练掌握必须双向经过跨日验证；即使掌握也会继续定期复习。</p>'+
  '<p class="small muted">历史记录不清空；旧版答题缺少可靠时间证据时，按待巩固处理。建议定期导出备份。</p>';
@@ -166,8 +166,14 @@ function smartRecord(result){
  if(!smartTask||smartTask.type!=='typing'||didCheck)return;
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
  const {word,mode}=smartTask,correct=['correct','hard','good','easy'].includes(result);
- TOPIK_SMART.review(state,word[1],mode,correct,Date.now(),result);
- TOPIK_RELEARN.afterAnswer(state,word[1],mode,correct);
+ const phase=TOPIK_SMART.wordState(state,word[1]);
+ if(phase==='LEARNING')TOPIK_SMART.learningResult(state,word[1],mode,correct,Date.now(),result);
+ else{
+  TOPIK_SMART.review(state,word[1],mode,correct,Date.now(),result);
+  if(!correct)state.lifecycle[word[1]].wordState='RELEARNING';
+  else if(phase==='RELEARNING'&&['meaning','spell'].every(m=>state.progress?.[word[1]]?.[m]?.memory?.phase==='review'))state.lifecycle[word[1]].wordState='REVIEW';
+  TOPIK_RELEARN.afterAnswer(state,word[1],mode,correct);
+ }
  markRecall(word[1],mode);
  const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;state.daily[key]=d;
  // Store the three outcomes separately, without changing legacy progress keys.
@@ -178,7 +184,8 @@ function smartRecord(result){
 }
 function markUnfamiliar(){
  if(!smartTask||smartTask.type!=='typing'||!didCheck)return;
- TOPIK_RELEARN.enqueue(state,smartTask.word[1],'refresh',[smartTask.mode]);
+ if(TOPIK_SMART.wordState(state,smartTask.word[1])==='LEARNING')state.lifecycle[smartTask.word[1]].learningStreak=0;
+ else TOPIK_RELEARN.enqueue(state,smartTask.word[1],'refresh',[smartTask.mode]);
  state.smartAnswerHistory.push({ko:smartTask.word[1],mode:smartTask.mode,result:'unfamiliar',at:Date.now()});
  state.smartAnswerHistory=state.smartAnswerHistory.slice(-3000);
  persist();notify('已加入重新学习：先看完整单词，再练习当前方向');smartNext();
@@ -360,7 +367,7 @@ function smartScreen(){
  const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck;
  const koreanKeyboard=webKeyboard&&!isMeaning,chineseKeyboard=webKeyboard&&isMeaning;
  if(chineseKeyboard&&CHINESE_IME_ENGINE==='simple-ime'&&!simpleIme)void loadChineseIme().catch(()=>{});
- const example=d[0]?'<div class="smart-example" id="smart-example" hidden><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
+ const example=d[0]?'<div class="smart-example" id="smart-example" '+(isShow?'':'hidden')+'><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
  const main=isShow?
  '<div class="smart-word" lang="ko">'+ko+'</div><div class="smart-translation">'+zh+'</div><div class="smart-reading">'+quote(romanizeHangul(w[1]))+'</div><button class="smart-speak" data-speak="'+ko+'">▶ 听发音</button>':
  '<div class="smart-word '+(isMeaning?'':'smart-chinese')+'" '+(isMeaning?'lang="ko"':'')+'>'+(isMeaning?ko:zh)+'</div>'+
@@ -384,7 +391,7 @@ function smartScreen(){
  return '<div class="smart-study"><header class="smart-study-head"><button class="text-btn" data-view="home">← 返回</button><span class="tiny muted">'+sum.newCount+' / '+sum.goal+' 新词 · '+sum.due+' 待复习</span></header>'+
  debugHtml+'<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
  '<section class="smart-focus"><div class="smart-kind">'+(type==='relearn-show'?'重新认识':isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
- (d[0]&&isShow?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+
+ (d[0]&&isShow?example:'')+
  (didCheck&&d[0]?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+'</section>'+
  '<footer class="smart-bottom'+(webKeyboard?' has-keyboard':'')+'">'+actions+(webKeyboard?'<div class="study-keyboard-dock">'+(koreanKeyboard?TOPIK_HANGUL.render(hangulShift):TOPIK_PINYIN.render())+'</div>':'')+'</footer></div>';
 }
