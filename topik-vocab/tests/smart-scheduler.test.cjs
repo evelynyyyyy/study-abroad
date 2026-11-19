@@ -22,4 +22,16 @@ S.review(state,'집','spell',true,now+S.DAY);
 assert.ok(state.progress['집'].spell.memory.stability>prev);
 const due=S.select(state,words,day,2,['학교','물'],now+S.DAY*2);
 assert.equal(due.type,'typing');
-console.log('Continuous scheduler regression tests passed');
+// Check that the primary button invokes the new engine and release marker is present.
+const app=fs.readFileSync('topik-vocab/app.js','utf8');
+const html=fs.readFileSync('topik-vocab/index.html','utf8');
+assert.ok(app.includes('data-smart-start="1"'));
+assert.ok(app.includes('function startSmart(){'));
+assert.ok(app.includes("view==='smart'?smartScreen()"));
+assert.ok(app.includes('TOPIK_SMART.select('));
+assert.ok(html.includes('smart-scheduler.js?v=2.0.0'));
+assert.ok(app.includes('版本 v2.0.0'));
+const homeSource=app.slice(app.indexOf('function home(){'),app.indexOf('function recordsHome(){'));
+assert.ok(!homeSource.includes('每轮最多 10 词'));
+assert.ok(!homeSource.includes('data-start="learn"'));
+console.log('Continuous scheduler and UI wiring regression tests passed');
