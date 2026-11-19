@@ -55,6 +55,8 @@ async function typeKorean(page,keys){const shifted={'ㅃ':'ㅂ','ㅉ':'ㅈ','ㄸ
  ['과','ㄱㅗㅏ'],['뭐','ㅁㅜㅓ'],['의','ㅇㅡㅣ']
  ];
  for(const [expected,keys] of samples){await setTask(page,'spell');await typeKorean(page,[...keys]);assert.equal(await page.locator('#spell-input').inputValue(),expected)}
+ await setTask(page,'meaning');await typeChinese(page,'xuesheng');const student=await page.evaluate(()=>simpleIme.getCandidates());await page.locator('[data-pinyin-choice="'+student.indexOf('学生')+'"]').click();await page.locator('[data-pinyin-mode="numbers"]').click();await page.locator('[data-pinyin-symbol="'+encodeURIComponent('、')+'"]').click();await page.locator('[data-pinyin-mode="letters"]').click();await typeChinese(page,'laoshi');const teacher=await page.evaluate(()=>simpleIme.getCandidates());assert.ok(teacher.includes('老师'));await page.locator('[data-pinyin-choice="'+teacher.indexOf('老师')+'"]').click();assert.equal(await page.locator('#spell-input').inputValue(),'学生、老师');
+ for(const [base,expected] of [['ㄱ','ㄲ'],['ㄷ','ㄸ'],['ㅂ','ㅃ'],['ㅅ','ㅆ'],['ㅈ','ㅉ']]){await setTask(page,'spell');await page.locator('[data-hangul-shift]').click();await page.locator('[data-hangul="'+base+'"]').click();assert.equal(await page.locator('#spell-input').inputValue(),expected)}
  await setTask(page,'spell');await page.locator('[data-hangul-shift]').click();
  assert.equal(await page.locator('[data-hangul-shift]').getAttribute('aria-pressed'),'true');
  await page.locator('[data-hangul="ㄱ"]').click();
