@@ -524,4 +524,20 @@ document.getElementById('theme-toggle').addEventListener('click',()=>{
  notify('已切换：'+(state.theme==='system'?'跟随系统':state.theme==='light'?'浅色':'深色'));
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&view!=='home'){change('home');return}if(view==='smart'){if(e.key==='Enter'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();if(smartTask?.type==='show'||didCheck)smartNext()}return}if(view==='onboard'){if(e.key==='Enter'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();if(onboarding.phase==='show')advanceReveal();else if(onboarding.phase==='intro'||onboarding.phase==='typing'&&didCheck)nextOnboardQuestion()}return}if(!session||!session.deck[session.index]||!['learn','context','review','wrong','spell','meaning'].includes(view))return;let typing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);if(view==='learn'||view==='context'){if(e.key==='Enter'){e.preventDefault();next(true)}return}if(view==='spell'||view==='meaning'||view==='review'||view==='wrong'){if(e.key==='Enter'&&didCheck){e.preventDefault();next(true,true)}return}if(typing)return;if(e.key===' '){e.preventDefault();if(!session.flipped){session.flipped=true;render()}}if(e.key==='Enter'&&!session.flipped){e.preventDefault();session.flipped=true;render()}});
+// Keep the fixed keyboard aligned to Safari's visible viewport, including toolbar changes.
+function updateStudyKeyboardDock(){
+ const dock=document.querySelector('.smart-bottom.has-keyboard');
+ if(!dock){document.documentElement.style.removeProperty('--study-dock-height');return}
+ const vv=window.visualViewport;
+ const bottom=vv?Math.max(0,window.innerHeight-vv.offsetTop-vv.height):0;
+ document.documentElement.style.setProperty('--study-visual-bottom',bottom+'px');
+ document.documentElement.style.setProperty('--study-dock-height',Math.ceil(dock.getBoundingClientRect().height+16)+'px');
+}
+if(window.visualViewport){
+ window.visualViewport.addEventListener('resize',updateStudyKeyboardDock);
+ window.visualViewport.addEventListener('scroll',updateStudyKeyboardDock);
+}
+window.addEventListener('resize',updateStudyKeyboardDock);
+new MutationObserver(updateStudyKeyboardDock).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});
+
 render();
