@@ -33,8 +33,9 @@ recall(state,ko,mode){
  state.lifecycle=state.lifecycle||{};
  const r=this.record(state,ko);
  if(r.stage==='unseen')return;
+ const wasBoth=r.first.meaning&&r.first.spell;
  r.first[mode]=true;
- if(r.first.meaning&&r.first.spell&&!r.firstBothAt&&!state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=Date.now();
+ if(!wasBoth&&r.first.meaning&&r.first.spell&&!state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=Date.now();
  else if(state.lifecycle?.[ko]?.firstBothAt)r.firstBothAt=state.lifecycle[ko].firstBothAt;
  r.stage=this.stage(state,ko);
  state.lifecycle[ko]=r;
