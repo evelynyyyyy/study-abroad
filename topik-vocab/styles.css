@@ -106,7 +106,7 @@
 .smart-speak{border:0;background:transparent;color:var(--soft);padding:12px;margin-top:10px}
 .smart-focus .input-wrap{width:min(100%,390px);margin-top:20px}
 .smart-focus .field{width:100%;text-align:center;font-size:20px;padding:15px 12px}
-.smart-feedback{font-size:15px;margin-top:12px}.smart-feedback.good{color:var(--good)}.smart-feedback.bad{color:var(--bad)}
+.smart-feedback{font-size:15px;margin-top:12px}
 .smart-expand{margin-top:18px;font-size:13px}
 .smart-example{max-width:100%;font-size:14px;text-align:center}.smart-example p{margin:4px 0}
 .smart-bottom{padding:12px 0 18px}.smart-action{width:100%;padding:16px}
