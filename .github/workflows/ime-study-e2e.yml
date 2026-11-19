@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/ime-study-e2e.yml'
       - 'topik-vocab/ime-experiment/production-smoke.cjs'
+      - 'topik-vocab/ime-experiment/special-acceptance.cjs'
       - 'topik-vocab/app.js'
       - 'topik-vocab/index.html'
       - 'topik-vocab/hangul-keyboard.js'
@@ -36,3 +37,4 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
           node topik-vocab/ime-experiment/production-smoke.cjs
+          node topik-vocab/ime-experiment/special-acceptance.cjs
