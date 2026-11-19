@@ -8,7 +8,7 @@ window.TOPIK_SMART={
     // Preserve old due dates and successful steps; never reset existing learning.
     const elapsed=p.last?Math.max(0,(now-p.last)/this.DAY):0;
     const stability=Math.max(.08,Math.min(365,p.step?Math.pow(2,Math.max(0,p.step-1)):.08));
-    return {stability,difficulty:Math.max(1,Math.min(10,5+(p.wrong||0)*.3)),retrievability:Math.pow(.9,elapsed/stability),interval:Math.max(0,(Number(p.due||now)-Number(p.last||now))/this.DAY),lastReview:p.last||0,nextReview:p.due||now,correct:p.correct||0,incorrect:p.wrong||0,reps:(p.correct||0)+(p.wrong||0)};
+    return {stability,difficulty:Math.max(1,Math.min(10,5+(p.wrong||0)*.3)),retrievability:Math.pow(.9,elapsed/stability),interval:Math.max(0,(Number(p.due||now)-Number(p.last||now))/this.DAY),lastReview:p.last||0,nextReview:p.due||now,correct:p.correct||Math.max(0,p.step||0),incorrect:p.wrong||0,reps:(p.correct||Math.max(0,p.step||0))+(p.wrong||0)};
   },
   review(state,ko,mode,success,now=Date.now()){
     const entry=state.progress[ko]||{},old=entry[mode]||{},m=this.normalize(state,ko,mode);
