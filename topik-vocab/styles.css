@@ -490,3 +490,21 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 .smart-head-total{text-align:right;white-space:nowrap;min-width:0;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
 .smart-head-detail{text-align:center;color:var(--soft);font-size:12px;white-space:nowrap;margin:12px 0 0}
 @media(max-width:360px){.smart-study-head{gap:6px}.smart-head-total{font-size:12px}.smart-head-detail{font-size:11px}}
+
+/* Study UI alignment only: two equal home columns and one in-page back control. */
+.smart-home .smart-stats{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:16px}
+.smart-home .smart-stats>div{min-width:0;min-height:76px;justify-content:center;text-align:center}
+.smart-home .smart-stats strong,.smart-home .smart-stats span{max-width:100%;text-align:center}
+.study-focus-mode .topbar .study-back{display:none}
+.smart-study{width:100%;min-width:0}
+.smart-study-head,.smart-progress,.smart-head-detail{width:100%;box-sizing:border-box}
+.smart-focus{width:100%;min-width:0;box-sizing:border-box}
+.smart-focus>.smart-word,.smart-focus>.smart-speak,.smart-focus>.input-wrap{max-width:100%;margin-left:auto;margin-right:auto}
+.smart-feedback{margin-left:auto;margin-right:auto}
+.smart-bottom .smart-actions:has([data-smart-next]){grid-template-columns:minmax(0,1fr);max-width:390px;margin-left:auto;margin-right:auto}
+.smart-feedback.good{color:#A8E6CF}
+@media(max-width:760px){
+ .smart-home .smart-stats{gap:14px}
+ .smart-study-head,.smart-progress,.smart-head-detail{margin-left:auto;margin-right:auto}
+ .smart-focus{padding-left:4px;padding-right:4px}
+}
