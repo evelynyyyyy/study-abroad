@@ -2,13 +2,26 @@
 (function(root){
  'use strict';
  const SoundManager={
-  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,lastKeyTarget:null,deleteRepeat:0,
+  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,samples:null,sampleContext:null,sampleLoading:null,lastKeyTarget:null,deleteRepeat:0,
   init(){
    if(this.mode==='off'||typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
    try{if(!this.context)this.context=new (root.AudioContext||root.webkitAudioContext)();
     if(this.context.state==='closed')this.context=new (root.AudioContext||root.webkitAudioContext)();
     if(this.context.state==='suspended'&&!document.hidden){const p=this.context.resume();if(p&&p.catch)p.catch(error=>console.debug('[Sound] resume failed',error));}
+    this.loadSamples();
    }catch(error){console.debug('[Sound] init failed',error)}
+  },
+  loadSamples(){
+   const ctx=this.context;if(!ctx||this.sampleContext===ctx)return;
+   this.sampleContext=ctx;this.samples={};
+   const files={key:'key-click.ogg',delete:'delete-click.ogg',modifier:'modifier-click.ogg'};
+   this.sampleLoading=Promise.allSettled(Object.entries(files).map(async ([kind,file])=>{
+    const response=await fetch('./assets/sounds/'+file+'?v=3.7.11');
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const audio=await response.arrayBuffer();
+    const decoded=await ctx.decodeAudioData(audio);
+    if(this.sampleContext===ctx)this.samples[kind]=decoded;
+   })).then(results=>{if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] sample loading',results.map(x=>x.status))});
   },
   setMode(mode){this.mode=['off','light','standard'].includes(mode)?mode:'light';if(this.mode==='off'&&this.context){try{this.context.suspend().catch(()=>{})}catch(_){}}else this.init()},
   play(type,scale=1){
@@ -45,7 +58,7 @@
     if(type==='key'||type==='function'||type==='delete'||type==='modifier'){
      // Original, programmatically generated iOS-style approximation; not Apple audio.
      // Precompute independent PCM samples once per AudioContext.
-     if(this.clickContext!==ctx||!this.clickBuffers){
+     if(!this.samples?.[kind]&&(this.clickContext!==ctx||!this.clickBuffers)){
       const createClick=(kind)=>{
        const rate=ctx.sampleRate;
        const length=Math.ceil(rate*(kind==='delete'?.027:kind==='modifier'?.024:.021));
@@ -73,7 +86,7 @@
      const isModifier=type==='modifier'||(type==='function'&&!isDelete);
      const kind=isDelete?'delete':isModifier?'modifier':'key';
      const source=ctx.createBufferSource(),gain=ctx.createGain();
-     source.buffer=this.clickBuffers[kind];
+     source.buffer=this.samples?.[kind]||this.clickBuffers[kind];
      const isRepeat=isDelete&&stamp-(this.lastDeleteAt||0)<140;
      if(isDelete)this.lastDeleteAt=stamp;
      gain.gain.value=(kind==='key'?.36:kind==='delete'?.43:.39)*(this.mode==='standard'?1:.58)*scale*(isRepeat?.43:1);
