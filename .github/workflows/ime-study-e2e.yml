@@ -1,0 +1,25 @@
+name: Study page simple-ime E2E
+on:
+  workflow_dispatch:
+  push:
+    branches: [gh-pages]
+    paths:
+      - '.github/workflows/ime-study-e2e.yml'
+      - 'topik-vocab/ime-experiment/production-smoke.cjs'
+permissions:
+  contents: read
+jobs:
+  study-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Test live study page with virtual keyboard
+        run: node topik-vocab/ime-experiment/production-smoke.cjs
