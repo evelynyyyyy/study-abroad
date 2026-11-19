@@ -34,6 +34,11 @@ async function type(page,py){for(const k of py)await page.locator('.pinyin-keybo
  await page.locator('[data-pinyin-mode="letters"]').click();
  await type(page,'jian');
  assert.equal(await page.locator('#pinyin-composition').textContent(),'jian');
+ assert.ok(await page.locator('[data-ime-next]').count(),'jian should have next page');
+ await page.locator('[data-ime-next]').click();
+ assert.ok(await page.locator('[data-ime-prev]').count(),'jian should have previous page');
+ await page.locator('[data-ime-prev]').click();
+ assert.ok((await page.locator('#pinyin-candidates').textContent()).includes('间'));
  await page.locator('[data-pinyin-key="backspace"]').first().click();
  assert.equal(await page.locator('#pinyin-composition').textContent(),'jia');
  assert.equal(await page.locator('#spell-input').inputValue(),'成为（时间');
