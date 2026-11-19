@@ -319,7 +319,8 @@ function bindDeleteRepeat(button,action){
  });
  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,stop);
  button.addEventListener('click',e=>{if(repeated){e.preventDefault();repeated=false;return}action()});
- window.addEventListener('blur',stop,{once:true});
+ window.addEventListener('blur',stop);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
 }
 let hangulMode='letters';
 function applyHangulKey(key){
