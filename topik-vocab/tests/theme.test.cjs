@@ -18,7 +18,7 @@ let t=make(false);assert.equal(t.ctrl.getMode(),'system');assert.equal(t.doc.doc
 t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');assert.equal(t.meta.value,'#1c1c1e');
 t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'light');
 t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深色'));assert.equal(t.choice.value,'dark');t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
-t.ctrl.setMode('system');assert.equal(t.toggle.textContent,'◐ 跟随系统');assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
+t.ctrl.setMode('system');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
 assert.ok(html.indexOf('theme.js?v=3.3.2')<html.indexOf('styles.css?v=3.3.2'),'theme must initialize before CSS');
