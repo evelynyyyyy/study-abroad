@@ -244,7 +244,7 @@ function smartScreen(){
  const debug=state.studyDebug?TOPIK_SMART.inspect(state,scope()):null;
  const debugHtml=debug?'<details class="study-debug" open><summary>学习调试信息</summary><p>当前方向：'+(mode==='meaning'?'韩→中':mode==='spell'?'中→韩':'首次展示')+' · 输入方式：'+quote(state.inputMethod)+'</p><p>Recognition due: '+debug.due.meaning+' · Production due: '+debug.due.spell+'</p><p>Queue ko→zh: '+debug.queue.meaning+' · Queue zh→ko: '+debug.queue.spell+' · 总计：'+debug.queueLength+'</p><p>选择原因：'+quote(smartTask.reason||'—')+'（队列按需生成，无预缓存）</p></details>':'';
  return '<div class="smart-study"><header class="smart-study-head"><button class="text-btn" data-view="home">← 返回</button><span class="tiny muted">'+sum.newCount+' / '+sum.goal+' 新词 · '+sum.due+' 待复习</span></header>'+
- '<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
+ debugHtml+'<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
  '<section class="smart-focus"><div class="smart-kind">'+(type==='relearn-show'?'重新认识':isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
  (d[0]&&isShow?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+
  (didCheck&&d[0]?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+'</section>'+
