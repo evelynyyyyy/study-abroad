@@ -21,6 +21,7 @@ jobs:
           node-version: '22'
       - name: Verify JavaScript syntax
         run: |
+          node --check topik-vocab/pinyin-keyboard.js
           node --check topik-vocab/hangul-keyboard.js
           node --check topik-vocab/app.js
           node --check topik-vocab/vocabulary.js
@@ -33,6 +34,7 @@ jobs:
           node --check topik-vocab/lexicon-quality.js
       - name: Test first learning lifecycle and independent recall
         run: |
+          node topik-vocab/tests/pinyin-keyboard.test.cjs
           node topik-vocab/tests/hangul-keyboard.test.cjs
           node topik-vocab/tests/first-learning.test.cjs
           node topik-vocab/tests/smart-scheduler.test.cjs
