@@ -21,7 +21,7 @@ t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深�
 t.ctrl.setMode('system');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
-assert.ok(html.indexOf('theme.js?v=3.4.0')<html.indexOf('styles.css?v=3.4.0'),'theme must initialize before CSS');
+assert.ok(html.indexOf('theme.js?v=3.5.0')<html.indexOf('styles.css?v=3.5.0'),'theme must initialize before CSS');
 assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
@@ -36,5 +36,5 @@ assert.ok(css.includes('.hangul-keyboard,.pinyin-keyboard'));
 for(const token of ['--background:#ffffff','--background:#000000','--surface-secondary:#f5f5f5','--surface-secondary:#1a1a1a','--keyboard-bg:#000000','--keyboard-bg:#ffffff','--radius-pill:9999px'])assert.ok(css.includes(token),token);
 assert.ok(css.includes('.level-switch button.active')&&css.includes('var(--button-primary-bg)'));
 assert.ok(css.includes('.toast{background:var(--surface-secondary)'));
-assert.ok(html.includes('◐ 主题')&&!html.includes('id="theme-menu"'));
+assert.ok(html.includes('id="theme-toggle"')&&!html.includes('id="theme-menu"'));
 console.log('System theme startup, live changes, overrides, restore, metadata and learning isolation passed.');
