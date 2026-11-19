@@ -41,3 +41,8 @@ assert.ok(app.includes('TOPIK_HANGUL.render()'));
 assert.ok(!app.includes('data-temporary-system'));
 assert.ok(html.includes('pinyin-keyboard.js?v=3.5.1'));
 console.log('Virtual keyboard is readonly and direction-derived.');
+
+for(const [plain,shifted] of Object.entries({'ㅂ':'ㅃ','ㅈ':'ㅉ','ㄷ':'ㄸ','ㄱ':'ㄲ','ㅅ':'ㅆ','ㅐ':'ㅒ','ㅔ':'ㅖ'})){assert.ok(K.render(false).includes('>'+plain+'</button>'));assert.ok(K.render(true).includes('>'+shifted+'</button>'))}
+assert.ok(K.render(true).includes('aria-pressed="true"'));assert.ok(K.render(false).includes('aria-pressed="false"'));assert.ok(!K.render().includes('双辅音'));
+for(const [keys,expected] of [[['ㄲ','ㅏ'],'까'],[['ㄸ','ㅏ'],'따'],[['ㅃ','ㅏ'],'빠'],[['ㅆ','ㅏ'],'싸'],[['ㅉ','ㅏ'],'짜'],[['ㅎ','ㅏ','ㄱ'],'학'],[['ㅁ','ㅓ','ㄱ'],'먹'],[['ㄱ','ㅗ','ㅏ'],'과'],[['ㄱ','ㅜ','ㅓ'],'궈'],[['ㄱ','ㅡ','ㅣ'],'긔']])assert.equal(type(keys),expected);
+assert.ok(app.includes('TOPIK_HANGUL.updateShift'));
