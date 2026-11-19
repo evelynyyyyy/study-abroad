@@ -66,9 +66,9 @@
     const stamp=performance.now();if(stamp-(this.lastPlayed[type]||0)<22)return;this.lastPlayed[type]=stamp;
     if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{type,mode:this.mode,contextState:ctx.state});
     const now=ctx.currentTime;
-    if(type==='key'){if(now-this.lastKey<.012)return;this.lastKey=now;this.keyIndex=(this.keyIndex+1)%3;}
+    if(type==='key'){if(now-this.lastKey<.012)return;this.lastKey=now;}
     const preset={
-     key:[1250+this.keyIndex*16,.032,.21,'triangle'],
+     key:[1250,.032,.21,'triangle'],
      function:[810,.042,.24,'triangle'],
      candidate:[980,.032,.17,'triangle'],
      ui:[840,.035,.16,'triangle'],
@@ -94,26 +94,27 @@
     if(type==='key'||type==='function'){
      // Short, dry iOS-style synthetic click: filtered transient + subdued body.
      // Keep the whole click in one voice to avoid exhausting the polyphony cap.
-     const isFunction=type==='function',variation=(Math.random()-.5)*.10;
+     const isFunction=type==='function';
      const duration=isFunction?.032:.025,noiseLength=isFunction?.021:.017;
      const samples=Math.ceil(ctx.sampleRate*noiseLength);
      const buffer=ctx.createBuffer(1,samples,ctx.sampleRate),data=buffer.getChannelData(0);
-     for(let i=0;i<samples;i++)data[i]=(Math.random()*2-1);
+     // Deterministic transient: identical timbre and loudness on every press.
+     let seed=0x45d9f3b;for(let i=0;i<samples;i++){seed=(Math.imul(seed,1664525)+1013904223)|0;data[i]=((seed>>>0)/2147483648)-1;}
      const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),noiseGain=ctx.createGain();
      const body=ctx.createOscillator(),bodyGain=ctx.createGain();
      const output=ctx.createGain();this.active++;
-     noise.buffer=buffer;filter.type='bandpass';
-     filter.frequency.setValueAtTime((isFunction?1950:2650)*(1+variation),now);
-     filter.Q.value=isFunction?.7:.85;
+     noise.buffer=buffer;filter.type='lowpass';
+     filter.frequency.setValueAtTime(isFunction?1050:1250,now);
+     filter.Q.value=.55;
      noiseGain.gain.setValueAtTime(.0001,now);
      noiseGain.gain.linearRampToValueAtTime(1,now+.001);
      noiseGain.gain.exponentialRampToValueAtTime(.0001,now+noiseLength);
      body.type='triangle';
-     body.frequency.setValueAtTime((isFunction?650:900)*(1+variation*.35),now);
+     body.frequency.setValueAtTime(isFunction?520:610,now);
      bodyGain.gain.setValueAtTime(.0001,now);
      bodyGain.gain.linearRampToValueAtTime(isFunction?.018:.011,now+.001);
      bodyGain.gain.exponentialRampToValueAtTime(.0001,now+(isFunction?.018:.012));
-     output.gain.value=(isFunction?.24:.19)*(1+variation)*(this.mode==='standard'?1:.58)*scale;
+     output.gain.value=(isFunction?.25:.22)*(this.mode==='standard'?1:.58)*scale;
      noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(output);
      body.connect(bodyGain);bodyGain.connect(output);output.connect(ctx.destination);
      const nodes=[noise,filter,noiseGain,body,bodyGain,output];this.activeNodes.add(nodes);
@@ -158,32 +159,38 @@
   document.addEventListener('pointerdown',unlock,{capture:true,passive:true});
   document.addEventListener('touchstart',unlock,{capture:true,passive:true});
   document.addEventListener('keydown',unlock,{capture:true});
-  const attachTest=()=>{const choice=document.getElementById('sound-mode');if(!choice||document.getElementById('sound-test'))return;
-   const button=document.createElement('button');button.id='sound-test';button.type='button';button.className='line-btn';button.textContent='测试音效';button.style.marginLeft='8px';choice.insertAdjacentElement('afterend',button);
-   const status=document.createElement('small');status.id='sound-status';status.style.marginLeft='8px';button.insertAdjacentElement('afterend',status);
-   const showStatus=()=>{
-    status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')+
-     ' · needsAudioRebuild: '+SoundManager.needsAudioRebuild;
-   };
+  const attachTest=()=>{
+   const choice=document.getElementById('sound-mode');
+   if(!choice||document.getElementById('sound-test'))return;
+   const button=document.createElement('button');
+   button.id='sound-test';button.type='button';button.className='line-btn';
+   button.textContent='测试音效';
+   // Keep controls in the existing setting row, without diagnostic text.
+   button.style.cssText='display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;white-space:nowrap;width:auto;min-width:0;max-width:100%;margin:4px 0 4px 8px;padding:6px 10px;';
+   choice.insertAdjacentElement('afterend',button);
    button.addEventListener('click',()=>{
     if(SoundManager.needsAudioRebuild)SoundManager.rebuildAudioContext();
     else SoundManager.init();
     if(SoundManager.context?.state!=='running')SoundManager.resumeAudioContext();
     SoundManager.play('test');
-    showStatus();
+    if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{state:SoundManager.context?.state,needsAudioRebuild:SoundManager.needsAudioRebuild,mode:SoundManager.mode});
    });
-   const reset=document.createElement('button');
-   reset.type='button';reset.className='line-btn';reset.textContent='重新初始化音频';
-   reset.style.marginLeft='8px';button.insertAdjacentElement('afterend',reset);
-   const help=document.createElement('small');help.style.display='block';help.style.marginTop='4px';
-   help.textContent='如果仍然没有声音：Safari 音频可能已暂停，请关闭当前标签页后重新打开网站。';
-   status.insertAdjacentElement('afterend',help);
-   reset.addEventListener('click',()=>{
-    SoundManager.needsAudioRebuild=true;
-    SoundManager.rebuildAudioContext();
-    showStatus();
-   });
-   showStatus();
+   // Troubleshooting remains available only in explicitly enabled debug mode.
+   if(root.TOPIK_SOUND_DEBUG){
+    const details=document.createElement('details');
+    details.style.cssText='margin-top:6px;max-width:100%;';
+    const summary=document.createElement('summary');summary.textContent='音效故障排查';
+    const status=document.createElement('small');
+    const reset=document.createElement('button');
+    reset.type='button';reset.className='line-btn';reset.textContent='重新初始化音频';
+    reset.style.cssText='display:inline-block;width:auto;margin:6px 0;padding:5px 9px;';
+    const update=()=>{status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')+' · needsAudioRebuild: '+SoundManager.needsAudioRebuild;};
+    details.append(summary,status,document.createElement('div'),reset);
+    button.insertAdjacentElement('afterend',details);
+    reset.addEventListener('click',()=>{SoundManager.needsAudioRebuild=true;SoundManager.rebuildAudioContext();update()});
+    button.addEventListener('click',update);
+    update();
+   }
   };
   new MutationObserver(attachTest).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});attachTest();
  }
