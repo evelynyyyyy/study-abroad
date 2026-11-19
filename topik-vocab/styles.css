@@ -20,3 +20,14 @@
 .study-actions .line-btn{font-size:14px}
 .study-actions .primary,.study-actions .secondary{font-size:14px}
 @media(max-width:760px){.context-panel{padding:16px 16px 12px}.context-ko{font-size:18px}.study-actions{gap:8px}.study-actions .line-btn,.study-actions .primary,.study-actions .secondary{min-width:0;flex:1 1 36%;padding:11px 10px}.study-screen{padding-top:24px;padding-bottom:22px}}
+
+/* First exposure is visually distinct from scored recall without redesigning the site. */
+.onboard-label{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.035em;color:var(--soft);border:1px solid var(--edge);padding:6px 10px;border-radius:8px;margin-bottom:24px}
+.onboard-reveal .korean{margin-bottom:8px}
+.onboard-reveal .answer-block{margin-top:22px}
+.onboard-reveal .answer-block .meaning{font-size:27px;font-weight:550}
+.onboard-reveal .muted.small{margin:25px auto 0}
+.onboard-test .question{margin-top:24px}
+.onboard-test .field{font-size:18px}
+.onboard-screen{min-height:300px}
+@media(max-width:760px){.onboard-label{margin-bottom:18px}.onboard-screen{min-height:260px}}
