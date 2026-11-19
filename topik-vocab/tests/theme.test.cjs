@@ -25,7 +25,7 @@ assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
 assert.ok(!app.includes("state.theme=state.theme||'dark'"));
 assert.ok(!app.includes("persist();render()});\ndocument.addEventListener('keydown'"),'theme toggle must not rerender');
-assert.ok(!source.includes('smartTask')&&!source.includes('scheduler')&&!source.includes('typed'),'theme controller must not access learning state');
+assert.ok(!source.includes('smartTask')&&!source.includes('TOPIK_SMART')&&!source.includes('typed'),'theme controller must not access learning state');
 for(const token of ['--bg-primary','--bg-secondary','--surface','--text-primary','--text-secondary','--text-muted','--border','--button-primary','--button-primary-text','--input-bg','--input-border','--keyboard-bg','--keyboard-key-bg','--keyboard-key-text','--candidate-bg','--candidate-text'])assert.ok(css.includes(token),token);
 assert.ok(css.includes('.hangul-keyboard,.pinyin-keyboard'));
 console.log('System theme startup, live changes, overrides, restore, metadata and learning isolation passed.');
