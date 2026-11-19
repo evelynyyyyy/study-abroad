@@ -19,9 +19,12 @@ jobs:
         with:
           node-version: '22'
       - name: Verify JavaScript syntax
-        run: node --check topik-vocab/app.js
+        run: |
+          node --check topik-vocab/app.js
+          node --check topik-vocab/vocabulary.js
       - name: Check site structure and title
         run: |
           node -e "const fs=require('fs');const h=fs.readFileSync('topik-vocab/index.html','utf8');for(const x of ['韩语词汇实验室','./app.js','./styles.css'])if(!h.includes(x))process.exit(1)"
           test -f topik-vocab/styles.css
+          test -f topik-vocab/vocabulary.js
           test -f topik-vocab/SKILL.md
