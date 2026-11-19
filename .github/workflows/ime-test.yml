@@ -18,8 +18,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'upstream-simple-ime/package-lock.json'
       - name: Fetch pinned upstream simple-ime source (MIT)
         run: |
           git clone https://github.com/nieyuyao/simple-ime.git upstream-simple-ime
