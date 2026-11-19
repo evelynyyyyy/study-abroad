@@ -33,7 +33,7 @@ window.TOPIK_SMART={
   const between=lastSerial?new Set(events.filter(e=>e.serial>lastSerial&&e.ko!==ko).map(e=>e.ko)).size:0;
   const available=Number(state.learningActiveWindow)||10;
   const required=Math.min(3,Math.max(1,available-1));
-  const spacingOk=!lastSerial||between>=required;
+  const spacingOk=(!lastSerial||between>=required)&&!(proof.round===2&&now-Number(proof.lastAt||0)<30000);
   const expected=proof.round===0?'meaning':proof.round===1?'spell':null;
   const orderOk=!expected||mode===expected;
   events.push({serial,ko,mode,success:!!success,at:now});
@@ -44,7 +44,7 @@ window.TOPIK_SMART={
    r.learningSuccessCount=(Number(r.learningSuccessCount)||0)+1;
    if(spacingOk&&orderOk){
     proof.round=Math.min(3,proof.round+1);
-    proof.lastSerial=serial;
+    proof.lastSerial=serial;proof.lastAt=now;
     proof.directions=(proof.directions||[]).concat(mode).slice(-3);
     r.learningStreak=proof.round;
    }
