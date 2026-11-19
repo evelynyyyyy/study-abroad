@@ -4,7 +4,7 @@
  */
 'use strict';
 window.TOPIK_SMART={
- DAY:86400000, MIN_GAP:2, VERSION:'3.7.23',
+ DAY:86400000, MIN_GAP:2, VERSION:'3.8.2',
  // Explicit lifecycle: short-term learning never invokes FSRS; graduated words enter dated review.
  wordState(state,ko){
   state.lifecycle=state.lifecycle||{};
@@ -43,11 +43,11 @@ window.TOPIK_SMART={
  },
 
  session:null,
- resetSession(){this.session={index:0,words:new Map()};},
+ resetSession(){this.session={index:0,words:new Map(),freshIntroduced:0};},
  sessionEntry(ko){if(!this.session)this.resetSession();if(!this.session.words.has(ko))this.session.words.set(ko,{count:0,last:-1000,byMode:{meaning:{wins:0,last:-1000},spell:{wins:0,last:-1000}},failed:false,outcome:'correct'});return this.session.words.get(ko)},
  recordExposure(ko,mode,result){const e=this.sessionEntry(ko);const index=this.session.index++;e.count++;e.last=index;e.outcome=result||'correct';if(mode){const m=e.byMode[mode];m.last=index;if(['again','wrong','incorrect','unfamiliar'].includes(result)){m.wins=0;e.failed=true}else if(['correct','good','easy','hard'].includes(result))m.wins++}},
  gapFor(ko,mode){const e=this.sessionEntry(ko);const m=mode?e.byMode[mode]:null;if(['again','wrong','incorrect','unfamiliar'].includes(e.outcome))return 3;if(!m||!m.wins)return 6;if(m.wins===1)return 6;if(m.wins===2)return 18;return 1000},
- sessionEligible(candidate){const e=this.sessionEntry(candidate.word[1]);const cap=candidate.reason==='learning-recall'?24:e.failed?6:4;if(e.count>=cap)return false;const elapsed=this.session.index-e.last-1;return elapsed>=(candidate.reason==='learning-recall'?3:this.gapFor(candidate.word[1],candidate.mode))},
+ sessionEligible(candidate){const e=this.sessionEntry(candidate.word[1]);const cap=candidate.reason==='learning-recall'?Math.max(5,Number(this.session?.freshIntroduced||0)+2):e.failed?6:4;if(e.count>=cap)return false;const elapsed=this.session.index-e.last-1;return elapsed>=(candidate.reason==='learning-recall'?(e.outcome==='wrong'||e.outcome==='again'?3:Math.max(5,this.gapFor(candidate.word[1],candidate.mode))):this.gapFor(candidate.word[1],candidate.mode))},
  CONFIG:{
   learningMinutes:[3,15,180],lapseMinutes:[3,15,180],
   targetRetention:.90,masteryRetention:.85,longTermRetention:.80,
@@ -150,7 +150,7 @@ window.TOPIK_SMART={
  },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
  select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null,pool='learn'){
-  const recent=history.slice(-3),introduced=new Set(day.learned||[]);
+  const recent=history.slice(-6),introduced=new Set(day.learned||[]);
   const learning=[],review=[],fresh=[];
   for(const word of words){
    const ko=word[1],phase=this.wordState(state,ko);
@@ -172,14 +172,21 @@ window.TOPIK_SMART={
     }
    }
   }
-  const byRecent=(a,b)=>recent.indexOf(a.word[1])-recent.indexOf(b.word[1]);
+  
   const nextReview=review.sort((a,b)=>(state.progress?.[a.word[1]]?.[a.mode]?.due||0)-(state.progress?.[b.word[1]]?.[b.mode]?.due||0))[0];
   const nextLearning=learning.sort((a,b)=>(state.lifecycle[a.word[1]]?.lastLearningSeenAt||0)-(state.lifecycle[b.word[1]]?.lastLearningSeenAt||0))[0];
   const nextFresh=fresh.find(c=>!recent.includes(c.word[1])&&this.sessionEligible(c));
-  // Separate pools; interleave tasks, never put new words into FSRS before graduation.
+  // Reserve a new-word slot while limiting the active learning window.
   if(pool==='review')return nextReview||null;
-  if(nextLearning)return nextLearning;
-  return nextFresh||null;
+  const active=words.reduce((n,w)=>n+(this.wordState(state,w[1])==='LEARNING'?1:0),0);
+  const capacity=Math.max(8,Math.min(12,10-Math.floor(active/8)));
+  const session=this.session||(this.resetSession(),this.session);
+  const freshOpportunity=!!nextFresh&&active<capacity;
+  // At least every other scheduled learning task introduces a new word while capacity permits.
+  if(freshOpportunity&&(!nextLearning||session.index%2===0||session.freshIntroduced===0)){
+   session.freshIntroduced++;return nextFresh;
+  }
+  return nextLearning||(freshOpportunity?(session.freshIntroduced++,nextFresh):null);
  },
  // Lightweight on-demand diagnostics; no persistent pre-generated direction queue.
  inspect(state,words,now=Date.now()){
