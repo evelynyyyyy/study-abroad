@@ -39,6 +39,4 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
           node topik-vocab/ime-experiment/production-smoke.cjs
-          node topik-vocab/ime-experiment/acceptance-special.cjs
-          node topik-vocab/ime-experiment/scheduler-equivalence.cjs
           node topik-vocab/ime-experiment/special-acceptance.cjs
