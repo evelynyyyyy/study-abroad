@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const c={window:{}};vm.runInNewContext(fs.readFileSync('topik-vocab/hangul-keyboard.js','utf8'),c);
+const K=c.window.TOPIK_HANGUL;
+function type(keys){return keys.reduce((s,k)=>K.append(s,k),'')}
+assert.equal(type(['ㅎ','ㅏ','ㄱ','ㅅ','ㅐ','ㅇ']),'학생');
+assert.equal(type(['ㅁ','ㅓ','ㄱ','ㅇ','ㅓ','ㅇ','ㅛ']),'먹어요');
+assert.equal(type(['ㅁ','ㅓ','ㄱ','ㅇ','ㅓ','ㅆ','ㅇ','ㅓ','ㅇ','ㅛ']),'먹었어요');
+assert.equal(type(['ㄱ','ㅗ','ㅏ']),'과');
+assert.equal(type(['ㄱ','ㅗ','ㅏ','ㄴ']),'관');
+assert.equal(type(['ㄱ','ㅗ','ㅏ','ㄴ','ㅏ']),'과나');
+assert.equal(type(['ㄱ','ㅏ','ㅂ','ㅅ']),'값');
+assert.equal(type(['ㄱ','ㅏ','ㅂ','ㅅ','ㅣ']),'갑시');
+assert.equal(type(['ㄲ','ㅏ']),'까');
+assert.equal(K.backspace('값'),'갑');
+assert.equal(K.backspace('갑'),'가');
+assert.equal(K.backspace('과'),'고');
+assert.equal(K.backspace('고'),'ㄱ');
+assert.equal(K.edit('학교',1,1,'ㅏ').text,'하교');
+assert.equal(K.edit('학교',0,1,'ㄱ').text,'ㄱ교');
+assert.equal(K.edit('학교',2,2,'Backspace').text,'학ㄱ');
+assert.ok(K.render().includes('data-hangul="Backspace"'));
+const app=fs.readFileSync('topik-vocab/app.js','utf8'),html=fs.readFileSync('topik-vocab/index.html','utf8');
+for(const m of ['input-method','data-temporary-system','TOPIK_HANGUL.edit','inputmode=','compositionstart','compositionend'])assert.ok(app.includes(m),m);
+assert.ok(html.includes('hangul-keyboard.js?v=3.1.0'));
+console.log('Hangul Dubeolsik syllables, compound vowels/finals, deletion, caret edit and UI hooks passed.');
