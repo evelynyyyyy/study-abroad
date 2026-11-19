@@ -424,7 +424,7 @@ function smartScreen(){
  '<strong>'+(correctRating(smartResult)?'回答正确':smartResult==='again'&&!typed?'不知道 · 稍后重练':'回答错误')+'</strong>'+
   (typed?'<div class="smart-user-answer">你的答案：'+quote(typed)+'</div>':'')+
  '<div class="smart-answer"><span>韩语</span><b lang="ko">'+ko+'</b><button class="text-btn" data-speak="'+ko+'">▶ 发音</button></div>'+
- '<div class="smart-answer"><span>中文</span><b>'+zh+'</b></div>'+ (correctRating(smartResult)?meaningFeedback(w,typed,mode):'')+
+ '<div class="smart-answer"><span>中文</span><b>'+zh+'</b></div>'+ (correctRating(smartResult)?meaningFeedback(w,typed,mode,false):'')+
  (d[2]?'<div class="smart-reading">读音：'+quote(d[2])+'</div>':'')+
  '</div>':'');
  const actions=isShow?'<button class="primary smart-action" data-smart-next="1">继续 →</button>':
@@ -504,11 +504,11 @@ function evaluateAnswer(w,input,mode){
  return {level:result.status==='incorrect'?'wrong':result.status,other:result.other,matched:result.matchedMeaning,reason:result.reason};
 }
 function answerCorrect(w,input,mode){return evaluateAnswer(w,input,mode).level!=='wrong'}
-function meaningFeedback(w,input,mode){
+function meaningFeedback(w,input,mode,showUserAnswer=true){
  if(mode!=='meaning')return '';
  const result=evaluateAnswer(w,input,mode);
  if(result.level==='wrong')return '';
- return '<div class="meaning-detail"><div>你的答案：'+quote(input)+'</div>'+
+ return '<div class="meaning-detail">'+(showUserAnswer?'<div>你的答案：'+quote(input)+'</div>':'')+
  (result.level==='acceptable'?'<div>基本正确 · 可接受表达（'+quote(result.matched)+'）</div>':'')+
  (result.other.length?'<div>其他常见义项：'+result.other.map(quote).join('、')+'</div>':'')+'</div>';
 }
