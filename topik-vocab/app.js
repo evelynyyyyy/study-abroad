@@ -164,8 +164,8 @@ function restoreSmartSession(pool){
 }
 
 function startSmart(pool='learn'){
- smartPool=pool==='review'?'review':'learn';
  if(view==='smart')saveSmartSession();
+ smartPool=pool==='review'?'review':'learn';
  const restored=restoreSmartSession(smartPool);
  if(!restored){smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();typed='';didCheck=false;smartPick();}
  view='smart';session=null;onboarding=null;render();
