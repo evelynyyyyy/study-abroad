@@ -27,5 +27,8 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
           node -e "console.log('Using preinstalled Chromium and WebKit from Playwright image')"
+      - name: Measure pinned IME bundle compression
+        run: |
+          node -e "const fs=require('fs'),z=require('zlib');const b=fs.readFileSync('topik-vocab/ime-experiment/simple-ime-core.js');console.log(JSON.stringify({engine:'simple-ime',rawBytes:b.length,gzipBytes:z.gzipSync(b,{level:9}).length,brotliBytes:z.brotliCompressSync(b).length}))"
       - name: Test live study page with virtual keyboard
         run: node topik-vocab/ime-experiment/production-smoke.cjs
