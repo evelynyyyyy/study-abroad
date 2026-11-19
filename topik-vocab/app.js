@@ -138,6 +138,8 @@ function smartPick(){
  resetKeyboardInteraction();if(typeof simpleIme!=='undefined'&&simpleIme)simpleIme.reset();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;hangulMode='letters';pinyinShift=false;pinyinMode='letters';pinyinExpanded=false;didCheck=false;pendingRating=false;smartResult=null;
 }
 function resetKeyboardInteraction(){clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null;}
+window.addEventListener('blur',resetKeyboardInteraction);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)resetKeyboardInteraction()});
 function smartNext(){
  if(!smartTask)return;
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
@@ -319,8 +321,7 @@ function bindDeleteRepeat(button,action){
  });
  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,stop);
  button.addEventListener('click',e=>{if(repeated){e.preventDefault();repeated=false;return}action()});
- window.addEventListener('blur',stop);
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
+
 }
 let hangulMode='letters';
 function applyHangulKey(key){
