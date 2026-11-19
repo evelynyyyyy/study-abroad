@@ -12,7 +12,7 @@ const state=parse(STORAGE,{});
 state.progress=state.progress||{};state.lifecycle=state.lifecycle||{};state.dailyGoal=Math.max(0,Math.min(200,Number(state.dailyGoal??20)));state.smartHistory=state.smartHistory||[];state.smartAnswerHistory=state.smartAnswerHistory||[];state.relearn=state.relearn||{};state.favorites=state.favorites||[];state.daily=state.daily||{};delete state.goal;state.theme=window.TOPIK_THEME.getMode();state.level=Number(state.level)||1;state.collection=state.collection||'topik';state.inputMethod=state.inputMethod==='system'?'system':'bilingual';state.webChineseAutoFocus=state.webChineseAutoFocus===true;state.extra=Array.isArray(state.extra)?state.extra:parse('topik_extra',[]);
 let legacy=parse('topik_records',{});
 if(!state.legacyMigrated){Object.entries(legacy).forEach(([ko,r])=>{if(!state.progress[ko])state.progress[ko]={read:{step:Number(r.step)||0,due:Number(r.due)||0,wrong:0}}});state.legacyMigrated=true;}
-let pinyinComposition='',pinyinPage=0;let hangulShift=false;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
+let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
 function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],window.TOPIK_VERIFIED_ADDITIONS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 const TOPIK_TOPICS={
@@ -135,8 +135,9 @@ function smartPick(){
    queueLength:d.queueLength,queueKoToZh:d.queue.meaning,queueZhToKo:d.queue.spell
   });
  }
- typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;didCheck=false;pendingRating=false;smartResult=null;
+ resetKeyboardInteraction();typed='';pinyinComposition='';pinyinPage=0;hangulShift=false;pinyinShift=false;didCheck=false;pendingRating=false;smartResult=null;
 }
+function resetKeyboardInteraction(){clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null;}
 function smartNext(){
  if(!smartTask)return;
  if(useVirtualKeyboard())document.getElementById('spell-input')?.blur();
@@ -165,7 +166,7 @@ function smartRecord(result){
  state.smartAnswerHistory=(state.smartAnswerHistory||[]).concat([{
   ko:word[1],mode,result,at:Date.now()
  }]).slice(-3000);
- smartResult=result;pendingRating=false;didCheck=true;persist();render();
+ smartResult=result;pendingRating=false;didCheck=true;resetKeyboardInteraction();persist();render();
 }
 function markUnfamiliar(){
  if(!smartTask||smartTask.type!=='typing'||!didCheck)return;
@@ -193,7 +194,7 @@ function smartSubmit(){
   const actions=document.querySelector('.smart-bottom .smart-actions');
   if(actions){actions.innerHTML='<button type="button" class="secondary" data-smart-rate="hard">很吃力</button><button type="button" class="secondary" data-smart-rate="good">一般</button><button type="button" class="primary" data-smart-rate="easy">很熟悉</button>';
    actions.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));}
-  notify('回答正确，请选择记忆感受');return;
+  resetKeyboardInteraction();render();notify('回答正确，请选择记忆感受');return;
  }
  smartRecord('wrong');
 }
@@ -214,26 +215,49 @@ function chineseGlosses(){return scope().map(w=>w[2])}
 function updatePinyinDisplay(){
  const label=document.getElementById('pinyin-composition'),list=document.getElementById('pinyin-candidates');
  if(!label||!list)return;
- label.textContent=pinyinComposition||'输入拼音，点击候选汉字或词语';
+ label.textContent=pinyinComposition||'';
  const choices=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses());
- const pages=Math.max(1,Math.ceil(choices.length/7));pinyinPage=Math.min(pinyinPage,pages-1);
- const shown=choices.slice(pinyinPage*7,(pinyinPage+1)*7);
- list.innerHTML=(pinyinPage>0?'<button type="button" data-pinyin-page="-1" aria-label="上一页">‹</button>':'')+
- shown.map((w,i)=>'<button type="button" data-pinyin-choice="'+(pinyinPage*7+i)+'">'+quote(w)+'</button>').join('')+
- (pinyinPage<pages-1?'<button type="button" data-pinyin-page="1" aria-label="下一页">›</button>':'');
+ pinyinPage=0;
+ list.innerHTML=choices.map((w,i)=>'<button type="button" data-pinyin-choice="'+i+'">'+quote(w)+'</button>').join('');
  list.querySelectorAll('[data-pinyin-choice]').forEach(b=>b.onclick=()=>{
   const choice=choices[Number(b.dataset.pinyinChoice)];if(!choice)return;
   const result=TOPIK_PINYIN.select(typed,pinyinComposition,choice);
   typed=result.answer;pinyinComposition=result.composition;pinyinPage=0;
   const input=document.getElementById('spell-input');if(input)input.value=typed;updatePinyinDisplay();
  });
- list.querySelectorAll('[data-pinyin-page]').forEach(b=>b.onclick=()=>{pinyinPage+=Number(b.dataset.pinyinPage);updatePinyinDisplay()});
+
 }
 function applyPinyinKey(key){
  if(!useChineseKeyboard()||didCheck||pendingRating)return;
  if(key==='space'&&pinyinComposition){const c=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];if(c){const result=TOPIK_PINYIN.select(typed,pinyinComposition,c);typed=result.answer;pinyinComposition=''}else notify('没有匹配候选，请修改拼音')}
  else{const result=TOPIK_PINYIN.update(typed,pinyinComposition,key);typed=result.answer;pinyinComposition=result.composition}
+ if(pinyinShift&&/^[a-z]$/i.test(key)){pinyinShift=false;TOPIK_PINYIN.updateShift(document.querySelector('.pinyin-keyboard'),false)}
  pinyinPage=0;const input=document.getElementById('spell-input');if(input)input.value=typed;updatePinyinDisplay();
+}
+function keyboardReturn(){
+ if(didCheck||pendingRating)return;
+ if(useChineseKeyboard()&&pinyinComposition){
+  const first=TOPIK_PINYIN.candidates(pinyinComposition,chineseGlosses())[0];
+  if(!first){notify('没有匹配候选，请修改拼音');return}
+  const result=TOPIK_PINYIN.select(typed,pinyinComposition,first);
+  typed=result.answer;pinyinComposition=result.composition;
+  const input=document.getElementById('spell-input');if(input)input.value=typed;
+  updatePinyinDisplay();return;
+ }
+ // Korean jamo are already synchronously assembled by TOPIK_HANGUL.edit.
+ smartSubmit();
+}
+function bindDeleteRepeat(button,action){
+ let repeated=false;
+ const stop=()=>{clearTimeout(keyboardDeleteTimer);clearInterval(keyboardDeleteInterval);keyboardDeleteTimer=null;keyboardDeleteInterval=null};
+ button.addEventListener('pointerdown',e=>{
+  if(e.button!==0||didCheck||pendingRating)return;
+  stop();repeated=false;
+  keyboardDeleteTimer=setTimeout(()=>{repeated=true;action();keyboardDeleteInterval=setInterval(action,72)},420);
+ });
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,stop);
+ button.addEventListener('click',e=>{if(repeated){e.preventDefault();repeated=false;return}action()});
+ window.addEventListener('blur',stop,{once:true});
 }
 function applyHangulKey(key){
  if(!useHangulKeyboard()||didCheck||pendingRating)return;
@@ -253,7 +277,7 @@ function smartScreen(){
  }
  const {word:w,type,mode}=smartTask,ko=quote(w[1]),zh=quote(w[2]),d=ex(w);
  const isShow=type==='show'||type==='relearn-show',isMeaning=mode==='meaning';
- const webKeyboard=!isShow&&useVirtualKeyboard();
+ const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck;
  const koreanKeyboard=webKeyboard&&!isMeaning,chineseKeyboard=webKeyboard&&isMeaning;
  const example=d[0]?'<div class="smart-example" id="smart-example" hidden><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
  const main=isShow?
@@ -385,10 +409,11 @@ function render(){
  }else if(current&&taskKey)current.dataset.taskKey=taskKey;
  bind();if(useChineseKeyboard())updatePinyinDisplay();
 }
-function bind(){const topLevel=document.getElementById('top-level-select');if(topLevel)topLevel.onchange=e=>{state.level=Number(e.target.value);persist();session=null;render()};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>change(b.dataset.view));document.querySelectorAll('[data-next-reveal]').forEach(b=>b.onclick=advanceReveal);document.querySelectorAll('[data-begin-typing]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-next-question]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-check-onboard]').forEach(b=>b.onclick=submitOnboardAnswer);document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{state.level=Number(b.dataset.level);persist();session=null;render()});document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start(b.dataset.start));document.querySelectorAll('[data-smart-start]').forEach(b=>b.onclick=startSmart);let collectionChoice=document.getElementById('collection-choice');if(collectionChoice)collectionChoice.onchange=e=>{state.collection=e.target.value;listQuery='';persist();render()};document.querySelectorAll('[data-reset-scope]').forEach(b=>b.onclick=()=>resetLearning(b.dataset.resetScope));document.querySelectorAll('[data-smart-next]').forEach(b=>b.onclick=smartNext);document.querySelectorAll('[data-smart-submit]').forEach(b=>b.onclick=smartSubmit);
- document.querySelectorAll('[data-hangul]').forEach(b=>b.onclick=()=>applyHangulKey(hangulShift&&b.dataset.shift?b.dataset.shift:b.dataset.hangul));
+function bind(){const topLevel=document.getElementById('top-level-select');if(topLevel)topLevel.onchange=e=>{state.level=Number(e.target.value);persist();session=null;render()};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>change(b.dataset.view));document.querySelectorAll('[data-next-reveal]').forEach(b=>b.onclick=advanceReveal);document.querySelectorAll('[data-begin-typing]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-next-question]').forEach(b=>b.onclick=nextOnboardQuestion);document.querySelectorAll('[data-check-onboard]').forEach(b=>b.onclick=submitOnboardAnswer);document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{state.level=Number(b.dataset.level);persist();session=null;render()});document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start(b.dataset.start));document.querySelectorAll('[data-smart-start]').forEach(b=>b.onclick=startSmart);let collectionChoice=document.getElementById('collection-choice');if(collectionChoice)collectionChoice.onchange=e=>{state.collection=e.target.value;listQuery='';persist();render()};document.querySelectorAll('[data-reset-scope]').forEach(b=>b.onclick=()=>resetLearning(b.dataset.resetScope));document.querySelectorAll('[data-smart-next]').forEach(b=>b.onclick=smartNext);document.querySelectorAll('[data-smart-submit]').forEach(b=>b.onclick=b.closest('.ios-keyboard')?keyboardReturn:smartSubmit);
+ document.querySelectorAll('[data-hangul]').forEach(b=>{const action=()=>applyHangulKey(hangulShift&&b.dataset.shift?b.dataset.shift:b.dataset.hangul);if(b.dataset.hangul==='Backspace')bindDeleteRepeat(b,action);else b.onclick=action});
  document.querySelectorAll('[data-hangul-shift]').forEach(b=>b.onclick=()=>{hangulShift=!hangulShift;TOPIK_HANGUL.updateShift(document.querySelector('.hangul-keyboard'),hangulShift)});
- document.querySelectorAll('[data-pinyin-key]').forEach(b=>b.onclick=()=>applyPinyinKey(b.dataset.pinyinKey));
+ document.querySelectorAll('[data-pinyin-key]').forEach(b=>{const action=()=>applyPinyinKey(b.dataset.pinyinKey);if(b.dataset.pinyinKey==='backspace')bindDeleteRepeat(b,action);else b.onclick=action});
+ document.querySelectorAll('[data-pinyin-shift]').forEach(b=>b.onclick=()=>{pinyinShift=!pinyinShift;TOPIK_PINYIN.updateShift(document.querySelector('.pinyin-keyboard'),pinyinShift)});
  const inputMethodChoice=document.getElementById('input-method');if(inputMethodChoice)inputMethodChoice.onchange=e=>{state.inputMethod=e.target.value;persist();render()};
  const debugChoice=document.getElementById('study-debug');if(debugChoice)debugChoice.onchange=e=>{state.studyDebug=!!e.target.checked;persist();render()};document.querySelectorAll('[data-smart-rate]').forEach(b=>b.onclick=()=>smartRate(b.dataset.smartRate));document.querySelectorAll('[data-smart-unknown]').forEach(b=>b.onclick=smartDontKnow);document.querySelectorAll('[data-unfamiliar]').forEach(b=>b.onclick=markUnfamiliar);document.querySelectorAll('[data-relearn-batch]').forEach(b=>b.onclick=()=>relearnBatch(b.dataset.relearnBatch));document.querySelectorAll('[data-relearn-selected]').forEach(b=>b.onclick=()=>queueRelearn(all().filter(w=>relearnSelection.has(w[1])),relearnKind(),relearnModes()));document.querySelectorAll('[data-smart-example]').forEach(b=>b.onclick=()=>{let el=document.getElementById('smart-example');if(el)el.hidden=!el.hidden});enhanceSpeakButtons();document.querySelectorAll('[data-flip]').forEach(b=>b.onclick=()=>{session.flipped=true;render()});document.querySelectorAll('[data-next-learn]').forEach(b=>b.onclick=()=>next(true));document.querySelectorAll('[data-practice-word]').forEach(b=>b.onclick=()=>startSpecific(b.dataset.practiceWord));document.querySelectorAll('[data-resume-practice]').forEach(b=>b.onclick=resumePractice);document.querySelectorAll('[data-mark-fuzzy]').forEach(b=>b.onclick=()=>next('fuzzy'));document.querySelectorAll('[data-grade]').forEach(b=>b.onclick=()=>next(b.dataset.grade==='fuzzy'?'fuzzy':b.dataset.grade==='1'));document.querySelectorAll('[data-grade-spell]').forEach(b=>b.onclick=()=>next(true,true));document.querySelectorAll('[data-check]').forEach(b=>b.onclick=checkSpell);let i=document.getElementById('spell-input');if(i){i.oninput=e=>typed=e.target.value;i.onkeydown=e=>{if(e.isComposing||e.keyCode===229||i.dataset.composing==='1')return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();if(view==='smart'){if(didCheck)smartNext();else if(!pendingRating)smartSubmit()}else if(view==='onboard'){if(didCheck)nextOnboardQuestion();else submitOnboardAnswer()}else if(didCheck)next(true,true);else checkSpell()}};i.addEventListener('compositionstart',()=>i.dataset.composing='1');i.addEventListener('compositionend',()=>{i.dataset.composing='0';typed=i.value});if(!useVirtualKeyboard()&&!/iPad|iPhone|iPod/.test(navigator.userAgent))i.focus({preventScroll:true})}let search=document.getElementById('word-search');if(search)search.oninput=e=>{listQuery=e.target.value;let rows=scope().filter(w=>(w[1]+w[2]).toLowerCase().includes(listQuery.toLowerCase())).filter(w=>listFilter==='all'||(listFilter==='favorites'?state.favorites.includes(w[1]):weak(w[1])>0));document.getElementById('word-results').innerHTML=rowsHTML(rows);bindRows()};let filt=document.getElementById('word-filter');if(filt)filt.onchange=e=>{listFilter=e.target.value;render()};bindRows();let goal=document.getElementById('daily-goal');if(goal)goal.onchange=e=>{state.dailyGoal=Math.max(0,Math.min(200,Number(e.target.value)||0));persist();notify('每日新词目标已保存')};let ch=document.getElementById('theme-choice');if(ch)ch.onchange=e=>{state.theme=window.TOPIK_THEME.setMode(e.target.value)};let up=document.getElementById('csv-upload');if(up)up.onchange=importCSV;let resetBackup=document.getElementById('reset-backup');if(resetBackup)resetBackup.onclick=()=>document.getElementById('export-data')?.click();let bu=document.getElementById('backup-upload');if(bu)bu.onchange=importBackup;let ec=document.getElementById('export-csv');if(ec)ec.onclick=exportCSV;let ed=document.getElementById('export-data');if(ed)ed.onclick=()=>download('topik-lab-backup.json',JSON.stringify({version:2,state},null,2),'application/json')}
 function bindRows(){document.querySelectorAll('[data-relearn-word]').forEach(b=>b.onchange=()=>{if(b.checked)relearnSelection.add(b.dataset.relearnWord);else relearnSelection.delete(b.dataset.relearnWord);const c=document.querySelector('[data-relearn-selected]');if(c)c.textContent='重新学习已选 '+relearnSelection.size+' 词'});document.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{let ko=b.dataset.favorite;state.favorites=state.favorites.includes(ko)?state.favorites.filter(x=>x!==ko):[...state.favorites,ko];persist();render()});/* all word-list voice controls are wired by enhanceSpeakButtons */}
