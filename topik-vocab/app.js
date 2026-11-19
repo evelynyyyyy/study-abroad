@@ -48,6 +48,58 @@ function practiceHome(){
 }
 function choose(mode){let words=scope();if(mode==='learn')return words.filter(w=>isNew(w[1]));if(mode==='context')return words.filter(w=>!!ex(w)[0]);if(mode==='review')return words.filter(w=>['reviewing','mastered'].includes(learningStage(w[1]))&&['meaning','spell'].some(m=>isDue(w[1],m)));if(mode==='wrong')return words.filter(w=>hasSeen(w[1])&&weak(w[1])>0).sort((a,b)=>weak(b[1])-weak(a[1]));if(mode==='meaning'){let studied=words.filter(w=>hasSeen(w[1]));let due=studied.filter(w=>!prog(w[1],'meaning')||isDue(w[1],'meaning'));return due}if(mode==='spell'){let studied=words.filter(w=>hasSeen(w[1]));let due=studied.filter(w=>!prog(w[1],'spell')||isDue(w[1],'spell'));return due}return[]}
 
+
+function startSmart(){
+ view='smart';session=null;onboarding=null;typed='';didCheck=false;smartPick();render();
+}
+function smartPick(){
+ const history=state.smartHistory||[];
+ smartTask=TOPIK_SMART.select(state,scope(),dayInfo(),state.dailyGoal,history);
+ typed='';didCheck=false;
+}
+function smartNext(){
+ if(!smartTask)return;
+ if(smartTask.type==='show'){
+   markShown(smartTask.word[1]);
+ }else if(!didCheck){notify('请先提交答案');return}
+ state.smartHistory=(state.smartHistory||[]).concat([smartTask.word[1]]).slice(-30);
+ persist();smartPick();render();
+}
+function smartSubmit(){
+ if(!smartTask||smartTask.type!=='typing'||didCheck)return;
+ const input=document.getElementById('spell-input');
+ if(input?.dataset.composing==='1')return;
+ typed=(input?.value??typed).trim();if(!typed){notify('请先输入答案');return}
+ const {word,mode}=smartTask,correct=answerCorrect(word,typed,mode);
+ TOPIK_SMART.review(state,word[1],mode,correct);
+ markRecall(word[1],mode);
+ const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;state.daily[key]=d;
+ didCheck=true;persist();render();
+}
+function smartScreen(){
+ if(!smartTask){
+   const sum=TOPIK_SMART.summary(state,scope(),dayInfo(),state.dailyGoal);
+   return '<div class="smart-done"><div class="eyebrow">今日学习</div><h1>当前任务已完成</h1><p class="muted">今日认识 '+sum.newCount+' 个新词，当前没有可安排的到期题目。</p><button class="primary" data-view="home">返回首页</button></div>';
+ }
+ const {word:w,type,mode}=smartTask,ko=quote(w[1]),zh=quote(w[2]),d=ex(w);
+ const isShow=type==='show',isMeaning=mode==='meaning';
+ const example=d[0]?'<div class="smart-example" id="smart-example" hidden><p lang="ko">'+markExample(d[0],w[1])+'</p><p class="muted">'+quote(d[1])+'</p><button class="text-btn" data-speak="'+quote(d[0])+'">▶ 听例句</button></div>':'';
+ const main=isShow?
+ '<div class="smart-word" lang="ko">'+ko+'</div><div class="smart-translation">'+zh+'</div><div class="smart-reading">'+quote(romanizeHangul(w[1]))+'</div><button class="smart-speak" data-speak="'+ko+'">▶ 听发音</button>':
+ '<div class="smart-word '+(isMeaning?'':'smart-chinese')+'" '+(isMeaning?'lang="ko"':'')+'>'+(isMeaning?ko:zh)+'</div>'+
+ '<div class="input-wrap"><input id="spell-input" class="field" aria-label="'+(isMeaning?'输入中文':'输入韩语')+'" placeholder="'+(isMeaning?'输入中文意思':'请输入韩语')+'" autocomplete="off" autocapitalize="off" spellcheck="false" lang="'+(isMeaning?'zh-CN':'ko')+'" value="'+quote(typed)+'" '+(didCheck?'disabled':'')+'></div>'+
+ (didCheck?'<div class="smart-feedback '+(answerCorrect(w,typed,mode)?'good':'bad')+'">'+(answerCorrect(w,typed,mode)?'回答正确':'正确答案：'+(isMeaning?zh:ko))+'</div>':'');
+ const actions=isShow?'<button class="primary smart-action" data-smart-next="1">继续 →</button>':
+ didCheck?'<button class="primary smart-action" data-smart-next="1">下一词 →</button>':'<button class="primary smart-action" data-smart-submit="1">提交答案</button>';
+ const sum=TOPIK_SMART.summary(state,scope(),dayInfo(),state.dailyGoal);
+ return '<div class="smart-study"><header class="smart-study-head"><button class="text-btn" data-view="home">← 返回</button><span class="tiny muted">'+sum.newCount+' / '+sum.goal+' 新词 · '+sum.due+' 待复习</span></header>'+
+ '<div class="smart-progress"><i style="width:'+Math.min(100,100*sum.newCount/Math.max(1,sum.goal))+'%"></i></div>'+
+ '<section class="smart-focus"><div class="smart-kind">'+(isShow?'认识新词':isMeaning?'韩语 → 中文':'中文 → 韩语')+'</div>'+main+
+ (d[0]&&isShow?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+
+ (didCheck&&d[0]?'<button class="text-btn smart-expand" data-smart-example="1">查看例句 ﹀</button>'+example:'')+'</section>'+
+ '<footer class="smart-bottom">'+actions+'</footer></div>';
+}
+
 function startOnboarding(){
  let words=scope().filter(w=>['unseen','shown','learning'].includes(learningStage(w[1]))).slice(0,TOPIK_FIRST_LEARNING.LIMIT);
  onboarding=TOPIK_FIRST_LEARNING.newBatch(words);
