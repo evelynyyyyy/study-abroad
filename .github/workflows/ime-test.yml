@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/ime-test.yml'
       - 'topik-vocab/ime-experiment/simple-ime.acceptance.test.ts'
+      - 'topik-vocab/ime-experiment/build-engine.cjs'
 permissions:
   contents: write
 jobs:
@@ -38,6 +39,12 @@ jobs:
           IME_UPSTREAM_SHA: d503bee97392f3b99e1fb9d6f23cecc86ced6f26
           IME_RESULTS_PATH: ../topik-vocab/ime-experiment/results.json
         run: npx vitest run tests/topik-integration.test.ts --reporter=verbose
+      - name: Bundle verified upstream engine for isolated browser test
+        working-directory: upstream-simple-ime
+        run: |
+          cp ../topik-vocab/ime-experiment/build-engine.cjs ./topik-build-engine.cjs
+          node ./topik-build-engine.cjs
+          cp LICENSE ../topik-vocab/ime-experiment/UPSTREAM-LICENSE.txt
       - name: Record actual candidate results even when acceptance fails
         if: always()
         run: |
@@ -48,6 +55,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add topik-vocab/ime-experiment/results.json
+          if [ -f topik-vocab/ime-experiment/simple-ime-core.js ]; then git add topik-vocab/ime-experiment/simple-ime-core.js topik-vocab/ime-experiment/UPSTREAM-LICENSE.txt; fi
           if ! git diff --cached --quiet; then git commit -m 'Record actual simple-ime acceptance results [skip ci]' && git push; fi
       - name: Publish results in workflow summary
         if: always()
