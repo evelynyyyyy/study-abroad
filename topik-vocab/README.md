@@ -1,3 +1,13 @@
+## 连续智能学习（当前默认入口）
+
+首页只保留「开始学习」、TOPIK 等级和关键进度。原有语境学词、双向 Typing、到期复习、错词强化仍在「专项练习」中，词库和设置保留。
+
+「开始学习」不再使用固定 10 词轮次。调度器 `smart-scheduler.js` 每次根据当前等级的词、今日新词目标、两个方向各自的到期时间、错误次数、最近出现词形等选择下一项。未展示的词先完整展示韩语/中文、发音、罗马字和可展开例句，不计正确率；之后两方向独立 Typing。连续相邻任务避免同一个词；错误的方向会在短间隔后重新到期，自动参与调度。
+
+**复习模型**：使用 FSRS 启发的 D/S/R（难度、稳定度、可提取性）记忆模型，非官方 FSRS 参数实现。每个方向的 `progress[ko][mode].memory` 保存 `stability`、`difficulty`、`retrievability`、`lastReview`、`nextReview`、`interval`、`correct`、`incorrect`、`reps`；原 `due`、`step`、`wrong` 等字段继续保留，旧进度自动按需迁移，不会被清空。学习记录继续保存在 `topik_lab_v2`，每日目标默认 20、可在设置修改（0 表示不增加新词），目标仅限制引入新词，不限制到期复习。
+
+手机输入法组合期间的 Enter 不会提交答案；韩语严格匹配，中文支持词库已有的多释义和部分人工整理的同义表达。复习数据是本机 localStorage，切换设备需手动备份恢复。
+
 # TOPIK单词
 
 静态网页，部署于 GitHub Pages：<https://evelynyyyyy.github.io/study-abroad/topik-vocab/>
