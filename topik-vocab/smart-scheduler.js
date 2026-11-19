@@ -10,7 +10,7 @@ window.TOPIK_SMART={
   targetRetention:.90,masteryRetention:.85,longTermRetention:.80,
   longTermDays:7,masteryDays:21,masteryCrossDays:2,
   maxNewWhenDue:12,maxNewWhenBacklogged:0,
-  maxIntervalDays:365
+  maxIntervalDays:365, maxComparableRun:4, alternateScoreTolerance:18, firstRecallPriority:138
  },
  dayKey(t){return new Date(t).toISOString().slice(0,10)},
  normalize(state,ko,mode,now=Date.now()){
@@ -120,7 +120,9 @@ window.TOPIK_SMART={
     if(!first&&seenAt&&now-seenAt<3000)continue;
     const m=this.normalize(state,ko,mode,now);
     const overdue=q?.due?Math.max(0,(now-q.due)/this.DAY):0;
-    const score=(!first?95:m.phase==='relearning'?145:m.phase==='learning'?120:100)+
+    // First-time recall is a real due task: never bury the untested direction
+    // beneath an unlimited backlog of already-practiced short-step cards.
+    const score=(!first?this.CONFIG.firstRecallPriority:m.phase==='relearning'?145:m.phase==='learning'?120:100)+
      (m.lastResult==='again'?20:0)+Math.min(80,overdue*12)+
      (1-m.retrievability)*30+Math.min(20,(q?.wrong||0)*2);
     candidates.push({word,type:'typing',mode,score});
@@ -130,25 +132,43 @@ window.TOPIK_SMART={
   if(!eligible.length)eligible=candidates.filter(c=>c.word[1]!==history.at(-1));
   if(!eligible.length)eligible=candidates;
   eligible.sort((a,b)=>b.score-a.score);
-  // Direction is determined exclusively by due memory tasks, never keyboard settings.
-  // A tiny same-direction preference is capped at three consecutive Typing tasks.
-  // Alternate directions are never starved when their due priority is comparable.
-  const best=eligible[0];
-  const recentModes=(state.smartDirectionHistory||[]).slice(-3);
-  const sameRun=preferredMode&&recentModes.length===3&&recentModes.every(m=>m===preferredMode);
-  const alternate=preferredMode&&best?eligible.find(c=>c.mode!==preferredMode&&c.score>=best.score-8):null;
-  const same=preferredMode&&!sameRun&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-8):null;
-  const due=(sameRun&&alternate)||same||best,backlog=candidates.length;
+  // Soft anti-starvation: keyboard preference never enters task selection.
+  // Direction streak is a scheduling hint, not a reason to skip urgent lapses.
+  const best=eligible[0],recentModes=(state.smartDirectionHistory||[]).slice(-this.CONFIG.maxComparableRun);
+  const sameRun=preferredMode&&recentModes.length===this.CONFIG.maxComparableRun&&recentModes.every(m=>m===preferredMode);
+  const other=preferredMode&&best?eligible.find(c=>c.mode!==preferredMode):null;
+  const comparable=other&&other.score>=best.score-this.CONFIG.alternateScoreTolerance;
+  const same=preferredMode&&!sameRun&&best?eligible.find(c=>c.mode===preferredMode&&c.score>=best.score-5):null;
+  const due=(sameRun&&comparable?other:null)||same||best,backlog=candidates.length;
   const freshAllowed=introduced.size<goal&&
    (backlog<this.CONFIG.maxNewWhenDue||this.CONFIG.maxNewWhenBacklogged>0&&backlog<this.CONFIG.maxNewWhenBacklogged);
   const recentSpellings=history.slice(-3);
   const distinct=fresh.filter(c=>!recentSpellings.some(prev=>window.TOPIK_LEXICON?.similar(c.word[1],prev)));
   const nextFresh=(distinct.length?distinct:fresh).find(c=>!recent.includes(c.word[1]))||
     (distinct.length?distinct:fresh)[0];
-  if(relearn&&relearn.word[1]!==history.at(-1))return relearn;
-  if(due&&(!freshAllowed||history.length%5!==0))return due;
-  if(freshAllowed&&nextFresh)return nextFresh;
-  return due||relearn||null;
+  let picked,reason;
+  if(relearn&&relearn.word[1]!==history.at(-1)){picked=relearn;reason='relearn'}
+  else if(due&&(!freshAllowed||history.length%5!==0)){picked=due;reason=sameRun&&comparable&&due===other?'direction-starvation-guard':!state.lifecycle?.[due.word[1]]?.first?.[due.mode]?'new-word-'+(due.mode==='meaning'?'recognition':'production'):'due-review'}
+  else if(freshAllowed&&nextFresh){picked=nextFresh;reason='new-word-introduction'}
+  else {picked=due||relearn||null;reason=picked?'due-review':'no-due-task'}
+  if(picked){picked={...picked,reason};}
+  return picked;
+ },
+ // Lightweight on-demand diagnostics; no persistent pre-generated direction queue.
+ inspect(state,words,now=Date.now()){
+  const counts={meaning:0,spell:0},eligible={meaning:0,spell:0},states={};
+  for(const w of words){
+   const ko=w[1],stage=this.stage(state,ko,now);
+   if(stage==='unseen')continue;
+   for(const mode of ['meaning','spell']){
+    if(this.due(state,ko,mode,now)){
+     counts[mode]++;
+     const m=this.normalize(state,ko,mode,now);
+     if(!states[mode])states[mode]={phase:m.phase,stability:m.stability,due:m.nextReview};
+    }
+   }
+  }
+  return {due:counts,queue:counts,states,queueLength:counts.meaning+counts.spell,preGenerated:false};
  },
  summary(state,words,day,goal,now=Date.now()){
   let due=0,consolidating=0,mastered=0,firstRecall=0;
