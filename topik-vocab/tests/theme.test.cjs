@@ -14,20 +14,20 @@ function make(initialDark,preference){
  const ctx={window:{}};vm.runInNewContext(source,ctx);
  return {ctrl:ctx.window.TOPIK_THEME.create({document:doc,media,storage}),doc,media,meta,store,toggle,choice,buttons};
 }
-let t=make(false);assert.equal(t.ctrl.getMode(),'system');assert.equal(t.doc.documentElement.dataset.theme,'light');assert.equal(t.toggle.textContent,'◐ 跟随系统');assert.equal(t.choice.value,'system');
+let t=make(false);assert.equal(t.ctrl.getMode(),'system');assert.equal(t.doc.documentElement.dataset.theme,'light');assert.ok(t.toggle['aria-label'].includes('跟随系统'));assert.equal(t.choice.value,'system');
 t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');assert.equal(t.meta.value,'#1c1c1e');
 t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'light');
-t.ctrl.setMode('dark');assert.equal(t.toggle.textContent,'☾ 深色');assert.equal(t.choice.value,'dark');t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
+t.ctrl.setMode('dark');assert.ok(t.toggle['aria-label'].includes('主题：深色'));assert.equal(t.choice.value,'dark');t.media.matches=false;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t.ctrl.setMode('system');assert.equal(t.toggle.textContent,'◐ 跟随系统');assert.equal(t.choice.value,'system');assert.equal(t.doc.documentElement.dataset.theme,'light');t.media.matches=true;t.media.change();assert.equal(t.doc.documentElement.dataset.theme,'dark');
 t=make(true,'light');assert.equal(t.doc.documentElement.dataset.theme,'light');
 t=make(false,'dark');assert.equal(t.doc.documentElement.dataset.theme,'dark');
-assert.ok(html.indexOf('theme.js?v=3.3.1')<html.indexOf('styles.css?v=3.3.1'),'theme must initialize before CSS');
+assert.ok(html.indexOf('theme.js?v=3.3.2')<html.indexOf('styles.css?v=3.3.2'),'theme must initialize before CSS');
 assert.ok(html.includes('name="color-scheme" content="light dark"'));
 assert.ok(app.includes("window.TOPIK_THEME.setMode(e.target.value)"));
-assert.ok(app.includes('window.TOPIK_THEME.setMode(button.dataset.themeOption)'));
-assert.ok(html.includes('id="theme-menu"')&&html.includes('data-theme-option="system"'));
-assert.ok(!html.includes('◐ 主题'));
-assert.ok(css.includes('.theme-trigger')&&css.includes('var(--text-secondary)'));
+assert.ok(app.includes("window.TOPIK_THEME.getMode()"));
+assert.ok(html.includes('id="theme-toggle"')&&!html.includes('id="theme-menu"'));
+assert.ok(html.includes('◐ 主题'));
+assert.ok(!css.includes('.theme-trigger'));
 assert.ok(!app.includes("state.theme=state.theme||'dark'"));
 assert.ok(!app.includes("persist();render()});\ndocument.addEventListener('keydown'"),'theme toggle must not rerender');
 assert.ok(!source.includes('smartTask')&&!source.includes('TOPIK_SMART')&&!source.includes('typed'),'theme controller must not access learning state');
