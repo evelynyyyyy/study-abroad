@@ -145,6 +145,7 @@ function saveSmartSession(){
  };
  persist();
 }
+window.TOPIK_SAVE_SESSION=saveSmartSession;
 function restoreSmartSession(pool){
  const snap=state.smartSessions?.[pool];
  if(!snap||snap.version!==SMART_SNAPSHOT_VERSION||snap.level!==state.level||snap.collection!==state.collection)return false;
