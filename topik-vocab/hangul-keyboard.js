@@ -63,9 +63,17 @@ function edit(text,start,end,key){
  const result=key==='Backspace'?(start===end?backspace(left):left):append(left,key);
  return {text:result+right,caret:result.length};
 }
-function render(shift=false){return '<div class="hangul-keyboard" role="group" aria-label="韩语两套式网页键盘">'+
- keys.map(row=>'<div class="hangul-row">'+row.map(pair=>'<button type="button" class="hangul-key" data-hangul="'+pair[0]+'"'+(pair[1]?' data-shift="'+pair[1]+'"':'')+'>'+(shift&&pair[1]?pair[1]:pair[0])+'</button>').join('')+'</div>').join('')+
- '<div class="hangul-row"><button type="button" class="hangul-key hangul-control" data-hangul-shift="1" aria-label="Shift" aria-pressed="'+String(shift)+'">⇧</button><button type="button" class="hangul-key hangul-space" data-hangul=" ">空格</button><button type="button" class="hangul-key hangul-control" data-hangul="Backspace">⌫ 删除</button></div></div>'}
+function render(shift=false){
+ const key=(pair)=>'<button type="button" class="hangul-key" data-hangul="'+pair[0]+'"'+(pair[1]?' data-shift="'+pair[1]+'"':'')+'>'+(shift&&pair[1]?pair[1]:pair[0])+'</button>';
+ const row=(pairs,extra='')=>'<div class="hangul-row '+extra+'">'+pairs.map(key).join('')+'</div>';
+ return '<div class="hangul-keyboard ios-keyboard" role="group" aria-label="韩语两套式网页键盘">'+
+ row(keys[0],'ios-row-first')+row(keys[1],'ios-row-second')+
+ '<div class="hangul-row ios-row-third">'+
+ '<button type="button" class="hangul-key hangul-control ios-special ios-shift" data-hangul-shift="1" aria-label="Shift" aria-pressed="'+String(shift)+'"><span aria-hidden="true">'+(shift?'⬆':'⇧')+'</span></button>'+
+ keys[2].map(key).join('')+
+ '<button type="button" class="hangul-key hangul-control ios-special ios-delete" data-hangul="Backspace" aria-label="删除">⌫</button></div>'+
+ '<div class="hangul-row ios-row-bottom"><button type="button" class="hangul-key hangul-space ios-space" data-hangul=" " aria-label="空格">한국어</button><button type="button" class="hangul-key ios-return" data-smart-submit="1" aria-label="提交答案">↵</button></div></div>';
+}
 function updateShift(container,shift){if(!container)return;container.querySelectorAll('[data-hangul]').forEach(b=>{if(b.dataset.shift)b.textContent=shift?b.dataset.shift:b.dataset.hangul});const b=container.querySelector('[data-hangul-shift]');if(b)b.setAttribute('aria-pressed',String(shift));}
 return root.TOPIK_HANGUL={append,backspace,edit,render,updateShift,keys,L,V,T};
 })(typeof window!=='undefined'?window:globalThis);
