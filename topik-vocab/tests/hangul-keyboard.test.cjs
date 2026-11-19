@@ -30,7 +30,7 @@ assert.ok(app.indexOf('<h3>学习安排</h3>')<app.indexOf('<h3>输入方式</h3
 for(const mode of ['system','bilingual'])assert.ok(app.includes('<option value="'+mode+'"'));
 assert.ok(app.includes("state.inputMethod=e.target.value;persist();render()"));
 assert.ok(app.includes("state.inputMethod=state.inputMethod==='system'?'system':'bilingual'"));
-assert.ok(app.includes('TOPIK_PINYIN.render()')&&app.includes('TOPIK_HANGUL.render()'));
+assert.ok(app.includes('TOPIK_PINYIN.render()')&&app.includes('TOPIK_HANGUL.render(hangulShift)'));
 console.log('Hangul Dubeolsik syllables, compound vowels/finals, deletion, caret edit and UI hooks passed.');
 
 assert.ok(app.includes("state.inputMethod=state.inputMethod==='system'?'system':'bilingual'"));
