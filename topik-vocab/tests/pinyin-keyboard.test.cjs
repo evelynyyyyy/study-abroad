@@ -36,3 +36,16 @@ assert.ok(app.includes('function bindDeleteRepeat('));
 assert.ok(app.includes('pinyinShift=!pinyinShift'));
 assert.ok(app.includes('const webKeyboard=!isShow&&useVirtualKeyboard()&&!pendingRating&&!didCheck'));
 assert.ok(app.includes('pinyinComposition||\'\''));
+
+const jian=K.candidates('jian');assert.ok(jian.length>=20);
+assert.ok(jian.includes('间'));
+for(const [py,word] of Object.entries({shijian:'时间',zhongjian:'中间',fangjian:'房间',xuesheng:'学生',xuexi:'学习',gongzuo:'工作',pengyou:'朋友'}))assert.ok(K.candidates(py).includes(word),py);
+for(const mark of ['，','。','！','？','：','；','、','（','）','“','”','‘','’','《','》','【','】','…','—','[',']','{','}','#','%','^','*','+','=','_','|','~','<','>','€','£','$'])assert.ok(K.render().includes(mark)||K.render().includes(encodeURIComponent(mark)),mark);
+assert.ok(K.render().includes('data-pinyin-expand="1"'));
+assert.ok(K.render().includes('data-pinyin-mode="numbers"'));
+assert.ok(K.render().includes('data-pinyin-mode="extra"'));
+assert.equal(K.update('学生','', 'insert:（').answer,'学生（');
+assert.equal(K.update('学生（','', 'backspace').answer,'学生');
+assert.equal(K.update('“学习”','', 'backspace').answer,'“学习');
+assert.ok(app.includes('function applyPinyinSymbol('));
+assert.ok(app.includes('pinyinExpanded=!pinyinExpanded'));
