@@ -124,3 +124,16 @@
 .reset-actions button{flex:1 1 180px;min-height:44px}
 .reset-danger{border:1px solid #a54b4b!important;color:#eaa0a0!important}
 .reset-danger:hover{background:rgba(165,75,75,.12)!important}
+
+/* Optional in-page Dubeolsik input: large touch targets and safe-area spacing. */
+.hangul-keyboard{width:100%;max-width:560px;margin:12px auto 4px;display:grid;gap:6px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.hangul-row{display:flex;justify-content:center;gap:4px;min-width:0}
+.hangul-key{flex:1 1 0;min-width:0;min-height:45px;border:1px solid var(--edge);border-radius:8px;background:var(--card,var(--bg));color:var(--ink);font-size:17px;font-weight:600;touch-action:manipulation;cursor:pointer}
+.hangul-key:active,.hangul-key[aria-pressed=true]{background:var(--hover)}
+.hangul-control{font-size:12px;flex:1.5}
+.hangul-space{flex:2.4;font-size:13px}
+.keyboard-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.smart-study:has(.hangul-keyboard){min-height:0}
+.smart-study:has(.hangul-keyboard) .smart-focus{min-height:0;padding-top:12px;padding-bottom:8px}
+.smart-study:has(.hangul-keyboard) .smart-bottom{position:sticky;bottom:0;z-index:3;background:var(--bg);padding-bottom:max(12px,env(safe-area-inset-bottom))}
+@media(max-width:760px){.hangul-keyboard{gap:5px}.hangul-row{gap:3px}.hangul-key{min-height:42px;font-size:16px}.hangul-control,.hangul-space{font-size:11px}.smart-study:has(.hangul-keyboard) .smart-focus{padding:10px 2px}}
