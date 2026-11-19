@@ -419,3 +419,10 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 .pinyin-keyboard .pinyin-symbols .pinyin-key{min-width:0;flex:1 1 0;font-size:clamp(15px,4vw,21px);padding:0}
 .pinyin-keyboard .pinyin-symbols .ios-row-second{padding-inline:0}
 .pinyin-keyboard .pinyin-symbols .ios-row-third{gap:3px}
+
+/* Candidate composition stays above candidates; expand control overlays the right edge. */
+.pinyin-keyboard .ios-candidate-strip{position:relative;flex-direction:column;align-items:stretch;padding-right:34px}
+.pinyin-keyboard .pinyin-expand{position:absolute;right:0;bottom:0;height:31px;width:34px}
+.pinyin-keyboard .pinyin-candidates.expanded{height:auto;min-height:31px;max-height:185px;flex-wrap:wrap;overflow-y:auto;overflow-x:hidden;align-items:flex-start}
+.pinyin-keyboard .pinyin-candidates.expanded button{height:34px;min-height:34px}
+.pinyin-keyboard .pinyin-symbols .ios-row-third .ios-delete{flex:1.35 1 0!important}
