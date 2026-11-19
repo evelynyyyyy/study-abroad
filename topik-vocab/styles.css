@@ -426,3 +426,24 @@ dialog,[role="dialog"],.modal{background:var(--surface);color:var(--foreground);
 .pinyin-keyboard .pinyin-candidates.expanded{height:auto;min-height:31px;max-height:185px;flex-wrap:wrap;overflow-y:auto;overflow-x:hidden;align-items:flex-start}
 .pinyin-keyboard .pinyin-candidates.expanded button{height:34px;min-height:34px}
 .pinyin-keyboard .pinyin-symbols .ios-row-third .ios-delete{flex:1.35 1 0!important}
+
+/* v3.7.0: shared iOS-style flex rows, without changing study/scheduler layout. */
+.ios-keyboard{border-radius:12px 12px 0 0;gap:7px;padding-block:8px max(8px,env(safe-area-inset-bottom));}
+.ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{display:flex;gap:4px;justify-content:center;align-items:stretch;min-width:0;}
+.ios-keyboard .ios-row-second{padding-inline:4.2%;}
+.ios-keyboard .hangul-key,.ios-keyboard .pinyin-key{
+ border:0!important;border-radius:7px!important;
+ box-shadow:0 1px 0 var(--ios-key-shadow)!important;
+}
+.ios-keyboard .hangul-key:active,.ios-keyboard .pinyin-key:active{transform:translateY(1px);filter:brightness(1.12);}
+.ios-keyboard .ios-row-bottom .ios-space{font-size:11px!important;opacity:.87;}
+.ios-keyboard .ios-row-bottom .ios-return{font-size:23px!important;}
+.ios-keyboard .ios-candidate-strip{border:0;box-shadow:none;}
+.ios-keyboard .pinyin-candidates button{flex:0 0 auto!important;min-width:52px!important;width:auto!important;max-width:160px!important;border-radius:0!important;padding:0 12px!important;}
+.ios-keyboard .pinyin-candidates button[data-ime-prev],.ios-keyboard .pinyin-candidates button[data-ime-next]{min-width:28px!important;padding:0 5px!important;}
+.ios-keyboard [data-hangul-panel][hidden],.ios-keyboard [data-pinyin-panel][hidden]{display:none!important;}
+.ios-keyboard .hangul-symbols,.ios-keyboard .pinyin-symbols,.ios-keyboard [data-hangul-panel="letters"],.ios-keyboard [data-pinyin-panel="letters"]{display:flex;flex-direction:column;gap:7px;}
+.ios-keyboard .hangul-symbols .hangul-key,.ios-keyboard .pinyin-symbols .pinyin-key{font-size:clamp(14px,3.8vw,21px)!important;}
+.ios-keyboard [data-hangul-mode],.ios-keyboard [data-hangul-more]{flex:1.25 1 0!important;font-size:13px!important;}
+.ios-keyboard [data-hangul-more][hidden]{display:none!important;}
+@media(max-width:390px){.ios-keyboard .hangul-row,.ios-keyboard .pinyin-row{gap:3px;}.ios-keyboard{gap:6px;}}
