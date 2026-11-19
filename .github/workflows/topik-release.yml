@@ -49,10 +49,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Select GitHub Actions as the sole Pages publishing source
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow
+      - name: Allow legacy branch Pages build to settle before publishing verified artifact
+        run: sleep 35
       - uses: actions/deploy-pages@v4
         id: deployment
   verify-online:
