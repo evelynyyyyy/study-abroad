@@ -105,3 +105,14 @@
 .slow-speak:hover{color:var(--ink);background:var(--hover)}
 .smart-speak+.slow-speak{margin-top:8px}
 @media(max-width:760px){.slow-speak{min-height:40px;padding:9px 12px}}
+
+/* Voluntary relearning controls; keep home uncluttered. */
+.relearn-panel{display:grid;gap:12px;margin-block:14px 18px}
+.relearn-panel h3,.relearn-panel p{margin:0}
+.relearn-tools{display:flex;flex-wrap:wrap;gap:8px}
+.relearn-tools .select{flex:1;min-width:130px}
+.relearn-word{display:flex;align-items:flex-start;gap:12px;min-width:0;flex:1}
+.relearn-word>div{min-width:0}
+.relearn-check{display:inline-flex;align-items:center;min-height:40px;flex-shrink:0}
+.relearn-check input{width:19px;height:19px;accent-color:var(--ink)}
+@media(max-width:760px){.relearn-tools .line-btn{flex:1 1 auto;min-height:42px}.relearn-panel>.primary{width:100%}}
