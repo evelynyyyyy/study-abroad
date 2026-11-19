@@ -1,7 +1,7 @@
 /* Release metadata comes from the deployed artifact, never GitHub branch HEAD. */
 (function(){
  'use strict';
- const release=window.TOPIK_RELEASE||{version:'unknown',buildSha:'unverified',buildTime:'',assetVersion:'unverified'};
+ const release=window.TOPIK_RELEASE||{version:document.querySelector('meta[name="topik-version"]')?.content||'unknown',buildSha:'unverified',buildTime:'',assetVersion:'unverified'};
  window.TOPIK_APP_VERSION=release.version;
  window.TOPIK_BUILD=release.buildSha;
  window.TOPIK_ASSET_VERSION=release.assetVersion;
