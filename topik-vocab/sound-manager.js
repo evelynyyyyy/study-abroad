@@ -2,19 +2,50 @@
 (function(root){
  'use strict';
  const SoundManager={
-  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},
+  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},needsGestureResume:false,resumePending:null,
   init(){
    if(this.mode==='off'||typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
-   try{if(!this.context)this.context=new (root.AudioContext||root.webkitAudioContext)();
-    if(this.context.state==='closed')this.context=new (root.AudioContext||root.webkitAudioContext)();
-    if(this.context.state==='suspended'&&!document.hidden){const p=this.context.resume();if(p&&p.catch)p.catch(error=>console.debug('[Sound] resume failed',error));}
+   try{
+    if(!this.context||this.context.state==='closed'){
+     this.context=new (root.AudioContext||root.webkitAudioContext)();
+     this.needsGestureResume=this.context.state!=='running';
+    }
+    if((this.context.state==='suspended'||this.context.state==='interrupted')&&!document.hidden){
+     this.resumeAudioContext();
+    }
    }catch(error){console.debug('[Sound] init failed',error)}
+  },
+  resumeAudioContext(){
+   const ctx=this.context;
+   if(!ctx||this.mode==='off')return Promise.resolve(false);
+   if(ctx.state==='running'){this.needsGestureResume=false;return Promise.resolve(true)}
+   if(ctx.state!=='suspended'&&ctx.state!=='interrupted'){
+    this.needsGestureResume=true;return Promise.resolve(false);
+   }
+   if(this.resumePending)return this.resumePending;
+   // Call resume synchronously during the triggering user gesture.
+   let attempt;
+   try{attempt=ctx.resume()}catch(error){
+    this.needsGestureResume=true;
+    if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] resume exception',error);
+    return Promise.resolve(false);
+   }
+   this.resumePending=Promise.resolve(attempt).then(()=>{
+    const ready=ctx.state==='running';
+    this.needsGestureResume=!ready;
+    return ready;
+   }).catch(error=>{
+    this.needsGestureResume=true;
+    if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] resume failed',error);
+    return false;
+   }).finally(()=>{this.resumePending=null});
+   return this.resumePending;
   },
   setMode(mode){this.mode=['off','light','standard'].includes(mode)?mode:'light';if(this.mode==='off'&&this.context){try{this.context.suspend().catch(()=>{})}catch(_){}}else this.init()},
   play(type,scale=1){
    try{
     if(this.mode==='off'||document.hidden)return;
-    this.init();const ctx=this.context;if(!ctx||ctx.state!=='running'||this.active>=this.maxVoices){if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] skipped',type,ctx?.state);return;}
+    this.init();const ctx=this.context;if(ctx&&(ctx.state==='suspended'||ctx.state==='interrupted'))this.resumeAudioContext();if(!ctx||ctx.state!=='running'||this.active>=this.maxVoices){if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] skipped',type,ctx?.state);return;}
     const stamp=performance.now();if(stamp-(this.lastPlayed[type]||0)<22)return;this.lastPlayed[type]=stamp;
     if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{type,mode:this.mode,contextState:ctx.state});
     const now=ctx.currentTime;
@@ -81,20 +112,38 @@
  };
  root.TOPIK_SOUND=SoundManager;
  if(typeof document!=='undefined'){
+  const resumeOnReturn=()=>{
+   if(SoundManager.mode==='off'||!SoundManager.context)return;
+   SoundManager.resumeAudioContext().then(ok=>{
+    if(!ok)SoundManager.needsGestureResume=true;
+    if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] foreground',{state:SoundManager.context?.state,needsGestureResume:SoundManager.needsGestureResume});
+   });
+  };
   document.addEventListener('visibilitychange',()=>{
-   try{if(document.hidden)SoundManager.context?.suspend().catch(()=>{});else if(SoundManager.mode!=='off')SoundManager.init()}catch(_){}
+   // Let Safari manage interruption; never proactively suspend or close.
+   if(!document.hidden)resumeOnReturn();
   });
+  root.addEventListener('pageshow',resumeOnReturn);
+  root.addEventListener('focus',resumeOnReturn);
   console.debug('[Sound] module loaded');
-  const unlock=()=>{SoundManager.unlocked=true;SoundManager.init()};
+  const unlock=()=>{
+   SoundManager.unlocked=true;
+   if(SoundManager.mode==='off')return;
+   if(!SoundManager.context||SoundManager.context.state==='closed')SoundManager.init();
+   if(SoundManager.context?.state!=='running'||SoundManager.needsGestureResume)SoundManager.resumeAudioContext();
+  };
   document.addEventListener('pointerdown',unlock,{capture:true,passive:true});
   document.addEventListener('touchstart',unlock,{capture:true,passive:true});
-  document.addEventListener('click',unlock,{capture:true,passive:true});
   document.addEventListener('keydown',unlock,{capture:true});
-  document.addEventListener('pageshow',()=>{if(SoundManager.unlocked)SoundManager.init()});
   const attachTest=()=>{const choice=document.getElementById('sound-mode');if(!choice||document.getElementById('sound-test'))return;
    const button=document.createElement('button');button.id='sound-test';button.type='button';button.className='line-btn';button.textContent='测试音效';button.style.marginLeft='8px';choice.insertAdjacentElement('afterend',button);
    const status=document.createElement('small');status.id='sound-status';status.style.marginLeft='8px';button.insertAdjacentElement('afterend',status);
-   button.addEventListener('click',()=>{SoundManager.init();SoundManager.play('test');status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')});
+   button.addEventListener('click',async ()=>{
+    SoundManager.init();
+    const ready=await SoundManager.resumeAudioContext();
+    if(ready)SoundManager.play('test');
+    status.textContent='Audio: '+(SoundManager.context?.state||'unavailable')+' · needsGestureResume: '+SoundManager.needsGestureResume;
+   });
   };
   new MutationObserver(attachTest).observe(document.getElementById('app')||document.body,{childList:true,subtree:true});attachTest();
  }
