@@ -3,6 +3,7 @@ const app=fs.readFileSync('topik-vocab/app.js','utf8'),css=fs.readFileSync('topi
 const extract=(a,b)=>app.slice(app.indexOf(a),app.indexOf(b));
 const sessionCode=extract('let smartPool=', 'function smartPick(){');
 const context={state:{smartSessions:{},level:1,collection:'topik'},view:'home',TOPIK_SMART:{session:null,resetSession(){this.session={index:0,freshIntroduced:0,words:new Map()}},wordState(){return 'LEARNING'}},scope:()=>[[1,'학생','学生'],[1,'시간','时间']],smartTask:null,typed:'',pinyinComposition:'',pinyinPage:0,hangulShift:false,hangulMode:'letters',pinyinShift:false,pinyinMode:'letters',pinyinExpanded:false,didCheck:false,pendingRating:false,smartResult:null,session:null,onboarding:null,document:{getElementById:()=>null},persist(){},render(){},smartPick(){this.smartTask={word:[1,'학생','学生'],type:'typing',mode:'meaning',reason:'learning-recall'}},Date,Map,Number,Array};
+context.window=context;
 vm.createContext(context);vm.runInContext(sessionCode,context);
 context.TOPIK_SMART.resetSession();context.TOPIK_SMART.session.index=7;
 vm.runInContext("smartPool='learn';view='smart';smartTask={word:[1,'学生','学生'],type:'typing',mode:'meaning'};smartTask.word[1]='학생';typed='学生';didCheck=true;smartResult='good';smartSessionTasks.learn=5;saveSmartSession()",context);
