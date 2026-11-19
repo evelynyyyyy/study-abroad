@@ -89,7 +89,8 @@ window.TOPIK_SMART={
   // Avoid introducing very similar Hangul spellings back-to-back when alternatives exist.
   const recentSpellings=history.slice(-3);
   const distinctFresh=fresh.filter(c=>!recentSpellings.some(prev=>{
-   const ko=c.word[1];return ko.length>=3&&prev.length>=3&&ko.slice(0,2)===prev.slice(0,2)&&Math.abs(ko.length-prev.length)<=2;
+   const ko=c.word[1];
+   return window.TOPIK_LEXICON?.similar(ko,prev)||false;
   }));
   const nextFresh=(distinctFresh.length?distinctFresh:fresh)[0];
   // Explicit relearning takes priority when it does not repeat the immediately previous word.
