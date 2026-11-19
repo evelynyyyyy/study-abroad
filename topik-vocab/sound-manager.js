@@ -1,37 +1,97 @@
 /* Lightweight synthesized UI feedback; independent of IME, scheduler and speech. */
 (function(root){
  'use strict';
+ const bufferRms=buffer=>{const data=buffer.getChannelData(0);let sum=0;for(let i=0;i<data.length;i++)sum+=data[i]*data[i];return Math.sqrt(sum/Math.max(1,data.length))};
  const SoundManager={
-  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,samples:null,sampleContext:null,sampleLoading:null,lastKeyTarget:null,deleteRepeat:0,
+  context:null,mode:'light',active:0,maxVoices:5,lastKey:0,keyIndex:0,unlocked:false,lastPlayed:{},clickBuffers:null,clickContext:null,samples:null,sampleContext:null,sampleLoading:null,lastKeyTarget:null,deleteRepeat:0,audioUnlocked:false,unlockPending:null,masterGain:null,keyboardGain:null,limiter:null,keyboardSources:[],keyboardSoundReady:false,sampleLevels:null,
   init(){
    if(this.mode==='off'||typeof (root.AudioContext||root.webkitAudioContext)!=='function')return;
-   try{if(!this.context)this.context=new (root.AudioContext||root.webkitAudioContext)();
-    if(this.context.state==='closed')this.context=new (root.AudioContext||root.webkitAudioContext)();
-    if(this.context.state==='suspended'&&!document.hidden){const p=this.context.resume();if(p&&p.catch)p.catch(error=>console.debug('[Sound] resume failed',error));}
+   try{
+    if(!this.context||this.context.state==='closed'){
+     this.context=new (root.AudioContext||root.webkitAudioContext)();
+     this.audioUnlocked=false;this.unlockPending=null;this.sampleContext=null;
+     this.samples=null;this.keyboardSoundReady=false;this.clickContext=null;
+     this.masterGain=null;this.keyboardGain=null;this.limiter=null;this.keyboardSources=[];
+    }
+    const ctx=this.context;
+    if(!this.masterGain){
+     this.masterGain=ctx.createGain();this.masterGain.gain.value=1;
+     this.keyboardGain=ctx.createGain();this.keyboardGain.gain.value=this.mode==='standard'?1:.58;
+     this.limiter=ctx.createDynamicsCompressor();
+     this.limiter.threshold.value=-12;this.limiter.knee.value=0;
+     this.limiter.ratio.value=16;this.limiter.attack.value=.001;this.limiter.release.value=.055;
+     this.keyboardGain.connect(this.masterGain);this.masterGain.connect(this.limiter);
+     this.limiter.connect(ctx.destination);
+    }
     this.loadSamples();
    }catch(error){console.debug('[Sound] init failed',error)}
   },
+  ensureAudioUnlocked(){
+   this.init();
+   const ctx=this.context;
+   if(!ctx||ctx.state==='closed')return;
+   if(ctx.state==='running'){this.audioUnlocked=true;return}
+   if(ctx.state==='suspended'&&!this.unlockPending){
+    this.unlockPending=ctx.resume().then(()=>{this.audioUnlocked=ctx.state==='running'})
+     .catch(error=>console.debug('[Sound] resume failed',error))
+     .finally(()=>{this.unlockPending=null});
+   }
+  },
   loadSamples(){
    const ctx=this.context;if(!ctx||this.sampleContext===ctx)return;
-   this.sampleContext=ctx;this.samples={};
+   this.sampleContext=ctx;this.keyboardSoundReady=false;this.samples=null;
    const files={key:'key-click.ogg',delete:'delete-click.ogg',modifier:'modifier-click.ogg'};
-   this.sampleLoading=Promise.allSettled(Object.entries(files).map(async ([kind,file])=>{
+   this.sampleLoading=Promise.all(Object.entries(files).map(async ([kind,file])=>{
     const response=await fetch('./assets/sounds/'+file+'?v=3.7.11');
     if(!response.ok)throw new Error('HTTP '+response.status);
-    const audio=await response.arrayBuffer();
-    const decoded=await ctx.decodeAudioData(audio);
-    if(this.sampleContext===ctx)this.samples[kind]=decoded;
-   })).then(results=>{if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] sample loading',results.map(x=>x.status))});
+    return [kind,await ctx.decodeAudioData(await response.arrayBuffer())];
+   })).then(entries=>{
+    if(this.sampleContext!==ctx)return;
+    const buffers=Object.fromEntries(entries);
+    // One deterministic gain match for all sample types; no per-key randomness.
+    this.ensureFallbackBuffers(ctx);
+    const levels={};
+    for(const kind of Object.keys(buffers)){
+     const rms=bufferRms(buffers[kind]),fallback=bufferRms(this.clickBuffers[kind]);
+     levels[kind]=Math.min(2.5,Math.max(.2,fallback/Math.max(rms,.00001)));
+    }
+    this.sampleLevels=levels;this.samples=buffers;this.keyboardSoundReady=true;
+    if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] all keyboard samples ready');
+   }).catch(error=>{
+    this.keyboardSoundReady=false;this.samples=null;
+    console.debug('[Sound] keyboard samples unavailable; PCM fallback',error);
+   });
   },
-  setMode(mode){this.mode=['off','light','standard'].includes(mode)?mode:'light';if(this.mode==='off'&&this.context){try{this.context.suspend().catch(()=>{})}catch(_){}}else this.init()},
+  ensureFallbackBuffers(ctx){
+   if(this.clickContext===ctx&&this.clickBuffers)return;
+   const createClick=(kind)=>{
+    const rate=ctx.sampleRate;
+    const length=Math.ceil(rate*(kind==='delete'?.027:kind==='modifier'?.024:.021));
+    const buffer=ctx.createBuffer(1,length,rate),out=buffer.getChannelData(0);
+    let low=0,high=0;
+    for(let i=0;i<length;i++){
+     const t=i/rate,white=Math.random()*2-1;
+     low+=((kind==='delete'?.24:kind==='modifier'?.32:.42)*(white-low));
+     const band=low-high;high+=.09*band;
+     const first=Math.exp(-t/(kind==='delete'?.0037:.0026));
+     const offset=kind==='delete'?.006:kind==='modifier'?.0048:.0038;
+     const tail=t>=offset?Math.exp(-(t-offset)/(kind==='delete'?.0055:.0037)):0;
+     out[i]=Math.max(-1,Math.min(1,band*(first*.85+tail*(kind==='delete'?.58:.34))));
+    }
+    return buffer;
+   };
+   this.clickBuffers={key:createClick('key'),delete:createClick('delete'),modifier:createClick('modifier')};
+   this.clickContext=ctx;
+  },
+  setMode(mode){this.mode=['off','light','standard'].includes(mode)?mode:'light';if(this.mode==='off'&&this.context){try{this.context.suspend().catch(()=>{})}catch(_){}}else{this.init();if(this.keyboardGain)this.keyboardGain.gain.value=this.mode==='standard'?1:.58}},
   play(type,scale=1){
    try{
     if(this.mode==='off'||document.hidden)return;
-    this.init();const ctx=this.context;if(!ctx||ctx.state!=='running'||this.active>=this.maxVoices){if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] skipped',type,ctx?.state);return;}
-    const stamp=performance.now();if(stamp-(this.lastPlayed[type]||0)<22)return;this.lastPlayed[type]=stamp;
+    this.init();const ctx=this.context;const keyboardType=['key','function','delete','modifier'].includes(type);if(!ctx||ctx.state!=='running'||(!keyboardType&&this.active>=this.maxVoices)){if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound] skipped',type,ctx?.state);return;}
+    const stamp=performance.now();if(!keyboardType&&stamp-(this.lastPlayed[type]||0)<22)return;if(!keyboardType)this.lastPlayed[type]=stamp;
     if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{type,mode:this.mode,contextState:ctx.state});
     const now=ctx.currentTime;
-    if(type==='key'){if(now-this.lastKey<.012)return;this.lastKey=now;this.keyIndex=(this.keyIndex+1)%3;}
+    if(type==='key'){this.keyIndex=0;}
     const preset={
      key:[1250+this.keyIndex*16,.032,.21,'triangle'],
      function:[810,.042,.24,'triangle'],
@@ -56,43 +116,35 @@
      osc.start(at);osc.stop(at+len+.005);
     };
     if(type==='key'||type==='function'||type==='delete'||type==='modifier'){
-     // Original, programmatically generated iOS-style approximation; not Apple audio.
-     // Precompute independent PCM samples once per AudioContext.
-     const target=this.lastKeyTarget;
-     const descriptor=target?.dataset||{};
+     const descriptor=this.lastKeyTarget?.dataset||{};
      const keyName=String(descriptor.hangul||descriptor.pinyinKey||descriptor.hangulMode||descriptor.pinyinMode||'').toLowerCase();
      const isDelete=type==='delete'||(type==='function'&&/backspace|delete/.test(keyName));
-     const isModifier=type==='modifier'||(type==='function'&&!isDelete);
-     const kind=isDelete?'delete':isModifier?'modifier':'key';
-     if(!this.samples?.[kind]&&(this.clickContext!==ctx||!this.clickBuffers)){
-      const createClick=(kind)=>{
-       const rate=ctx.sampleRate;
-       const length=Math.ceil(rate*(kind==='delete'?.027:kind==='modifier'?.024:.021));
-       const buffer=ctx.createBuffer(1,length,rate),out=buffer.getChannelData(0);
-       let low=0,high=0;
-       for(let i=0;i<length;i++){
-        const t=i/rate,white=Math.random()*2-1;
-        low+=((kind==='delete'?.24:kind==='modifier'?.32:.42)*(white-low));
-        const band=low-high;high+=.09*band;
-        const first=Math.exp(-t/(kind==='delete'?.0037:.0026));
-        const offset=kind==='delete'?.006:kind==='modifier'?.0048:.0038;
-        const tail=t>=offset?Math.exp(-(t-offset)/(kind==='delete'?.0055:.0037)):0;
-        // Low-frequency rumble suppressed by differentiation; no oscillator or pitch.
-        out[i]=Math.max(-1,Math.min(1,band*(first*.85+tail*(kind==='delete'?.58:.34))));
-       }
-       return buffer;
-      };
-      this.clickBuffers={key:createClick('key'),delete:createClick('delete'),modifier:createClick('modifier')};
-      this.clickContext=ctx;
-     }
-     const source=ctx.createBufferSource(),gain=ctx.createGain();
-     source.buffer=this.samples?.[kind]||this.clickBuffers[kind];
+     const kind=isDelete?'delete':type==='modifier'||type==='function'?'modifier':'key';
+     if(!this.keyboardSoundReady)this.ensureFallbackBuffers(ctx);
+     const buffer=this.keyboardSoundReady?this.samples[kind]:this.clickBuffers[kind];
      const isRepeat=isDelete&&stamp-(this.lastDeleteAt||0)<140;
      if(isDelete)this.lastDeleteAt=stamp;
-     gain.gain.value=(kind==='key'?.36:kind==='delete'?.43:.39)*(this.mode==='standard'?1:.58)*scale*(isRepeat?.43:1);
-     source.connect(gain);gain.connect(ctx.destination);
-     this.active++;
-     source.onended=()=>{this.active=Math.max(0,this.active-1);try{source.disconnect();gain.disconnect()}catch(_){}};
+     // Oldest click is replaced rather than dropping the incoming keystroke.
+     if(this.keyboardSources.length>=4){
+      const oldest=this.keyboardSources.shift();
+      try{oldest.source.stop()}catch(_){}
+     }
+     const source=ctx.createBufferSource(),gain=ctx.createGain();
+     source.buffer=buffer;source.playbackRate.value=1;
+     gain.gain.value=(kind==='key'?.36:kind==='delete'?.43:.39)*scale*
+      (this.keyboardSoundReady?this.sampleLevels[kind]:1)*(isRepeat?.45:1);
+     source.connect(gain);gain.connect(this.keyboardGain);
+     const voice={source,gain};this.keyboardSources.push(voice);
+     source.onended=()=>{
+      const index=this.keyboardSources.indexOf(voice);
+      if(index!==-1)this.keyboardSources.splice(index,1);
+      try{source.disconnect();gain.disconnect()}catch(_){}
+     };
+     if(root.TOPIK_SOUND_DEBUG)console.debug('[Sound]',{
+      type,contextState:ctx.state,mode:this.mode,activeSources:this.keyboardSources.length,
+      masterGain:this.masterGain.gain.value,keyboardGain:this.keyboardGain.gain.value,
+      sampleReady:this.keyboardSoundReady,kind
+     });
      source.start(now);
      return;
     }
@@ -105,15 +157,13 @@
  root.TOPIK_SOUND=SoundManager;
  if(typeof document!=='undefined'){
   document.addEventListener('visibilitychange',()=>{
-   try{if(document.hidden)SoundManager.context?.suspend().catch(()=>{});else if(SoundManager.mode!=='off')SoundManager.init()}catch(_){}
+   try{if(document.hidden)SoundManager.context?.suspend().catch(()=>{});else if(SoundManager.mode!=='off')SoundManager.ensureAudioUnlocked()}catch(_){}
   });
   console.debug('[Sound] module loaded');
-  const unlock=e=>{SoundManager.unlocked=true;SoundManager.init();if(e.target?.closest)SoundManager.lastKeyTarget=e.target.closest('[data-hangul],[data-pinyin-key],[data-hangul-shift],[data-pinyin-shift],[data-hangul-mode],[data-pinyin-mode],[data-smart-submit]')};
+  const unlock=e=>{if(!SoundManager.audioUnlocked){SoundManager.unlocked=true;SoundManager.ensureAudioUnlocked()}if(e.target?.closest)SoundManager.lastKeyTarget=e.target.closest('[data-hangul],[data-pinyin-key],[data-hangul-shift],[data-pinyin-shift],[data-hangul-mode],[data-pinyin-mode],[data-smart-submit]')};
   document.addEventListener('pointerdown',unlock,{capture:true,passive:true});
-  document.addEventListener('touchstart',unlock,{capture:true,passive:true});
-  document.addEventListener('click',unlock,{capture:true,passive:true});
   document.addEventListener('keydown',unlock,{capture:true});
-  document.addEventListener('pageshow',()=>{if(SoundManager.unlocked)SoundManager.init()});
+  document.addEventListener('pageshow',()=>{if(SoundManager.unlocked)SoundManager.ensureAudioUnlocked()});
   const attachTest=()=>{const choice=document.getElementById('sound-mode');if(!choice||document.getElementById('sound-test'))return;
    const button=document.createElement('button');button.id='sound-test';button.type='button';button.className='line-btn';button.textContent='测试音效';button.style.marginLeft='8px';choice.insertAdjacentElement('afterend',button);
    const status=document.createElement('small');status.id='sound-status';status.style.marginLeft='8px';button.insertAdjacentElement('afterend',status);
