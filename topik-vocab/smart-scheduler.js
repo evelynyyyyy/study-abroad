@@ -47,7 +47,7 @@ window.TOPIK_SMART={
  sessionEntry(ko){if(!this.session)this.resetSession();if(!this.session.words.has(ko))this.session.words.set(ko,{count:0,last:-1000,byMode:{meaning:{wins:0,last:-1000},spell:{wins:0,last:-1000}},failed:false,outcome:'correct'});return this.session.words.get(ko)},
  recordExposure(ko,mode,result){const e=this.sessionEntry(ko);const index=this.session.index++;e.count++;e.last=index;e.outcome=result||'correct';if(mode){const m=e.byMode[mode];m.last=index;if(['again','wrong','incorrect','unfamiliar'].includes(result)){m.wins=0;e.failed=true}else if(['correct','good','easy','hard'].includes(result))m.wins++}},
  gapFor(ko,mode){const e=this.sessionEntry(ko);const m=mode?e.byMode[mode]:null;if(['again','wrong','incorrect','unfamiliar'].includes(e.outcome))return 3;if(!m||!m.wins)return 6;if(m.wins===1)return 6;if(m.wins===2)return 18;return 1000},
- sessionEligible(candidate){const e=this.sessionEntry(candidate.word[1]);const cap=e.failed?6:4;if(e.count>=cap)return false;const elapsed=this.session.index-e.last-1;return elapsed>=this.gapFor(candidate.word[1],candidate.mode)},
+ sessionEligible(candidate){const e=this.sessionEntry(candidate.word[1]);const cap=candidate.reason==='learning-recall'?24:e.failed?6:4;if(e.count>=cap)return false;const elapsed=this.session.index-e.last-1;return elapsed>=(candidate.reason==='learning-recall'?3:this.gapFor(candidate.word[1],candidate.mode))},
  CONFIG:{
   learningMinutes:[3,15,180],lapseMinutes:[3,15,180],
   targetRetention:.90,masteryRetention:.85,longTermRetention:.80,
