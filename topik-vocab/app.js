@@ -14,7 +14,7 @@ let legacy=parse('topik_records',{});
 Object.entries(legacy).forEach(([ko,r])=>{if(!state.progress[ko])state.progress[ko]={read:{step:Number(r.step)||0,due:Number(r.due)||0,wrong:0}}});
 let view='home',session=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,toastTimer;
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
-function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
+function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 function scope(){return all().filter(w=>Number(w[0])===state.level)}
 function prog(ko,mode){return state.progress[ko]?.[mode]}
 function isDue(ko,mode){let p=prog(ko,mode);return p&&Number(p.due)<=Date.now()}
