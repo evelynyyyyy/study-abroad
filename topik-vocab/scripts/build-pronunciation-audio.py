@@ -94,20 +94,25 @@ def main() -> int:
     clips={};generated=0
     for index,text in enumerate(texts,1):
         voice_input=spoken_text(text)
-        key=hashlib.sha256((MODEL_ID+"\0"+MODEL_REVISION+"\0"+GENERATOR_VERSION+"\0"+text+"\0"+voice_input).encode("utf-8")).hexdigest()[:24]
-        target=clips_dir/(key+".wav")
-        if not target.exists() or target.stat().st_size<1000:
-            wav=tts.synthesize(voice_input)
-            wav=np.asarray(wav,dtype=np.float32).reshape(-1)
-            if wav.size<100:
-                raise RuntimeError(f"Empty audio for {text!r}")
-            sf.write(target,wav,SAMPLE_RATE,subtype="PCM_16",format="WAV")
+        input_key=hashlib.sha256((MODEL_ID+"\0"+MODEL_REVISION+"\0"+GENERATOR_VERSION+"\0"+text+"\0"+voice_input).encode("utf-8")).hexdigest()[:24]
+        temporary=clips_dir/("."+input_key+".wav")
+        wav=tts.synthesize(voice_input)
+        wav=np.asarray(wav,dtype=np.float32).reshape(-1)
+        if wav.size<100:
+            raise RuntimeError(f"Empty audio for {text!r}")
+        sf.write(temporary,wav,SAMPLE_RATE,subtype="PCM_16",format="WAV")
+        payload=temporary.read_bytes()
+        digest=hashlib.sha256(payload).hexdigest()
+        target=clips_dir/(digest[:24]+".wav")
+        if target.exists():
+            temporary.unlink()
+        else:
+            temporary.replace(target)
             generated+=1
-        payload=target.read_bytes()
         frames=max(0,(len(payload)-44)//2)
         clips[text]={
             "file":"./audio/clips/"+target.name,
-            "sha256":hashlib.sha256(payload).hexdigest(),
+            "sha256":digest,
             "bytes":len(payload),
             "durationMs":round(frames/SAMPLE_RATE*1000),
         }
