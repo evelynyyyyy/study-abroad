@@ -4,7 +4,7 @@
  */
 'use strict';
 window.TOPIK_SMART={
- DAY:86400000, MIN_GAP:2, VERSION:'3.8.3',
+ DAY:86400000, MIN_GAP:2, VERSION:'3.8.3', REVIEW_DATA_VERSION:2, REVIEW_ROUND_SCHEMA:2,
  // Explicit lifecycle: short-term learning never invokes FSRS; graduated words enter dated review.
  wordState(state,ko){
   state.lifecycle=state.lifecycle||{};
@@ -173,6 +173,71 @@ window.TOPIK_SMART={
   if(m.schedulerVersion!==3)return true;
   return !Number.isFinite(Number(p.due))||Number(p.due)<=now;
  },
+ reviewMigrationPlan(state){
+  const days=Object.values(state.daily||{}),rounds=days.map(d=>d?.smartReviewRound).filter(r=>r&&Array.isArray(r.words));
+  const legacy=rounds.filter(r=>!r.schemaVersion&&(r.roundId==='legacy'||!r.roundId||!Number(r.createdAt)));
+  return {needed:Number(state.reviewDataVersion||0)<this.REVIEW_DATA_VERSION,roundCount:rounds.length,legacyCount:legacy.length};
+ },
+ migrateReviewData(state,localDayKey=ts=>new Date(ts).toLocaleDateString('sv-SE'),now=Date.now()){
+  const plan=this.reviewMigrationPlan(state),report={fromVersion:Number(state.reviewDataVersion||0),toVersion:this.REVIEW_DATA_VERSION,legacyRounds:0,recoveredCompleted:0,unresolvedWords:0,structuredRounds:0};
+  if(!plan.needed)return report;
+  const history=Array.isArray(state.smartAnswerHistory)?state.smartAnswerHistory:[];
+  for(const [dayKey,day] of Object.entries(state.daily||{})){
+   const source=day?.smartReviewRound;
+   if(!source||!Array.isArray(source.words))continue;
+   const words=[...new Set(source.words.filter(Boolean))];
+   const stateMap=source.states&&typeof source.states==='object'?source.states:{};
+   const structured=source.schemaVersion>=this.REVIEW_ROUND_SCHEMA||
+    (!!source.roundId&&source.roundId!=='legacy'&&Number(source.createdAt)>0&&words.every(ko=>{
+     const r=stateMap[ko];return r&&r.wordId===ko&&['pending','reinforcing','completed'].includes(r.status);
+    }));
+   if(structured){
+    source.schemaVersion=this.REVIEW_ROUND_SCHEMA;
+    source.completed=[...new Set((source.completed||[]).filter(ko=>words.includes(ko)))];
+    source.total=words.length;source.words=words;
+    source.status=source.completed.length>=source.total&&source.total>0?'completed':(source.status||'active');
+    report.structuredRounds++;continue;
+   }
+   report.legacyRounds++;
+   if(!day.smartReviewRoundLegacy)day.smartReviewRoundLegacy=JSON.parse(JSON.stringify(source));
+   const explicit=new Set((source.completed||[]).filter(ko=>words.includes(ko)));
+   const completed=new Set(explicit),states={};
+   for(const ko of words){
+    const result={roundId:'legacy-'+dayKey,wordId:ko,koToZhPassed:false,zhToKoPassed:false,hadError:false,attemptCount:0,status:'pending',lastErrorAt:0,lastErrorMode:null};
+    if(explicit.has(ko)){
+     result.koToZhPassed=true;result.zhToKoPassed=true;result.status='completed';states[ko]=result;continue;
+    }
+    const events=history.filter(h=>h?.ko===ko&&['meaning','spell'].includes(h.mode)&&Number.isFinite(Number(h.at))&&localDayKey(Number(h.at))===dayKey)
+     .sort((a,b)=>Number(a.at)-Number(b.at));
+    for(const event of events){
+     result.attemptCount++;
+     if(event.result==='good'){
+      if(event.mode==='meaning')result.koToZhPassed=true;
+      else result.zhToKoPassed=true;
+     }else{
+      result.koToZhPassed=false;result.zhToKoPassed=false;result.hadError=true;result.status='reinforcing';
+      result.lastErrorAt=Number(event.at)||0;result.lastErrorMode=event.mode;
+     }
+     if(result.koToZhPassed&&result.zhToKoPassed){
+      result.status='completed';completed.add(ko);report.recoveredCompleted++;break;
+     }
+    }
+    if(result.status!=='completed')result.status=result.hadError?'reinforcing':'pending';
+    states[ko]=result;
+   }
+   const unresolved=words.filter(ko=>!completed.has(ko));
+   report.unresolvedWords+=unresolved.length;
+   day.smartReviewRound={
+    roundId:'legacy-'+dayKey,createdAt:Number(source.createdAt)||0,schemaVersion:this.REVIEW_ROUND_SCHEMA,
+    total:words.length,words,completed:[...completed],states,
+    status:unresolved.length?'closed-unresolved':'completed',closedAt:now,
+    migration:{source:'pre-v3.8.9',migratedAt:now,recoveredCompleted:[...completed].filter(ko=>!explicit.has(ko)),unresolved}
+   };
+  }
+  state.reviewDataVersion=this.REVIEW_DATA_VERSION;
+  state.reviewMigration={...report,migratedAt:now};
+  return report;
+ },
  reviewRound(day){
   const round=day?.smartReviewRound;
   if(!round||!Array.isArray(round.words))return null;
@@ -191,11 +256,17 @@ window.TOPIK_SMART={
     lastErrorAt:Math.max(0,Number(old.lastErrorAt)||0),lastErrorMode:old.lastErrorMode||null
    };
   }
+  if(round.completed.length>=round.total&&round.total>0)round.status='completed';
+  else if(!round.status)round.status='active';
   return round;
  },
+ activeReviewRound(day){
+  const round=this.reviewRound(day);
+  return round&&round.status==='active'&&round.completed.length<round.total?round:null;
+ },
  startReviewRound(day,dueWords,dayKey,now=Date.now()){
-  const current=this.reviewRound(day),unique=[...new Set((dueWords||[]).filter(Boolean))];
-  if(current&&current.completed.length<current.total)return current;
+  const current=this.reviewRound(day),active=this.activeReviewRound(day),unique=[...new Set((dueWords||[]).filter(Boolean))];
+  if(active)return active;
   if(!unique.length)return current;
   if(current&&current.total){
    day.smartReviewRoundHistory=Array.isArray(day.smartReviewRoundHistory)?day.smartReviewRoundHistory:[];
@@ -203,11 +274,11 @@ window.TOPIK_SMART={
     day.smartReviewRoundHistory.push(JSON.parse(JSON.stringify(current)));
   }
   const roundId=String(dayKey||this.dayKey(now))+'-'+now;
-  day.smartReviewRound={roundId,createdAt:now,total:unique.length,words:unique,completed:[],states:{}};
+  day.smartReviewRound={roundId,createdAt:now,schemaVersion:this.REVIEW_ROUND_SCHEMA,status:'active',total:unique.length,words:unique,completed:[],states:{}};
   return this.reviewRound(day);
  },
  recordReviewRound(day,ko,mode,success,now=Date.now()){
-  const round=this.reviewRound(day);
+  const round=this.activeReviewRound(day);
   if(!round||!round.words.includes(ko))return null;
   const r=round.states[ko];
   if(!r||r.status==='completed')return r||null;
@@ -222,6 +293,7 @@ window.TOPIK_SMART={
   if(r.koToZhPassed&&r.zhToKoPassed){
    r.status='completed';
    if(!round.completed.includes(ko))round.completed.push(ko);
+   if(round.completed.length>=round.total)round.status='completed';
   }else if(r.hadError)r.status='reinforcing';
   else r.status='pending';
   return r;
@@ -264,7 +336,7 @@ window.TOPIK_SMART={
     continue;
    }
    if((phase==='REVIEW'||phase==='RELEARNING')&&pool==='review'){
-    const round=this.reviewRound(day);
+    const round=this.activeReviewRound(day);
     if(round){
      if(!round.words.includes(ko))continue;
      const rs=round.states[ko];
