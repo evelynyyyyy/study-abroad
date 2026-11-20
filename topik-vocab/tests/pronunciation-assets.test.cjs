@@ -11,7 +11,7 @@ for(const source of sources){
  }
 }
 assert.ok(texts.size>5000,'full default vocabulary/example inventory must be covered by hosted pronunciation generation');
-for(const sample of ['한국어','학교','지금 집에 있어요.'])assert.ok(texts.has(sample),'pronunciation inventory missing '+sample);
+for(const sample of ['한국어','학교','학교에 가요.'])assert.ok(texts.has(sample),'pronunciation inventory missing '+sample);
 const app=fs.readFileSync('topik-vocab/app.js','utf8');
 const pronunciation=fs.readFileSync('topik-vocab/pronunciation.js','utf8');
 const workflow=fs.readFileSync('.github/workflows/topik-release.yml','utf8');
