@@ -86,6 +86,8 @@ assert.ok(app.includes("const STORAGE='topik_lab_v2'"));
 assert.ok(app.includes("const REVIEW_MIGRATION_BACKUP='topik_lab_v2_review_migration_v2_backup'"));
 assert.ok(app.indexOf('localStorage.setItem(REVIEW_MIGRATION_BACKUP')<app.indexOf('TOPIK_SMART.migrateReviewData(state'),'backup must precede migration');
 assert.ok(app.includes('window.TOPIK_REVIEW_DIAGNOSTIC=reviewDiagnostic'));
+const diagnosticBody=app.slice(app.indexOf('function reviewDiagnostic(){'),app.indexOf('window.TOPIK_REVIEW_DIAGNOSTIC=reviewDiagnostic'));
+assert.ok(!diagnosticBody.includes('persist()'),'diagnostic is read-only');assert.ok(!diagnosticBody.includes('fetch('),'diagnostic never uploads data');
 for(const marker of ['wordId','wordState','lastAnswers','fsrs','roundId','roundStatus','koToZhPassed','zhToKoPassed','belongsToCurrentRound','completed','queueReason','buildSha','dataStructureVersion','timezone'])assert.ok(app.includes(marker),'diagnostic field '+marker);
 assert.ok(!app.includes('localStorage.clear('),'upgrade never clears local storage');
 console.log('Legacy v3.8.8/v3.8.9 review migration, recovery, idempotence, due filtering and local-only diagnostics passed');
