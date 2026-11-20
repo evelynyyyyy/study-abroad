@@ -99,14 +99,14 @@ function smartDailyStats(){
  const graduated=words.filter(w=>{const life=state.lifecycle?.[w[1]];const t=Number(life?.graduationEvidence?.verifiedAt||0);return t&&life?.graduatedAt&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
  const completed=new Set((d.smartReviewCompleted||[]).filter(ko=>allowed.has(ko)));
  const due=words.filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
- const reviewGoal=Math.max(Number(d.smartReviewGoal)||0,due+completed.size);
- return {goal:state.dailyGoal,introduced:learned.size,firstBoth:words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.firstBothAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length,learning:words.filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length,graduated,learnTasks:Number(d.smartLearnTasks)||0,reviewGoal,reviewDone:completed.size,reviewDue:due,reviewTasks:Number(d.smartReviewTasks)||0};
+ const round=d.smartReviewRound;const reviewGoal=round&&Array.isArray(round.completed)?round.total:due;const roundDone=round&&Array.isArray(round.completed)?new Set(round.completed.filter(ko=>allowed.has(ko))).size:0;
+ return {goal:state.dailyGoal,introduced:learned.size,firstBoth:words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.firstBothAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length,learning:words.filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length,graduated,learnTasks:Number(d.smartLearnTasks)||0,reviewGoal,reviewDone:roundDone,reviewDue:due,reviewTasks:Number(d.smartReviewTasks)||0};
 }
 function home(){
  const n=counts(),sum=TOPIK_SMART.summary(state,scope(),levelDayInfo(),state.dailyGoal),stats=smartDailyStats();
  return '<div class="smart-home"><div class="eyebrow">今日学习 · '+today()+'</div><h1>TOPIK单词</h1>'+levelBar()+
  '<div class="smart-stats"><div><strong>'+stats.graduated+' <small>/ '+sum.goal+'</small></strong><span>今日已学会</span></div><div><strong>'+stats.introduced+'</strong><span>今日接触新词</span></div><div><strong>'+sum.consolidating+'</strong><span>学习中</span></div><div><strong>'+sum.due+'</strong><span>今日待复习</span></div></div>'+
- '<div class="smart-start-stack"><button class="primary smart-start" data-smart-start="learn">开始学习 · '+stats.graduated+'/'+stats.goal+' <span>→</span></button><button class="primary smart-start" data-smart-start="review">开始复习 · '+stats.reviewDone+'/'+stats.reviewGoal+' <span>→</span></button></div>'+ (stats.reviewDue===0?'<p class="tiny muted">今日复习已完成</p>':'')+
+ '<div class="smart-start-stack"><button class="primary smart-start" data-smart-start="learn">开始学习 · '+stats.graduated+'/'+stats.goal+' <span>→</span></button><button class="primary smart-start" data-smart-start="review">开始复习 · 待复习 '+stats.reviewDue+' <span>→</span></button></div>'+ (stats.reviewDue===0?'<p class="tiny muted">今日复习已完成</p>':'')+
  '<p class="tiny muted smart-home-note">新词学习与到期复习分池安排 · 学习毕业后交给 FSRS。</p></div>';
 }
 function recordsHome(){
@@ -169,7 +169,7 @@ function startSmart(pool='learn'){
  if(view==='smart')saveSmartSession();
  smartPool=pool==='review'?'review':'learn';
  const restored=restoreSmartSession(smartPool);
- if(!restored){smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();typed='';didCheck=false;smartPick();}
+ if(!restored){smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();if(smartPool==='review'){const d=dayInfo();const dueWords=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).map(w=>w[1]);d.smartReviewRound={total:dueWords.length,words:dueWords,completed:[]};persist()}typed='';didCheck=false;smartPick();}
  view='smart';session=null;onboarding=null;render();
  if(restored)saveSmartSession();
 }
@@ -229,11 +229,12 @@ function smartRecord(result){
  if(correct)markRecall(word[1],mode);
  const d=dayInfo(),key=today();d.spell=(d.spell||0)+1;
  if(smartPool==='review'&&(phase==='REVIEW'||phase==='RELEARNING')){
-  const completed=new Set(d.smartReviewCompleted||[]);
-  completed.add(word[1]);d.smartReviewCompleted=[...completed];
-  // Freeze the daily target at its highest observed total; new due words cannot shrink it.
-  const dueNow=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
-  d.smartReviewGoal=Math.max(Number(d.smartReviewGoal)||0,dueNow+completed.size);
+  const round=d.smartReviewRound;
+  if(round&&Array.isArray(round.words)&&round.words.includes(word[1])&&correct&&
+     !['meaning','spell'].some(m=>TOPIK_SMART.due(state,word[1],m))){
+   round.completed=round.completed||[];
+   if(!round.completed.includes(word[1]))round.completed.push(word[1]);
+  }
   d.smartReviewTasks=(Number(d.smartReviewTasks)||0)+1;
   smartSessionTasks.review++;
  }else if(smartPool==='learn'&&phase==='LEARNING'){
