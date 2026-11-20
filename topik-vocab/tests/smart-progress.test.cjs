@@ -5,7 +5,7 @@ assert.match(css,/\.smart-start-stack>\.smart-start\s*\{[^}]*width:100%/);
 assert.match(app,/class="smart-start-stack"/);
 assert.match(app,/smartPool==='learn'\?stats\.graduated/);
 assert.match(app,/smartPool==='review'&&\(phase==='REVIEW'\|\|phase==='RELEARNING'\)/);
-assert.match(app,/smartReviewRound/);
+assert.match(app,/TOPIK_SMART\.reviewRound/);
 assert.match(app,/开始复习 · 待复习 /);
 assert.match(app,/smartSessionTasks\[smartPool\]=0/);
 assert.match(app,/const STORAGE='topik_lab_v2'/);
