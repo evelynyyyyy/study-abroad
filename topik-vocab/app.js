@@ -583,7 +583,7 @@ function reviewDiagnostic(){
  let storage={key:STORAGE,readable:false,parseable:false,migrationBackupAvailable:false};
  try{const raw=localStorage.getItem(STORAGE);storage.readable=raw!==null;if(raw!==null){JSON.parse(raw);storage.parseable=true}storage.migrationBackupAvailable=localStorage.getItem(REVIEW_MIGRATION_BACKUP)!==null}catch(err){storage.error=String(err?.message||err)}
  const reviewDue=active?queueIds.length:rawDue.length;
- return {appVersion:window.TOPIK_APP_VERSION||null,buildSha:window.TOPIK_BUILD||null,dataStructureVersion:Number(state.reviewDataVersion||0),
+ return {appVersion:window.TOPIK_APP_VERSION||null,buildSha:window.TOPIK_BUILD||null,assetVersion:window.TOPIK_ASSET_VERSION||null,dataStructureVersion:Number(state.reviewDataVersion||0),
   storage,localDate:today(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||null,generatedAt:new Date(now).toISOString(),
   migration:{boot:reviewMigrationBoot,persisted:state.reviewMigration||null},
   summary:{rawFsrsDueUniqueWords:rawDue.length,activeRoundId:active?.roundId||null,activeRoundStatus:active?.status||null,
