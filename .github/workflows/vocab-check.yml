@@ -48,6 +48,7 @@ jobs:
           node topik-vocab/tests/smart-scheduler.test.cjs
           node topik-vocab/tests/smart-progress.test.cjs
           node topik-vocab/tests/smart-resume.test.cjs
+          node topik-vocab/tests/review-migration.test.cjs
           node topik-vocab/tests/learning-fairness.test.cjs
           node topik-vocab/tests/graduation-proof.test.cjs
           node topik-vocab/tests/release.test.cjs
