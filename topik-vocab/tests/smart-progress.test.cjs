@@ -16,7 +16,7 @@ assert.match(app,/stats\.reviewDue\+'<\/strong><span>今日待复习/,'home due 
 const source=app.slice(app.indexOf('function smartDailyStats(){'),app.indexOf('function home(){'));
 const now=new Date(),today=now.toLocaleDateString('sv-SE');
 const state={daily:{[today]:{learned:['新','新'],smartReviewCompleted:['复','复'],smartReviewGoal:4,smartReviewTasks:3,smartLearnTasks:2}},dailyGoal:100,lifecycle:{'新':{seenAt:Date.now()},'学':{wordState:'LEARNING'},'复':{wordState:'REVIEW'},'毕':{wordState:'REVIEW',graduatedAt:Date.now(),graduationEvidence:{verifiedAt:Date.now(),round:3,directions:['meaning','spell','meaning']}}}};
-const context={state,today:()=>today,dayInfo:()=>state.daily[today],scope:()=>[['','新'],['','学'],['','复'],['','毕']],TOPIK_SMART:{wordState:(s,k)=>s.lifecycle[k]?.wordState||'NEW',due:(s,k)=>k==='复',reviewRound:d=>d.smartReviewRound||null},Date,Set,Number,Math};
+const context={state,today:()=>today,dayInfo:()=>state.daily[today],scope:()=>[['','新'],['','学'],['','复'],['','毕']],TOPIK_SMART:{wordState:(s,k)=>s.lifecycle[k]?.wordState||'NEW',due:(s,k)=>k==='复',reviewRound:d=>d.smartReviewRound||null,activeReviewRound:d=>d.smartReviewRound&&d.smartReviewRound.status!=='closed-unresolved'&&d.smartReviewRound.completed?.length<d.smartReviewRound.total?d.smartReviewRound:null},Date,Set,Number,Math};
 vm.createContext(context);vm.runInContext(source+';this.stats=smartDailyStats;',context);
 let s=context.stats();
 assert.equal(s.introduced,1);assert.equal(s.graduated,1);assert.equal(s.learning,1);
