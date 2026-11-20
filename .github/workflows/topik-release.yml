@@ -23,19 +23,52 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Run all existing TOPIK tests without skipping
         run: |
           set -e
           for test in topik-vocab/tests/*.test.cjs; do node "$test"; done
           node --check topik-vocab/app.js
           node --check topik-vocab/release-client.js
+      - name: Prepare release tree
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/topik-site"
+          tar --exclude=.git --exclude=node_modules --exclude=.github -cf - . | tar -xf - -C "$RUNNER_TEMP/topik-site"
+          python topik-vocab/scripts/build-pronunciation-audio.py --site topik-vocab --inventory-only
+      - uses: actions/cache@v4
+        id: pronunciation-cache
+        with:
+          path: ${{ runner.temp }}/topik-pronunciation-cache
+          key: topik-pronunciation-ppaso-53d0966-${{ hashFiles('topik-vocab/app.js', 'topik-vocab/vocabulary.js', 'topik-vocab/data/*.js', 'topik-vocab/scripts/build-pronunciation-audio.py') }}
+      - name: Generate same-origin Korean pronunciation audio
+        if: steps.pronunciation-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --quiet huggingface_hub numpy soundfile python-mecab-ko onnxruntime
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          import os
+          snapshot_download(
+              repo_id='akamotaco/ppaso-tts-v1',
+              revision='53d0966',
+              local_dir=os.path.join(os.environ['RUNNER_TEMP'],'ppaso-tts-v1'),
+          )
+          PY
+          python topik-vocab/scripts/build-pronunciation-audio.py \
+            --site "$RUNNER_TEMP/topik-site/topik-vocab" \
+            --model "$RUNNER_TEMP/ppaso-tts-v1" \
+            --output "$RUNNER_TEMP/topik-pronunciation-cache"
       - name: Build immutable asset URLs and release manifest
         id: meta
         run: |
           set -euo pipefail
           echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
-          mkdir -p "$RUNNER_TEMP/topik-site"
-          tar --exclude=.git --exclude=node_modules --exclude=.github -cf - . | tar -xf - -C "$RUNNER_TEMP/topik-site"
+          rm -rf "$RUNNER_TEMP/topik-site/topik-vocab/audio"
+          mkdir -p "$RUNNER_TEMP/topik-site/topik-vocab/audio"
+          cp -a "$RUNNER_TEMP/topik-pronunciation-cache/." "$RUNNER_TEMP/topik-site/topik-vocab/audio/"
           node topik-vocab/scripts/build-release.cjs "$RUNNER_TEMP/topik-site"
           node topik-vocab/scripts/verify-release.cjs "$RUNNER_TEMP/topik-site/topik-vocab"
           test "$(node -p "require('$RUNNER_TEMP/topik-site/topik-vocab/release.json').buildSha")" = "$GITHUB_SHA"
