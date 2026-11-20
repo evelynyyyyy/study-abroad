@@ -53,6 +53,7 @@ jobs:
           node topik-vocab/tests/graduation-proof.test.cjs
           node topik-vocab/tests/release.test.cjs
           node topik-vocab/tests/pronunciation.test.cjs
+          node topik-vocab/tests/pronunciation-assets.test.cjs
           node topik-vocab/tests/relearn.test.cjs
           node topik-vocab/tests/reset-progress.test.cjs
           node topik-vocab/tests/vocabulary-expansion.test.cjs
