@@ -142,6 +142,7 @@ function saveSmartSession(){
   ko:smartTask.word[1],mode:smartTask.mode,type:smartTask.type,reason:smartTask.reason,
   typed,pinyinComposition,pinyinPage,hangulShift,hangulMode,pinyinShift,pinyinMode,pinyinExpanded,
   didCheck,pendingRating,smartResult,sessionTasks:smartSessionTasks[smartPool],
+  reviewRoundId:smartPool==='review'?TOPIK_SMART.reviewRound(dayInfo())?.roundId||null:null,
   scheduler:scheduler?{index:scheduler.index,freshIntroduced:scheduler.freshIntroduced,words:[...scheduler.words.entries()]}:null
  };
  persist();
@@ -158,7 +159,7 @@ function restoreSmartSession(pool){
  if(!expected.includes(TOPIK_SMART.wordState(state,word[1])))return false;
  if(pool==='review'){
   const round=TOPIK_SMART.reviewRound(dayInfo()),rs=round?.states?.[word[1]];
-  if(!round||!round.words.includes(word[1])||rs?.status==='completed'||round.completed.includes(word[1]))return false;
+  if(!round||snap.reviewRoundId!==round.roundId||!round.words.includes(word[1])||rs?.status==='completed'||round.completed.includes(word[1]))return false;
  }
  TOPIK_SMART.session={index:snap.scheduler.index,freshIntroduced:snap.scheduler.freshIntroduced||0,words:new Map(snap.scheduler.words)};
  smartTask={word,type:snap.type,mode:snap.mode,reason:snap.reason};
@@ -178,7 +179,7 @@ function startSmart(pool='learn'){
   smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();
   if(smartPool==='review'){
    const d=dayInfo(),dueWords=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).map(w=>w[1]);
-   TOPIK_SMART.startReviewRound(d,dueWords,today(),Date.now());persist();
+   TOPIK_SMART.startReviewRound(d,dueWords,today(),Date.now());state.daily[today()]=d;persist();
   }
   typed='';didCheck=false;smartPick();
  }
