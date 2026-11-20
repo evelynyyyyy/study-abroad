@@ -17,7 +17,7 @@ assert.equal(pronunciation.schemaVersion,1);
 assert.equal(pronunciation.source?.model,'akamotaco/ppaso-tts-v1');
 assert.equal(pronunciation.source?.license,'Apache-2.0');
 assert.ok(pronunciation.clipCount>5000,'release must contain full Korean pronunciation inventory');
-for(const text of ['한국어','학교','지금 집에 있어요.']){
+for(const text of ['한국어','학교','학교에 가요.']){
  const clip=pronunciation.clips[text];assert.ok(clip,'missing pronunciation '+text);
  const file=path.join(app,clip.file.replace(/^\.\//,''));
  const bytes=fs.readFileSync(file);
