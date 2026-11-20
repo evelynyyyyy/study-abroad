@@ -69,11 +69,18 @@ def main() -> int:
     parser.add_argument("--output",type=Path)
     parser.add_argument("--limit",type=int,default=0,help="QA only: generate first N texts")
     parser.add_argument("--inventory-only",action="store_true",help="Only verify and report extracted Korean text inventory")
+    parser.add_argument("--shard-index",type=int,default=0)
+    parser.add_argument("--shard-count",type=int,default=1)
     args=parser.parse_args()
     texts=extract_texts(args.site)
     if args.limit:
         texts=texts[:args.limit]
-    if len(texts)<100 and not args.limit:
+    if args.shard_count<1 or args.shard_index<0 or args.shard_index>=args.shard_count:
+        raise SystemExit("Invalid shard index/count")
+    full_count=len(texts)
+    if not args.inventory_only and args.shard_count>1:
+        texts=texts[args.shard_index::args.shard_count]
+    if full_count<100 and not args.limit:
         raise SystemExit(f"Refusing incomplete pronunciation build: only {len(texts)} Korean texts found")
     if args.inventory_only:
         print(json.dumps({"count":len(texts),"sample":texts[:10]},ensure_ascii=False))
@@ -119,7 +126,7 @@ def main() -> int:
         if index%250==0 or index==len(texts):
             print(f"pronunciation {index}/{len(texts)} (generated {generated})",flush=True)
     write_manifests(args.output,clips,generated)
-    print(f"Built {len(clips)} Korean pronunciation clips using {MODEL_ID}@{MODEL_REVISION}")
+    print(f"Built shard {args.shard_index+1}/{args.shard_count}: {len(clips)} Korean pronunciation clips using {MODEL_ID}@{MODEL_REVISION}")
     return 0
 
 if __name__=="__main__":
