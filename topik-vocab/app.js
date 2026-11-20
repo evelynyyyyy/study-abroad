@@ -97,7 +97,6 @@ function smartDailyStats(){
  const key=today(), d=dayInfo(), words=scope(), allowed=new Set(words.map(w=>w[1]));
  const learned=new Set((d.learned||[]).filter(ko=>allowed.has(ko)));
  const graduated=words.filter(w=>{const life=state.lifecycle?.[w[1]];const t=Number(life?.graduationEvidence?.verifiedAt||0);return t&&life?.graduatedAt&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
- const completed=new Set((d.smartReviewCompleted||[]).filter(ko=>allowed.has(ko)));
  const due=words.filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
  const round=d.smartReviewRound;const reviewGoal=round&&Array.isArray(round.completed)?round.total:due;const roundDone=round&&Array.isArray(round.completed)?new Set(round.completed.filter(ko=>allowed.has(ko))).size:0;
  return {goal:state.dailyGoal,introduced:learned.size,firstBoth:words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.firstBothAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length,learning:words.filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length,graduated,learnTasks:Number(d.smartLearnTasks)||0,reviewGoal,reviewDone:roundDone,reviewDue:due,reviewTasks:Number(d.smartReviewTasks)||0};
