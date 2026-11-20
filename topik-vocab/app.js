@@ -78,16 +78,12 @@ function theme(){window.TOPIK_THEME.apply()}
 const koreanSpeech=window.TOPIK_PRONUNCIATION.createController({
  speechSynthesis:window.speechSynthesis,
  SpeechSynthesisUtterance:window.SpeechSynthesisUtterance,
- onError:()=>notify('韩语朗读失败，请检查设备韩语语音设置')
+ Audio:window.Audio,document
 });
-function speak(s,slow=false){
- const result=koreanSpeech.play(s,slow);
- if(!result.ok){
-  const messages={'unsupported':'当前浏览器不支持语音朗读',
-   'no-ko-voice':'未检测到韩语语音。请在设备设置中下载或启用韩语声音',
-   'playback-error':'韩语朗读失败，请检查浏览器语音设置'};
-  notify(messages[result.reason]||'无法播放韩语语音');
- }
+async function speak(s,slow=false){
+ const result=await koreanSpeech.play(s,slow);
+ if(!result.ok&&result.reason!=='superseded')notify('韩语发音暂时无法播放，请重试');
+ return result;
 }
 function enhanceSpeakButtons(){
  document.querySelectorAll('[data-speak]').forEach(b=>{
