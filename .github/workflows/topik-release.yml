@@ -42,7 +42,7 @@ jobs:
         id: pronunciation-cache
         with:
           path: ${{ runner.temp }}/topik-pronunciation-cache
-          key: topik-pronunciation-ppaso-53d0966-${{ hashFiles('topik-vocab/app.js', 'topik-vocab/vocabulary.js', 'topik-vocab/data/*.js', 'topik-vocab/scripts/build-pronunciation-audio.py') }}
+          key: topik-pronunciation-ppaso-53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9-${{ hashFiles('topik-vocab/app.js', 'topik-vocab/vocabulary.js', 'topik-vocab/data/*.js', 'topik-vocab/scripts/build-pronunciation-audio.py') }}
       - name: Generate same-origin Korean pronunciation audio
         if: steps.pronunciation-cache.outputs.cache-hit != 'true'
         run: |
@@ -53,7 +53,7 @@ jobs:
           import os
           snapshot_download(
               repo_id='akamotaco/ppaso-tts-v1',
-              revision='53d0966',
+              revision='53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9',
               local_dir=os.path.join(os.environ['RUNNER_TEMP'],'ppaso-tts-v1'),
           )
           PY
