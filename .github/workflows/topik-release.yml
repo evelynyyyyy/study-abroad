@@ -14,7 +14,52 @@ concurrency:
   group: topik-pages-release
   cancel-in-progress: true
 jobs:
+  pronunciation-audio:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      max-parallel: 12
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        id: pronunciation-cache
+        with:
+          path: ${{ runner.temp }}/topik-pronunciation-shard
+          key: topik-pronunciation-ppaso-53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9-shard-${{ matrix.shard }}-${{ hashFiles('topik-vocab/app.js', 'topik-vocab/vocabulary.js', 'topik-vocab/data/*.js', 'topik-vocab/scripts/build-pronunciation-audio.py') }}
+      - name: Generate same-origin Korean pronunciation shard
+        if: steps.pronunciation-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --quiet huggingface_hub numpy soundfile python-mecab-ko onnxruntime
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          import os
+          snapshot_download(
+              repo_id='akamotaco/ppaso-tts-v1',
+              revision='53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9',
+              local_dir=os.path.join(os.environ['RUNNER_TEMP'],'ppaso-tts-v1'),
+          )
+          PY
+          python topik-vocab/scripts/build-pronunciation-audio.py \
+            --site topik-vocab \
+            --model "$RUNNER_TEMP/ppaso-tts-v1" \
+            --output "$RUNNER_TEMP/topik-pronunciation-shard" \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: topik-pronunciation-${{ matrix.shard }}
+          path: ${{ runner.temp }}/topik-pronunciation-shard
+          compression-level: 0
+          retention-days: 1
+
   test-and-build:
+    needs: pronunciation-audio
     runs-on: ubuntu-latest
     outputs:
       build_sha: ${{ steps.meta.outputs.sha }}
@@ -32,35 +77,23 @@ jobs:
           for test in topik-vocab/tests/*.test.cjs; do node "$test"; done
           node --check topik-vocab/app.js
           node --check topik-vocab/release-client.js
+          python topik-vocab/scripts/build-pronunciation-audio.py --site topik-vocab --inventory-only
       - name: Prepare release tree
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/topik-site"
           tar --exclude=.git --exclude=node_modules --exclude=.github -cf - . | tar -xf - -C "$RUNNER_TEMP/topik-site"
-          python topik-vocab/scripts/build-pronunciation-audio.py --site topik-vocab --inventory-only
-      - uses: actions/cache@v4
-        id: pronunciation-cache
+      - uses: actions/download-artifact@v4
         with:
-          path: ${{ runner.temp }}/topik-pronunciation-cache
-          key: topik-pronunciation-ppaso-53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9-${{ hashFiles('topik-vocab/app.js', 'topik-vocab/vocabulary.js', 'topik-vocab/data/*.js', 'topik-vocab/scripts/build-pronunciation-audio.py') }}
-      - name: Generate same-origin Korean pronunciation audio
-        if: steps.pronunciation-cache.outputs.cache-hit != 'true'
+          pattern: topik-pronunciation-*
+          path: ${{ runner.temp }}/topik-pronunciation-shards
+      - name: Merge hosted Korean pronunciation shards
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check --quiet huggingface_hub numpy soundfile python-mecab-ko onnxruntime
-          python - <<'PY'
-          from huggingface_hub import snapshot_download
-          import os
-          snapshot_download(
-              repo_id='akamotaco/ppaso-tts-v1',
-              revision='53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9',
-              local_dir=os.path.join(os.environ['RUNNER_TEMP'],'ppaso-tts-v1'),
-          )
-          PY
-          python topik-vocab/scripts/build-pronunciation-audio.py \
-            --site "$RUNNER_TEMP/topik-site/topik-vocab" \
-            --model "$RUNNER_TEMP/ppaso-tts-v1" \
-            --output "$RUNNER_TEMP/topik-pronunciation-cache"
+          python topik-vocab/scripts/merge-pronunciation-audio.py \
+            --shards "$RUNNER_TEMP/topik-pronunciation-shards" \
+            --output "$RUNNER_TEMP/topik-pronunciation-cache" \
+            --expected-shards 12
       - name: Build immutable asset URLs and release manifest
         id: meta
         run: |
@@ -75,6 +108,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/topik-site
+
   deploy:
     needs: test-and-build
     runs-on: ubuntu-latest
@@ -86,6 +120,7 @@ jobs:
         run: sleep 35
       - uses: actions/deploy-pages@v4
         id: deployment
+
   verify-online:
     needs: [test-and-build, deploy]
     runs-on: ubuntu-latest
