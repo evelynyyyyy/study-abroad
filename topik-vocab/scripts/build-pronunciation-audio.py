@@ -67,15 +67,21 @@ def main() -> int:
     parser.add_argument("--site",required=True,type=Path)
     parser.add_argument("--model",type=Path)
     parser.add_argument("--output",type=Path)
-    parser.add_argument("--limit",type=int,default=0,help="QA only: generate first N texts")\n    parser.add_argument("--inventory-only",action="store_true",help="Only verify and report extracted Korean text inventory")
+    parser.add_argument("--limit",type=int,default=0,help="QA only: generate first N texts")
+    parser.add_argument("--inventory-only",action="store_true",help="Only verify and report extracted Korean text inventory")
     args=parser.parse_args()
     texts=extract_texts(args.site)
     if args.limit:
         texts=texts[:args.limit]
     if len(texts)<100 and not args.limit:
         raise SystemExit(f"Refusing incomplete pronunciation build: only {len(texts)} Korean texts found")
+    if args.inventory_only:
+        print(json.dumps({"count":len(texts),"sample":texts[:10]},ensure_ascii=False))
+        return 0
+    if not args.model or not args.output:
+        raise SystemExit("--model and --output are required unless --inventory-only is used")
 
-    if args.inventory_only:\n        print(json.dumps({"count":len(texts),"sample":texts[:10]},ensure_ascii=False))\n        return 0\n    if not args.model or not args.output:\n        raise SystemExit("--model and --output are required unless --inventory-only is used")\n\n    sys.path.insert(0,str(args.model/"example"))
+    sys.path.insert(0,str(args.model/"example"))
     try:
         import numpy as np
         import soundfile as sf
