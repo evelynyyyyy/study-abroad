@@ -23,7 +23,7 @@ class MockAudio{
 }
 const manifest={schemaVersion:1,source:{model:'test'},clips:{
  '한국어':{file:'./audio/clips/korean.wav'},
- '지금 집에 있어요.':{file:'./audio/clips/sentence.wav'},
+ '학교에 가요.':{file:'./audio/clips/sentence.wav'},
  '학교':{file:'./audio/clips/school.wav'}
 }};
 const doc={baseURI:'https://example.test/topik-vocab/'};
@@ -40,9 +40,9 @@ const doc={baseURI:'https://example.test/topik-vocab/'};
  assert.equal(result.ok,true);assert.equal(result.source,'hosted');assert.equal(result.rate,.78);
  assert.equal(audioConstructed,1,'normal and slow reuse the same cached hosted clip');
 
- result=await controller.play('지금 집에 있어요.',false);
+ result=await controller.play('학교에 가요.',false);
  assert.equal(result.ok,true);assert.equal(result.source,'hosted','example sentence uses same pronunciation controller');
- result=await controller.play('지금 집에 있어요.',true);
+ result=await controller.play('학교에 가요.',true);
  assert.equal(result.ok,true);assert.equal(result.rate,.78,'example sentence supports slow playback');
 
  // Repeated playback should restart a cached element instead of constructing/downloading a new one.
