@@ -336,7 +336,7 @@ window.TOPIK_SMART={
     continue;
    }
    if((phase==='REVIEW'||phase==='RELEARNING')&&pool==='review'){
-    const round=this.activeReviewRound(day);
+    const currentRound=this.reviewRound(day),round=this.activeReviewRound(day);
     if(round){
      if(!round.words.includes(ko))continue;
      const rs=round.states[ko];
@@ -351,6 +351,7 @@ window.TOPIK_SMART={
        review.push({task:candidate,weight:1+Math.min(3,Math.max(0,now-Number(state.progress?.[ko]?.[mode]?.due||now))/this.DAY)});
      }
     }else{
+     if(currentRound?.completed?.includes(ko))continue;
      for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
       const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
       if(this.sessionEligible(candidate)&&!recent.includes(ko))
