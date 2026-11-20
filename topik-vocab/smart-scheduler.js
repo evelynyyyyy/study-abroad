@@ -173,6 +173,59 @@ window.TOPIK_SMART={
   if(m.schedulerVersion!==3)return true;
   return !Number.isFinite(Number(p.due))||Number(p.due)<=now;
  },
+ reviewRound(day){
+  const round=day?.smartReviewRound;
+  if(!round||!Array.isArray(round.words))return null;
+  round.words=[...new Set(round.words.filter(Boolean))];
+  round.completed=[...new Set((round.completed||[]).filter(ko=>round.words.includes(ko)))];
+  round.total=round.words.length;
+  round.roundId=round.roundId||'legacy';
+  round.states=round.states&&typeof round.states==='object'?round.states:{};
+  for(const ko of round.words){
+   const old=round.states[ko]||{},done=round.completed.includes(ko);
+   round.states[ko]={
+    roundId:round.roundId,wordId:ko,
+    koToZhPassed:done||!!old.koToZhPassed,zhToKoPassed:done||!!old.zhToKoPassed,
+    hadError:!!old.hadError,attemptCount:Math.max(0,Number(old.attemptCount)||0),
+    status:done?'completed':old.status==='reinforcing'?'reinforcing':'pending',
+    lastErrorAt:Math.max(0,Number(old.lastErrorAt)||0),lastErrorMode:old.lastErrorMode||null
+   };
+  }
+  return round;
+ },
+ startReviewRound(day,dueWords,dayKey,now=Date.now()){
+  const current=this.reviewRound(day),unique=[...new Set((dueWords||[]).filter(Boolean))];
+  if(current&&current.completed.length<current.total)return current;
+  if(!unique.length)return current;
+  if(current&&current.total){
+   day.smartReviewRoundHistory=Array.isArray(day.smartReviewRoundHistory)?day.smartReviewRoundHistory:[];
+   if(!day.smartReviewRoundHistory.some(r=>r.roundId===current.roundId))
+    day.smartReviewRoundHistory.push(JSON.parse(JSON.stringify(current)));
+  }
+  const roundId=String(dayKey||this.dayKey(now))+'-'+now;
+  day.smartReviewRound={roundId,createdAt:now,total:unique.length,words:unique,completed:[],states:{}};
+  return this.reviewRound(day);
+ },
+ recordReviewRound(day,ko,mode,success,now=Date.now()){
+  const round=this.reviewRound(day);
+  if(!round||!round.words.includes(ko))return null;
+  const r=round.states[ko];
+  if(!r||r.status==='completed')return r||null;
+  r.attemptCount++;
+  if(success){
+   if(mode==='meaning')r.koToZhPassed=true;
+   else if(mode==='spell')r.zhToKoPassed=true;
+  }else{
+   r.koToZhPassed=false;r.zhToKoPassed=false;r.hadError=true;r.status='reinforcing';
+   r.lastErrorAt=now;r.lastErrorMode=mode;
+  }
+  if(r.koToZhPassed&&r.zhToKoPassed){
+   r.status='completed';
+   if(!round.completed.includes(ko))round.completed.push(ko);
+  }else if(r.hadError)r.status='reinforcing';
+  else r.status='pending';
+  return r;
+ },
  stage(state,ko,now=Date.now()){return window.TOPIK_FIRST_LEARNING.stage(state,ko,now)},
  select(state,words,day,goal,history=[],now=Date.now(),preferredMode=null,pool='learn'){
   const session=this.session||(this.resetSession(),this.session);
@@ -211,10 +264,26 @@ window.TOPIK_SMART={
     continue;
    }
    if((phase==='REVIEW'||phase==='RELEARNING')&&pool==='review'){
-    for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
-     const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
-     if(this.sessionEligible(candidate)&&!recent.includes(ko))
-      review.push({task:candidate,weight:1+Math.min(3,Math.max(0,now-Number(state.progress?.[ko]?.[mode]?.due||now))/this.DAY)});
+    const round=this.reviewRound(day);
+    if(round){
+     if(!round.words.includes(ko))continue;
+     const rs=round.states[ko];
+     if(!rs||rs.status==='completed'||round.completed.includes(ko))continue;
+     for(const mode of ['meaning','spell']){
+      const passed=mode==='meaning'?rs.koToZhPassed:rs.zhToKoPassed;
+      if(passed)continue;
+      const candidate={word,type:'typing',mode,reason:rs.status==='reinforcing'?'review-reinforcement':'review-round'};
+      const retryUnlocked=rs.status!=='reinforcing'||rs.koToZhPassed||rs.zhToKoPassed||
+       this.sessionEligible(candidate)||(rs.lastErrorAt&&now-rs.lastErrorAt>=this.CONFIG.lapseMinutes[0]*60000);
+      if(retryUnlocked)
+       review.push({task:candidate,weight:1+Math.min(3,Math.max(0,now-Number(state.progress?.[ko]?.[mode]?.due||now))/this.DAY)});
+     }
+    }else{
+     for(const mode of ['meaning','spell'])if(this.due(state,ko,mode,now)){
+      const candidate={word,type:'typing',mode,reason:phase==='RELEARNING'?'relearning-due':'fsrs-review'};
+      if(this.sessionEligible(candidate)&&!recent.includes(ko))
+       review.push({task:candidate,weight:1+Math.min(3,Math.max(0,now-Number(state.progress?.[ko]?.[mode]?.due||now))/this.DAY)});
+     }
     }
    }
   }
