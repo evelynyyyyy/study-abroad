@@ -169,7 +169,7 @@ function startSmart(pool='learn'){
  if(view==='smart')saveSmartSession();
  smartPool=pool==='review'?'review':'learn';
  const restored=restoreSmartSession(smartPool);
- if(!restored){smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();if(smartPool==='review'){const d=dayInfo();const dueWords=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).map(w=>w[1]);d.smartReviewRound={total:dueWords.length,words:dueWords,completed:[]};persist()}typed='';didCheck=false;smartPick();}
+ if(!restored){smartSessionTasks[smartPool]=0;TOPIK_SMART.resetSession();if(smartPool==='review'){const d=dayInfo();const dueWords=scope().filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).map(w=>w[1]);if(!d.smartReviewRound||!Array.isArray(d.smartReviewRound.words)||!Array.isArray(d.smartReviewRound.completed)||d.smartReviewRound.completed.length>=d.smartReviewRound.total)d.smartReviewRound={total:dueWords.length,words:dueWords,completed:[]};persist()}typed='';didCheck=false;smartPick();}
  view='smart';session=null;onboarding=null;render();
  if(restored)saveSmartSession();
 }
