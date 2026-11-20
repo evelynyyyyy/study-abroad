@@ -148,3 +148,84 @@ S.select(isolated,words,{learned:['집']},2,[],now,null,'review');
 assert.equal(JSON.stringify(isolated.progress),preserved,'switching pools must not mutate FSRS progress');
 const completed={progress:{},lifecycle:{},smartHistory:[]};
 assert.equal(S.select(completed,words,{learned:[]},0,[],now,null,'review'),null);
+
+
+// Formal review round regression: completion is two directional passes, independent of future FSRS due flags.
+function freshRound(ids){
+ const d={learned:[]};S.startReviewRound(d,ids,'2026-11-20',now);return d;
+}
+function reviewState(ids){
+ const st={progress:{},lifecycle:{},smartHistory:[]};
+ for(const ko of ids)st.lifecycle[ko]={wordState:'REVIEW'};
+ return st;
+}
+let rd=freshRound(['양방향']);
+let rr=S.recordReviewRound(rd,'양방향','meaning',true,now);
+assert.equal(rr.status,'pending');assert.equal(rd.smartReviewRound.completed.length,0,'one direction is not complete');
+rr=S.recordReviewRound(rd,'양방향','spell',true,now+1);
+assert.equal(rr.status,'completed');assert.deepEqual(rd.smartReviewRound.completed,['양방향'],'two first-pass directions complete exactly one word');
+const attemptsAfterComplete=rr.attemptCount;
+S.recordReviewRound(rd,'양방향','meaning',true,now+2);
+assert.equal(rr.attemptCount,attemptsAfterComplete,'completed word ignores duplicate round submissions');
+
+rd=freshRound(['错后']);
+S.recordReviewRound(rd,'错后','meaning',true,now);
+rr=S.recordReviewRound(rd,'错后','spell',false,now+1);
+assert.equal(rr.status,'reinforcing');assert.equal(rr.koToZhPassed,false);assert.equal(rr.zhToKoPassed,false,'an error invalidates earlier directional pass');
+S.recordReviewRound(rd,'错后','spell',true,now+2);
+assert.equal(rd.smartReviewRound.completed.length,0,'wrong then one success is not complete');
+rr=S.recordReviewRound(rd,'错后','meaning',true,now+3);
+assert.equal(rr.status,'completed','after an error both directions must pass again');
+
+rd=freshRound(['先错']);
+S.recordReviewRound(rd,'先错','meaning',false,now);
+rr=S.recordReviewRound(rd,'先错','spell',true,now+1);
+assert.equal(rr.status,'reinforcing');assert.equal(rr.koToZhPassed,false);assert.equal(rr.zhToKoPassed,true,'wrong ko→zh plus correct zh→ko remains incomplete');
+rd=freshRound(['双错']);
+S.recordReviewRound(rd,'双错','meaning',false,now);
+rr=S.recordReviewRound(rd,'双错','spell',false,now+1);
+assert.equal(rr.status,'reinforcing');assert.equal(rd.smartReviewRound.completed.length,0,'two errors never complete');
+assert.ok(app.includes("smartRecord('again')"),'不知道 maps to Again/error path');
+
+const excludedState=reviewState(['完成词']);
+rd=freshRound(['完成词']);
+S.recordReviewRound(rd,'完成词','meaning',true,now);S.recordReviewRound(rd,'完成词','spell',true,now+1);
+S.resetSession();
+assert.equal(S.select(excludedState,[[1,'完成词','完成']],rd,0,[],now+2,null,'review'),null,'completed word never re-enters the same round');
+
+const persisted=JSON.parse(JSON.stringify(rd)),persistedRound=S.reviewRound(persisted);
+assert.equal(persistedRound.states['完成词'].status,'completed','refresh preserves completed state');
+assert.equal(persistedRound.completed.length,1,'refresh preserves completed count');
+const nextDay={learned:[]};S.startReviewRound(nextDay,['完成词'],'2026-11-21',now+S.DAY);
+assert.equal(nextDay.smartReviewRound.states['完成词'].status,'pending','same word may enter a new review round on another day');
+
+const coolState=reviewState(['冷却词']);
+rd=freshRound(['冷却词']);S.resetSession();
+S.review(coolState,'冷却词','meaning',false,now,'again');
+S.recordReviewRound(rd,'冷却词','meaning',false,now);S.recordExposure('冷却词','meaning','again');
+assert.equal(S.select(coolState,[[1,'冷却词','冷却']],rd,0,['冷却词'],now+1000,null,'review'),null,'failed word is not immediately repeated');
+assert.ok(S.select(coolState,[[1,'冷却词','冷却']],rd,0,['冷却词'],now+S.CONFIG.lapseMinutes[0]*60000+1,null,'review'),'failed word unlocks after short reinforcement interval');
+
+const eight=Array.from({length:8},(_,i)=>[1,'复习'+i,'释义'+i]),eightIds=eight.map(w=>w[1]);
+const eightState=reviewState(eightIds),eightDay=freshRound(eightIds),seenCompleted=new Set();
+S.resetSession();S.random=()=>0;
+for(let i=0;i<16;i++){
+ const task=S.select(eightState,eight,eightDay,0,eightState.smartHistory,now+i*1000,null,'review');
+ assert.ok(task,'8-word round must provide exactly 16 directional tasks');
+ S.review(eightState,task.word[1],task.mode,true,now+i*1000,'good');
+ const wordRound=S.recordReviewRound(eightDay,task.word[1],task.mode,true,now+i*1000);
+ S.recordExposure(task.word[1],task.mode,'correct');eightState.smartHistory.push(task.word[1]);
+ if(wordRound.status==='completed')seenCompleted.add(task.word[1]);
+}
+assert.equal(eightDay.smartReviewRound.completed.length,8,'8 words double-correct complete 8 unique words');
+assert.equal(seenCompleted.size,8,'directional passes never double-count a word');
+assert.ok(eightIds.every(ko=>eightDay.smartReviewRound.states[ko].attemptCount===2),'normal review needs one pass per direction only');
+assert.equal(S.select(eightState,eight,eightDay,0,eightState.smartHistory,now+20000,null,'review'),null,'all 8 completed words stay out of the current queue');
+assert.ok(app.includes('今日复习已完成'),'completed round has an explicit completion screen');
+
+const recordBody=app.slice(app.indexOf('function smartRecord(result){'),app.indexOf('function queueRelearn'));
+assert.equal((recordBody.match(/TOPIK_SMART\.review\(/g)||[]).length,1,'one submitted review answer invokes FSRS once');
+assert.ok(recordBody.includes("if(!smartTask||smartTask.type!=='typing'||didCheck)return"),'duplicate submit is blocked before FSRS');
+assert.ok(app.includes("slow.textContent='慢速'"),'wrong-answer pronunciation keeps existing slow playback support');
+assert.ok(app.includes('TOPIK_SMART.recordReviewRound'),'app persists formal round result separately from FSRS scheduling');
+assert.ok(!app.includes('delete d.smartReviewRound'),'review repair does not clear old review-round data');
