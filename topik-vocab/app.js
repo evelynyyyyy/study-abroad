@@ -16,8 +16,25 @@ let legacy=parse('topik_records',{});
 if(!state.legacyMigrated){Object.entries(legacy).forEach(([ko,r])=>{if(!state.progress[ko])state.progress[ko]={read:{step:Number(r.step)||0,due:Number(r.due)||0,wrong:0}}});state.legacyMigrated=true;}
 let pinyinComposition='',pinyinPage=0;let hangulShift=false,pinyinShift=false,pinyinMode='letters',pinyinExpanded=false;let keyboardDeleteTimer=null,keyboardDeleteInterval=null;let pendingRating=false;let view='home',session=null,practiceReturn=null,onboarding=null,smartTask=null,listQuery='',listFilter='all',feedback='',typed='',didCheck=false,smartResult=null,toastTimer,relearnSelection=new Set();
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{notify('保存失败：浏览器存储空间不足或不可用')}}
+const REVIEW_MIGRATION_BACKUP='topik_lab_v2_review_migration_v2_backup';
+let reviewMigrationBoot={needed:false,backupCreated:false,blocked:false};
+function migrateReviewStorage(){
+ const plan=TOPIK_SMART.reviewMigrationPlan(state);reviewMigrationBoot={...plan,backupCreated:false,blocked:false};
+ if(!plan.needed)return;
+ if(plan.roundCount){
+  try{
+   if(localStorage.getItem(REVIEW_MIGRATION_BACKUP)===null){
+    localStorage.setItem(REVIEW_MIGRATION_BACKUP,JSON.stringify({version:2,createdAt:Date.now(),state:JSON.parse(JSON.stringify(state))}));
+    reviewMigrationBoot.backupCreated=true;
+   }
+  }catch(err){reviewMigrationBoot.blocked=true;reviewMigrationBoot.error=String(err?.message||err);return}
+ }
+ const report=TOPIK_SMART.migrateReviewData(state,ts=>new Date(ts).toLocaleDateString('sv-SE'),Date.now());
+ reviewMigrationBoot={...reviewMigrationBoot,...report};persist();
+}
 // First visit creates an empty browser-local profile; existing profiles are never reset by opening or sharing the URL.
 try{if(localStorage.getItem(STORAGE)===null)persist()}catch(_){}
+migrateReviewStorage();
 function all(){let seen=new Set();return built.concat(window.TOPIK_EXTRA_WORDS||[],window.TOPIK_YONSEI_WORDS||[],window.TOPIK_VERIFIED_ADDITIONS||[],state.extra).filter(w=>{if(!w||!w[1]||seen.has(w[1]))return false;seen.add(w[1]);return true})}
 const TOPIK_TOPICS={
  conversation:['안녕','안녕하세요','감사합니다','죄송합니다','네','아니요','이름','친구','만나다','말하다','질문','대답','약속','인사하다'],
@@ -98,9 +115,9 @@ function smartDailyStats(){
  const learned=new Set((d.learned||[]).filter(ko=>allowed.has(ko)));
  const graduated=words.filter(w=>{const life=state.lifecycle?.[w[1]];const t=Number(life?.graduationEvidence?.verifiedAt||0);return t&&life?.graduatedAt&&new Date(t).toLocaleDateString('sv-SE')===key}).length;
  const due=words.filter(w=>['REVIEW','RELEARNING'].includes(TOPIK_SMART.wordState(state,w[1]))&&['meaning','spell'].some(m=>TOPIK_SMART.due(state,w[1],m))).length;
- const round=TOPIK_SMART.reviewRound(d),roundDone=round?new Set(round.completed.filter(ko=>allowed.has(ko))).size:0;
- const activeRound=!!round&&roundDone<round.total,reviewGoal=round?round.total:due;
- const reviewDue=activeRound?Math.max(0,reviewGoal-roundDone):due;
+ const round=TOPIK_SMART.reviewRound(d),activeRound=TOPIK_SMART.activeReviewRound(d);
+ const roundDone=round?new Set(round.completed.filter(ko=>allowed.has(ko))).size:0,reviewGoal=round?round.total:due;
+ const reviewDue=activeRound?Math.max(0,activeRound.total-roundDone):due;
  return {goal:state.dailyGoal,introduced:learned.size,firstBoth:words.filter(w=>{const t=Number(state.lifecycle?.[w[1]]?.firstBothAt||0);return t&&new Date(t).toLocaleDateString('sv-SE')===key}).length,learning:words.filter(w=>TOPIK_SMART.wordState(state,w[1])==='LEARNING').length,graduated,learnTasks:Number(d.smartLearnTasks)||0,reviewGoal,reviewDone:roundDone,reviewDue,reviewTasks:Number(d.smartReviewTasks)||0};
 }
 function home(){
@@ -142,7 +159,7 @@ function saveSmartSession(){
   ko:smartTask.word[1],mode:smartTask.mode,type:smartTask.type,reason:smartTask.reason,
   typed,pinyinComposition,pinyinPage,hangulShift,hangulMode,pinyinShift,pinyinMode,pinyinExpanded,
   didCheck,pendingRating,smartResult,sessionTasks:smartSessionTasks[smartPool],
-  reviewRoundId:smartPool==='review'?TOPIK_SMART.reviewRound(dayInfo())?.roundId||null:null,
+  reviewRoundId:smartPool==='review'?TOPIK_SMART.activeReviewRound(dayInfo())?.roundId||null:null,
   scheduler:scheduler?{index:scheduler.index,freshIntroduced:scheduler.freshIntroduced,words:[...scheduler.words.entries()]}:null
  };
  persist();
@@ -158,7 +175,7 @@ function restoreSmartSession(pool){
  const expected=pool==='learn'?['NEW','LEARNING','REVIEW']:['REVIEW','RELEARNING'];
  if(!expected.includes(TOPIK_SMART.wordState(state,word[1])))return false;
  if(pool==='review'){
-  const round=TOPIK_SMART.reviewRound(dayInfo()),rs=round?.states?.[word[1]];
+  const round=TOPIK_SMART.activeReviewRound(dayInfo()),rs=round?.states?.[word[1]];
   if(!round||snap.reviewRoundId!==round.roundId||!round.words.includes(word[1])||rs?.status==='completed'||round.completed.includes(word[1]))return false;
  }
  TOPIK_SMART.session={index:snap.scheduler.index,freshIntroduced:snap.scheduler.freshIntroduced||0,words:new Map(snap.scheduler.words)};
@@ -416,8 +433,10 @@ function smartScreen(){
    if(state.smartSessions)delete state.smartSessions[smartPool];persist();
    const stats=smartDailyStats();
    if(smartPool==='review'){
-    if(stats.reviewDone<stats.reviewGoal)return '<div class="smart-done"><div class="eyebrow">今日复习</div><h1>错词短期巩固中</h1><p class="muted">本轮已完成 '+stats.reviewDone+' / '+stats.reviewGoal+'，剩余 '+stats.reviewDue+' 个词。答错词会在穿插其他单词或短间隔后再次测试。</p><button class="primary" data-view="home">返回首页</button></div>';
-    return '<div class="smart-done"><div class="eyebrow">今日复习</div><h1>今日复习已完成</h1><p class="muted">本轮 '+stats.reviewDone+' 个单词已完成双向复习。</p><button class="primary" data-view="home">返回首页</button></div>';
+    const activeRound=TOPIK_SMART.activeReviewRound(dayInfo()),round=TOPIK_SMART.reviewRound(dayInfo());
+    if(activeRound)return '<div class="smart-done"><div class="eyebrow">今日复习</div><h1>错词短期巩固中</h1><p class="muted">本轮已完成 '+stats.reviewDone+' / '+stats.reviewGoal+'，剩余 '+stats.reviewDue+' 个词。答错词会在穿插其他单词或短间隔后再次测试。</p><button class="primary" data-view="home">返回首页</button></div>';
+    if(round?.status==='completed')return '<div class="smart-done"><div class="eyebrow">今日复习</div><h1>今日复习已完成</h1><p class="muted">本轮 '+round.completed.length+' 个单词已完成双向复习。</p><button class="primary" data-view="home">返回首页</button></div>';
+    return '<div class="smart-done"><div class="eyebrow">今日复习</div><h1>当前没有到期复习任务</h1><p class="muted">旧轮次不会强制重新入队；如需核查，可在设置中生成只读复习诊断。</p><button class="primary" data-view="home">返回首页</button></div>';
    }
    return '<div class="smart-done"><div class="eyebrow">今日学习</div><h1>当前任务已完成</h1><p class="muted">今日已学会 '+stats.graduated+' 个新词，当前没有可安排的到期题目。</p><button class="primary" data-view="home">返回首页</button></div>';
  }
