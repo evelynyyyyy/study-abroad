@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "kind": "build-generated",
+    "model": "akamotaco/ppaso-tts-v1",
+    "license": "Apache-2.0"
+  },
+  "clips": {}
+}
