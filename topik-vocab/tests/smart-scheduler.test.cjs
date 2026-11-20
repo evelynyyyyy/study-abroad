@@ -163,7 +163,7 @@ let rd=freshRound(['양방향']);
 let rr=S.recordReviewRound(rd,'양방향','meaning',true,now);
 assert.equal(rr.status,'pending');assert.equal(rd.smartReviewRound.completed.length,0,'one direction is not complete');
 rr=S.recordReviewRound(rd,'양방향','spell',true,now+1);
-assert.equal(rr.status,'completed');assert.deepEqual(rd.smartReviewRound.completed,['양방향'],'two first-pass directions complete exactly one word');
+assert.equal(rr.status,'completed');assert.equal([...rd.smartReviewRound.completed].join(','),'양방향','two first-pass directions complete exactly one word');
 const attemptsAfterComplete=rr.attemptCount;
 S.recordReviewRound(rd,'양방향','meaning',true,now+2);
 assert.equal(rr.attemptCount,attemptsAfterComplete,'completed word ignores duplicate round submissions');
