@@ -9,7 +9,7 @@ import argparse, hashlib, json, re, sys, unicodedata
 from pathlib import Path
 
 MODEL_ID="akamotaco/ppaso-tts-v1"
-MODEL_REVISION="53d0966"
+MODEL_REVISION="53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9"
 MODEL_LICENSE="Apache-2.0"
 GENERATOR_VERSION="1"
 SAMPLE_RATE=22050
