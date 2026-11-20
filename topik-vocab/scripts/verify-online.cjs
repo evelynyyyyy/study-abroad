@@ -23,7 +23,17 @@ async function verify(){
   const bytes=Buffer.from(await (await get(url)).arrayBuffer());
   assert.equal(crypto.createHash('sha256').update(bytes).digest('hex').slice(0,16),asset.hash,'Asset content mismatch '+asset.output);
  }
- console.log('VERIFIED published release',manifest.version,manifest.buildSha,manifest.assetVersion);
+ const pronunciation=await (await get(new URL('audio/manifest.json?verify='+marker,base))).json();
+ assert.equal(pronunciation.source?.model,'akamotaco/ppaso-tts-v1');
+ assert.equal(pronunciation.source?.license,'Apache-2.0');
+ assert.ok(pronunciation.clipCount>5000,'Published pronunciation inventory incomplete');
+ for(const text of ['한국어','학교','지금 집에 있어요.']){
+  const clip=pronunciation.clips?.[text];assert.ok(clip,'Published audio missing '+text);
+  const bytes=Buffer.from(await (await get(new URL(clip.file,base))).arrayBuffer());
+  assert.ok(bytes.length>1000,'Published audio too small '+text);
+  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),clip.sha256,'Published audio hash mismatch '+text);
+ }
+ console.log('VERIFIED published release',manifest.version,manifest.buildSha,manifest.assetVersion,'pronunciation clips',pronunciation.clipCount);
 }
 (async()=>{
  for(let attempt=0;attempt<15;attempt++){
