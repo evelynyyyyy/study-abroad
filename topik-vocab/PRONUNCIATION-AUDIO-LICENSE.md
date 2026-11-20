@@ -5,7 +5,7 @@ The production site generates its Korean pronunciation clips during the verified
 ## Primary generator
 
 - Model: **Ppaso-TTS v1**, repository `akamotaco/ppaso-tts-v1`
-- Pinned revision used by this site: `53d0966`
+- Pinned revision used by this site: `53d09664c4f636a5fb6f2ebe3ec22cd83ee249b9`
 - Source: https://huggingface.co/akamotaco/ppaso-tts-v1
 - License declared by the model repository: **Apache License 2.0**
 - Runtime backend used for release generation: ONNX CPU
